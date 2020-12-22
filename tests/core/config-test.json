@@ -1,0 +1,11 @@
+{
+  "user": "admin1",
+  "password": "password",
+  "url": "https://localhost:2997",
+  "connection" :{
+		"pool_maxsize": 10,
+		"max_retries": 5,
+		"pool_block" : false,
+		"disable_ssl_certificate": true
+	}
+}

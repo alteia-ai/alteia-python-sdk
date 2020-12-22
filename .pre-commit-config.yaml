@@ -1,0 +1,48 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+  hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-ast
+  - id: check-yaml
+    args: [--allow-multiple-documents]
+  - id: check-added-large-files
+  - id: check-case-conflict     # Check for files that would conflict in case-insensitive filesystems
+  - id: check-merge-conflict     # Check for files that contain merge conflict strings.
+  - id: debug-statements     # Check for debugger imports and py37+ `breakpoint()` calls in python source.
+  - id: requirements-txt-fixer     # Sorts entries in requirements.txt
+  - id: forbid-new-submodules     # Check for git submodules
+
+- repo: https://github.com/asottile/seed-isort-config
+  rev: v2.2.0
+  hooks:
+  - id: seed-isort-config
+
+- repo: https://github.com/timothycrosley/isort
+  rev: 5.5.4   # pick the isort version you'd like to use from https://github.com/timothycrosley/isort/releases
+  hooks:
+  - id: isort
+
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.8.3
+  hooks:
+  - id: flake8
+
+- repo: https://github.com/pycqa/pylint
+  rev: pylint-2.6.0
+  hooks:
+  - id: pylint
+
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v1.5.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
+
+- repo: https://gitlab.com/smop/pre-commit-hooks
+  rev: v1.0.0
+  hooks:
+  - id: check-poetry

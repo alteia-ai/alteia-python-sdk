@@ -1,0 +1,10 @@
+{
+    "user": "user",
+    "password": "password",
+    "secret": "secret",
+    "url": "https://app.alteia.com",
+    "connection" :{
+        "max_retries": 10,
+        "disable_ssl_certificate": false
+    }
+}

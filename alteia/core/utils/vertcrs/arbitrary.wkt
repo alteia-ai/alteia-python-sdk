@@ -1,0 +1,5 @@
+VERT_CS["Arbitrary",
+  VERT_DATUM["Arbitrary",2000],
+  UNIT["metre",1,
+    AUTHORITY["EPSG","9001"]],
+  AXIS["Up",UP]]

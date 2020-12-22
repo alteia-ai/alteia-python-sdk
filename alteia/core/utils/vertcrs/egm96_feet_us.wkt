@@ -1,0 +1,7 @@
+VERT_CS["EGM96 geoid (feet US)",
+  VERT_DATUM["EGM96 geoid",2005,
+    EXTENSION["PROJ4_GRIDS","egm96_15.gtx"],
+    AUTHORITY["EPSG","5171"]],
+  UNIT["US survey foot",0.3048006096,
+    AUTHORITY["EPSG","9003"]],
+  AXIS["Up",UP]]

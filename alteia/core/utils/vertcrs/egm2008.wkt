@@ -1,0 +1,7 @@
+VERT_CS["EGM2008 geoid (meters)",
+  VERT_DATUM["EGM2008 geoid",2005,
+    EXTENSION["PROJ4_GRIDS","egm08_25.gtx"],
+    AUTHORITY["EPSG","1027"]],
+  UNIT["metre",1,
+    AUTHORITY["EPSG","9001"]],
+  AXIS["Up",UP]]

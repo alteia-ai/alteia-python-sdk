@@ -1,0 +1,6 @@
+{
+    "user": "user",
+    "connection":{
+	  "disable_ssl_certificate": false
+    }
+}

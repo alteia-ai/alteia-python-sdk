@@ -1,0 +1,47 @@
+# Virtual environment
+/env/
+/venv/
+/venv*/
+
+# Build files
+/.coverage
+/dist/
+*.pyc
+/docs/_build/
+/docs/changelog.rst
+/build/
+/htmlcov/
+/CONTRIBUTING.html
+/.mypy_cache/
+
+# Install files
+/alteia.egg-info/
+/.eggs/
+*.egg/
+*.egg
+
+# Others
+*.tif
+*.tfw
+/data/
+/logs/
+.ropeproject
+.cache
+*.swp
+*~
+*.csv
+*.ods
+.idea/
+/TODO.org
+.vscode/
+
+# Configuration files
+/development-conf.json
+/staging-conf.json
+/production-conf.json
+
+# Test
+.tox/
+
+# Poetry
+poetry.lock

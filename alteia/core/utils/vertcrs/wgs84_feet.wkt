@@ -1,0 +1,5 @@
+VERT_CS["WGS84 ellipsoid (feet)",
+  VERT_DATUM["Ellipsoid",2002],
+  UNIT["foot",0.3048,
+    AUTHORITY["EPSG","9002"]],
+  AXIS["Up",UP]]

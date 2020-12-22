@@ -1,0 +1,5 @@
+VERT_CS["Arbitrary (feet)",
+  VERT_DATUM["Arbitrary",2000],
+  UNIT["foot",0.3048,
+    AUTHORITY["EPSG","9002"]],
+  AXIS["Up",UP]]

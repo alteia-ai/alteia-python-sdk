@@ -1,0 +1,7 @@
+VERT_CS["EGM2008 geoid (feet)",
+  VERT_DATUM["EGM2008 geoid",2005,
+    EXTENSION["PROJ4_GRIDS","egm08_25.gtx"],
+    AUTHORITY["EPSG","1027"]],
+  UNIT["foot",0.3048,
+    AUTHORITY["EPSG","9002"]],
+  AXIS["Up",UP]]
