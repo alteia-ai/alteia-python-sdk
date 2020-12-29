@@ -5,6 +5,13 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2020-12-29
+
+### Added
+
+- Add generic search function in `alteia/core/resources` (DAI-8219)
+- Add the base url as referear in each request headers (DAI-8283)
+
 ## [1.0.0] - 2020-12-22
 
 ### Changed

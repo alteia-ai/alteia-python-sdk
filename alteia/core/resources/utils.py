@@ -1,6 +1,57 @@
-from typing import Generator
+from typing import Generator, List, Union
 
-from alteia.core.resources.resource import Resource
+from alteia.core.resources.resource import Resource, ResourcesWithTotal
+
+
+def search(manager, *, url: str, filter: dict = None, limit: int = None,
+           page: int = None, sort: dict = None, return_total: bool = False,
+           **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    """Generic search function.
+
+    Args:
+        manager: Resource manager.
+
+        url: URL for the search request.
+
+        filter: Search filter dictionary.
+
+        limit: Maximum number of results to extract.
+
+        page: Page number (starting at page 1).
+
+        sort: Sort the results on the specified attributes
+            (``1`` is sorting in ascending order,
+            ``-1`` is sorting in descending order).
+
+        return_total: Return the number of results found.
+
+        **kwargs: Optional keyword arguments. Those arguments are
+            passed as is to the API provider.
+
+    Returns:
+        A list of resource descriptions or a namedtuple with
+        total number of results and list of resource descriptions.
+
+    """
+    data = kwargs
+    for name, value in [('filter', filter or {}),
+                        ('limit', limit),
+                        ('page', page),
+                        ('sort', sort)]:
+        if value is not None:
+            data.update({name: value})
+
+    r = manager._provider.post(url, data=data)
+
+    descriptions = r.get('results')
+
+    results = [Resource(**desc) for desc in descriptions]
+
+    if return_total is True:
+        total = r.get('total')
+        return ResourcesWithTotal(total=total, results=results)
+    else:
+        return results
 
 
 def search_generator(manager, *,

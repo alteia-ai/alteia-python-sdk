@@ -15,6 +15,11 @@ from alteia.core.connection.token import TokenManager
 from alteia.core.errors import ResponseError
 from tests.alteiatest import AlteiaTestBase
 
+DEFAULT_HEADERS = {
+    'User-Agent': f'alteia-python-sdk/{alteia.__version__}',
+    'referer': 'https://app.alteia.com',
+}
+
 
 @patch.object(urllib3.PoolManager, 'request')
 class TestConnection(AlteiaTestBase):
@@ -41,7 +46,7 @@ class TestConnection(AlteiaTestBase):
         del call_args['retries']
         self.assertDictEqual(call_args, {
             'body': {},
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'POST',
             'timeout': 30.0,
             'preload_content': True,
@@ -56,9 +61,11 @@ class TestConnection(AlteiaTestBase):
         self.assertEqual(mocked_req.call_count, 2)
         call_args = mocked_req.call_args[1]
         del call_args['retries']
+        headers = DEFAULT_HEADERS.copy()
+        headers['Custom-Header'] = 'Test'
         self.assertDictEqual(call_args, {
             'body': 'data to send',
-            'headers': {'Custom-Header': 'Test', 'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': headers,
             'method': 'POST',
             'preload_content': True,
             'timeout': 15.0,
@@ -83,7 +90,7 @@ class TestConnection(AlteiaTestBase):
         call_args = mocked_req.call_args[1]
         del call_args['retries']
         self.assertDictEqual(call_args, {
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'GET',
             'timeout': 30.0,
             'preload_content': True,
@@ -98,8 +105,10 @@ class TestConnection(AlteiaTestBase):
         self.assertEqual(mocked_req.call_count, 2)
         call_args = mocked_req.call_args[1]
         del call_args['retries']
+        headers = DEFAULT_HEADERS.copy()
+        headers['Custom-Header'] = 'Test'
         self.assertDictEqual(call_args, {
-            'headers': {'Custom-Header': 'Test', 'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': headers,
             'method': 'GET',
             'timeout': 15.0,
             'preload_content': True,
@@ -139,7 +148,7 @@ class TestConnection(AlteiaTestBase):
         call_args = mocked_req.call_args[1]
         del call_args['retries']
         self.assertDictEqual(call_args, {
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'GET',
             'preload_content': False,
             'timeout': 30.0,
@@ -156,7 +165,7 @@ class TestConnection(AlteiaTestBase):
         del call_args['retries']
         self.assertDictEqual(call_args, {
             'body': {},
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'PUT',
             'timeout': 30.0,
             'preload_content': True,
@@ -171,9 +180,11 @@ class TestConnection(AlteiaTestBase):
         self.assertEqual(mocked_req.call_count, 2)
         call_args = mocked_req.call_args[1]
         del call_args['retries']
+        headers = DEFAULT_HEADERS.copy()
+        headers['Custom-Header'] = 'Test'
         self.assertDictEqual(call_args, {
             'body': 'data to send',
-            'headers': {'Custom-Header': 'Test', 'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': headers,
             'method': 'PUT',
             'timeout': 15.0,
             'preload_content': True,
@@ -199,7 +210,7 @@ class TestConnection(AlteiaTestBase):
         del call_args['retries']
         self.assertDictEqual(call_args, {
             'body': {},
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'DELETE',
             'timeout': 30.0,
             'url': 'https://app.alteia.com/path'})
@@ -213,9 +224,11 @@ class TestConnection(AlteiaTestBase):
         self.assertEqual(mocked_req.call_count, 2)
         call_args = mocked_req.call_args[1]
         del call_args['retries']
+        headers = DEFAULT_HEADERS.copy()
+        headers['Custom-Header'] = 'Test'
         self.assertDictEqual(call_args, {
             'body': 'data to send',
-            'headers': {'Custom-Header': 'Test', 'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': headers,
             'method': 'DELETE',
             'timeout': 15.0,
             'url': 'https://app.alteia.com/other'})
@@ -268,7 +281,7 @@ class TestAsynchronousConnection(AlteiaTestBase):
         del call_args['retries']
         self.assertDictEqual(call_args, {
             'body': {},
-            'headers': {'User-Agent': 'alteia-python-sdk/{}'.format(alteia.__version__)},
+            'headers': DEFAULT_HEADERS,
             'method': 'PUT',
             'timeout': 30.0,
             'url': 'https://app.alteia.com/path'})

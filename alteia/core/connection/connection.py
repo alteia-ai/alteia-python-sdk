@@ -137,6 +137,7 @@ class Connection(AbstractConnection):
         params['headers'] = params['headers'] or {}
         self._add_authorization_maybe(params['headers'], params['url'])
         self._add_user_agent(params['headers'])
+        self._add_referer(params['headers'])
         self._ensure_stream_rewind(params)
 
         LOGGER.debug(f'Making {params["method"]} request to {params["url"]}')

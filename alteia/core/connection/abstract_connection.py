@@ -50,6 +50,10 @@ class AbstractConnection(object):
         if 'User-Agent' not in headers:
             headers['User-Agent'] = self.user_agent
 
+    def _add_referer(self, headers: dict):
+        if 'referer' not in headers:
+            headers['referer'] = self._base_url
+
     @property
     def user_agent(self):
         if not self._user_agent:
