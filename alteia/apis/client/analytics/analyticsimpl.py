@@ -14,6 +14,42 @@ class AnalyticsImpl:
     def __init__(self, analytics_service_api: AnalyticsServiceAPI, **kwargs):
         self._provider = analytics_service_api
 
+    def share_with_company(self, analytic: ResourceId, *,
+                           company: ResourceId, **kwargs):
+        """Allow a company to view, order, etc. the analytic.
+
+        Args:
+            analytic: Identifier of the analytic to update.
+
+            company: Identifier of the company to share the analytic with.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = {'analytic': analytic,
+                'company': company}
+        data.update(kwargs)
+        self._provider.post(path='share-analytic-with-company', data=data)
+
+    def unshare_with_company(self, analytic: ResourceId, *,
+                             company: ResourceId, **kwargs):
+        """Stop sharing the analytic with a company.
+
+        Args:
+            analytic: Identifier of the analytic to update.
+
+            company: Identifier of the company to stop sharing the analytic with.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = {'analytic': analytic,
+                'company': company}
+        data.update(kwargs)
+        self._provider.post(path='unshare-analytic-with-company', data=data)
+
     def search(self, *, name: str = None, filter: Dict = None,
                limit: int = None, page: int = None, sort: dict = None,
                return_total: bool = False,

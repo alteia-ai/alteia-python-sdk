@@ -5,13 +5,14 @@
 import mimetypes
 import os
 from enum import Enum
-from typing import AnyStr, List, Tuple, Union
+from typing import Generator, AnyStr, List, Tuple, Union
 
 from alteia.apis.provider import AnnotationsAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.utils.typing import (AnyPath, ResourceId, SomeResourceIds,
                                       SomeResources)
+from alteia.core.resources.utils import search_generator
 
 # TODO support for CSS3 colors
 
@@ -716,6 +717,35 @@ class AnnotationsImpl:
         data.update({'annotation': annotation,
                      'attachments': attachments})
         self._provider.post('remove-attachments', data=data)
+
+    def search_generator(self, *, filter: dict = None, limit: int = 50,
+                         page: int = None,
+                         **kwargs) -> Generator[Resource, None, None]:
+        """Return a generator to search through annotations.
+
+        The generator allows the user not to care about the pagination of
+        results, while being memory-effective.
+
+        Found annotations are sorted chronologically in order to allow
+        new resources to be found during the search.
+
+        Args:
+            page: Optional page number to start the search at (default is 0).
+
+            filter: Search filter dictionary.
+
+            limit: Optional maximum number of results by search
+                request.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            A generator yielding found annotations.
+
+        """
+        return search_generator(self, first_page=1, filter=filter, limit=limit,
+                                page=page, **kwargs)
 
     def search(self, *, project: ResourceId = None, filter: dict = None,
                limit: int = None, page: int = None, sort: dict = None,

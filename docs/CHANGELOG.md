@@ -5,6 +5,18 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2021-02-10
+
+### Changed
+
+- Fix `sdk.flights.describe` function (DAI-8446)
+
+### Added
+
+- Ability to rename a mission (DAI-8462)
+- Add search generator in `sdk.annotations` (DAI-8446)
+- Add share/unshare an analytic with a company: `sdk.analytics.share`, `sdk.analytics.unshare` (DAI-8746)
+
 ## [1.0.1] - 2020-12-29
 
 ### Added

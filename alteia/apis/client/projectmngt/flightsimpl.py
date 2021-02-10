@@ -3,6 +3,7 @@ from typing import List
 from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.resources.projectmngt.flights import Flight
 from alteia.core.utils.typing import ResourceId
+from alteia.core.errors import ResponseError
 
 
 class FlightsImpl:
@@ -22,8 +23,14 @@ class FlightsImpl:
             Resource: The flight resource with identifier equal to ``id``.
 
         """
-        content = self._provider.get(path=f'flights/{flight}')
-        return Flight(**content)
+        query = {
+            "flights_id": [flight]
+        }
+        content = self._provider.search(path='flights', query=query)
+        flights = content.get('flights', [])
+        if len(flights) != 1:
+            raise ResponseError('Flight not found')
+        return Flight(**flights[0])
 
     def search(self, *, project: ResourceId = None,
                mission: ResourceId = None) -> List[Flight]:

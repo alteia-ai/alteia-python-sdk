@@ -293,3 +293,24 @@ class MissionsImpl:
             return None
         else:
             return found[0]
+
+    def rename(self, mission: ResourceId, *, name: str, **kwargs
+               ) -> Optional[Mission]:
+        """Rename the given mission.
+
+        Args:
+            mission: Mission identifier.
+
+            name: Name to set.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = kwargs
+
+        data['mission'] = mission
+        data['name'] = name
+
+        content = self._alt_provider.post(path='missions/rename-survey', data=data)
+        return Mission(**content)
