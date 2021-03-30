@@ -1,7 +1,8 @@
-from typing import List
+from typing import Generator, List
 
 from alteia.apis.provider import CollectionTaskAPI, CollectionTaskManagementAPI
 from alteia.core.resources.resource import Resource
+from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 
 
@@ -14,7 +15,7 @@ class CollectionTaskImpl:
     def create(self, *, name: str, company: ResourceId, site: ResourceId = None,
                survey: ResourceId = None, location: dict = None,
                forecast_date_range: dict = None, scheduled_date_range: dict = None,
-               team: str = None, pic: ResourceId = None, comment: str = None,
+               team: ResourceId = None, pic: ResourceId = None, comment: str = None,
                custom_props: dict = None, requirement: dict = None, purpose: str = None,
                **kwargs) -> Resource:
         """Create a collection task.
@@ -35,9 +36,9 @@ class CollectionTaskImpl:
 
             scheduled_date_range: Optional scheduled date range ``{ start_date, end_date}``.
 
-            team: Optional team name.
+            team: Optional team identifier.
 
-            pic: Optional pilot in charge.
+            pic: Optional pilot in charge identifier.
 
             comment: Optional comment.
 
@@ -103,21 +104,43 @@ class CollectionTaskImpl:
 
         """
 
-        data = kwargs
+        return search(
+            self,
+            url='search-tasks',
+            filter=filter,
+            limit=limit,
+            page=page,
+            **kwargs
+        )
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
-            if value is not None:
-                data.update({name: value})
+    def search_generator(self, *, filter: dict = None, limit: int = 50,
+                         page: int = None,
+                         **kwargs) -> Generator[Resource, None, None]:
+        """Return a generator to search through collection tasks.
 
-        r = self._provider.post('search-tasks', data=data)
-        results = r.get('results')
+        The generator allows the user not to care about the pagination of
+        results, while being memory-effective.
 
-        tasks = [Resource(**m) for m in results]
+        Found collection tasks are sorted chronologically in order to allow
+        new resources to be found during the search.
 
-        return tasks
+        Args:
+            page: Optional page number to start the search at (default is 0).
+
+            filter: Search filter dictionary.
+
+            limit: Optional maximum number of results by search
+                request (default to 50).
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            A generator yielding found collection tasks.
+
+        """
+        return search_generator(self, first_page=0, filter=filter, limit=limit,
+                                page=page, **kwargs)
 
     def describe(self, task: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a collection task.
@@ -170,3 +193,89 @@ class CollectionTaskImpl:
         data['task'] = task
 
         self._alt_provider.post('create-or-update-task-flight-log', data=data)
+
+    def rename(self,  task: ResourceId, *, name: str, **kwargs):
+        """Rename a collection task.
+
+        Args:
+            task: Collection task to rename.
+
+            name: New task name.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            Resource: The renamed collection task.
+
+        """
+
+        data = kwargs
+        data.update({'task': task, 'name': name})
+
+        content = self._provider.post('set-task-name', data=data)
+        return Resource(**content)
+
+    def update(self, task: ResourceId, *, name: str = None, site: ResourceId = None,
+               survey: ResourceId = None, location: dict = None,
+               forecast_date_range: dict = None, scheduled_date_range: dict = None,
+               team: ResourceId = None, pic: ResourceId = None, comment: str = None,
+               custom_props: dict = None, requirement: dict = None, purpose: str = None,
+               **kwargs) -> Resource:
+        """Update a collection task.
+
+        Args:
+            task: Collection task identifier.
+
+            name: Optional collection task name.
+
+            site: Optional site identifier.
+
+            survey: Optional survey identifier.
+
+            location: Optional location
+                ``{ adress: {street, zipcode, city},  contact: {name, phone, email}, task_area: {} }``
+
+            forecast_date_range: Optional forecast date range ``{ start_date, end_date}``.
+
+            scheduled_date_range: Optional scheduled date range ``{ start_date, end_date}``.
+
+            team: Optional team identifier.
+
+            pic: Optional pilot in charge identifier.
+
+            comment: Optional comment.
+
+            custom_props: Optional custom properties.
+
+            requirement: Optional requirement.
+
+            purpose: Optional purpose.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            Resource: A collection task resource.
+        """
+        data = kwargs
+        data['task'] = task
+
+        for param_name, param_value in (('name', name),
+                                        ('site', site),
+                                        ('survey', survey),
+                                        ('location', location),
+                                        ('forecast_date_range', forecast_date_range),
+                                        ('scheduled_date_range', scheduled_date_range),
+                                        ('team', team),
+                                        ('pic', pic),
+                                        ('comment',  comment),
+                                        ('custom_props', custom_props),
+                                        ('requirement', requirement),
+                                        ('purpose', purpose),):
+            if param_value is not None:
+                data[param_name] = param_value
+
+        content = self._provider.post(path='update-task', data=data)
+
+        return Resource(**content)

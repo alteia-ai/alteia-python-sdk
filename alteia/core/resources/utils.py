@@ -92,7 +92,7 @@ def search_generator(manager, *,
     data = kwargs
     for name, value in [('filter', filter),
                         ('page', first_page if page is None else page),
-                        ('sort', {'creation_date': 1}),
+                        ('sort', {'_id': 1}),
                         ('limit', limit)]:
         if value is not None:
             data[name] = value

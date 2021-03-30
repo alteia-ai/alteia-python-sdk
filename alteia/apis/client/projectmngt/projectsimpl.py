@@ -165,3 +165,22 @@ class ProjectsImpl:
 
         """
         self._alt_provider.delete(path=f'projects/{project}')
+
+    def rename(self, project: ResourceId, *, name: str, **kwargs) -> Project:
+        """Rename the given project.
+
+        Args:
+            project: Project identifier.
+
+            name: Name to set.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = kwargs
+
+        data['name'] = name
+
+        content = self._alt_provider.put(path=f'projects/{project}', data=data)
+        return Project(**content)

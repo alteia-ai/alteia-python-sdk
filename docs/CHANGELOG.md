@@ -5,6 +5,20 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2021-03-30
+
+### Changed
+
+- Sort logs chronologically in `products.retrieve_logs` to avoid duplicated log entries in `products.follow_logs` (DAI-9522)
+- Sort by `_id` in `search_generator` as `creation_date` may be missing sometimes (DAI-9144)
+
+### Added
+
+- Add `sdk.collection_tasks.update` to update a collection task (DAI-9381)
+- Add `sdk.collection_tasks.rename` to rename a collection task (DAI-8021)
+- Add `sdk.projects.rename` to rename a project (DAI-8021)
+- Add `sdk.collection_tasks.search_generator` (DAI-9144)
+
 ## [1.0.2] - 2021-02-10
 
 ### Changed

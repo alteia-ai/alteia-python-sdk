@@ -5,14 +5,14 @@
 import mimetypes
 import os
 from enum import Enum
-from typing import Generator, AnyStr, List, Tuple, Union
+from typing import AnyStr, Generator, List, Tuple, Union
 
 from alteia.apis.provider import AnnotationsAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
+from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import (AnyPath, ResourceId, SomeResourceIds,
                                       SomeResources)
-from alteia.core.resources.utils import search_generator
 
 # TODO support for CSS3 colors
 

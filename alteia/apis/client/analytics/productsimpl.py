@@ -145,7 +145,7 @@ class ProductsImpl:
 
     def retrieve_logs(self, product: ResourceId,
                       **kwargs) -> ProductLogsWithTotal:
-        """Retrieve logs for a product.
+        """Retrieve logs for a product (sorted chronogically).
 
         Args:
             product: Identifier of the product.
@@ -162,7 +162,7 @@ class ProductsImpl:
         desc = self._provider.post('retrieve-product-logs', data=data)
         logs = []
         raw_logs = desc.get('logs')
-        for raw_log in raw_logs:
+        for raw_log in sorted(raw_logs, key=lambda log: log.get('timestamp')):
             timestamp_str = raw_log.get('timestamp')
             # Ex: '2020-04-16T08:35:42.338000000+00:00'
             # Truncate to 26 chars to keep up to milliseconds
@@ -209,7 +209,7 @@ class ProductsImpl:
 
             product_logs = self.retrieve_logs(product)
             log = None
-            for log in reversed(product_logs.logs):
+            for log in product_logs.logs:
                 if last_entry_date:
                     if log.timestamp <= last_entry_date:
                         continue

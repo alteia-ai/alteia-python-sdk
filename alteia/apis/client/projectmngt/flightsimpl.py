@@ -1,9 +1,9 @@
 from typing import List
 
 from alteia.apis.provider import ProjectManagerAPI
+from alteia.core.errors import ResponseError
 from alteia.core.resources.projectmngt.flights import Flight
 from alteia.core.utils.typing import ResourceId
-from alteia.core.errors import ResponseError
 
 
 class FlightsImpl:
