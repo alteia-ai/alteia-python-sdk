@@ -1,3 +1,5 @@
+import copy
+import warnings
 from typing import Generator, List, Union
 
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -57,6 +59,7 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
 def search_generator(manager, *,
                      page: int = None, first_page: int,
                      filter: dict = None, limit: int = 50,
+                     keyset_pagination: bool = False,
                      **kwargs) -> Generator[Resource, None, None]:
     """Return a generator to search through the given manager resources.
 
@@ -90,17 +93,50 @@ def search_generator(manager, *,
         raise RuntimeError('Search action not found on manager {!r}'.format(manager))
 
     data = kwargs
-    for name, value in [('filter', filter),
-                        ('page', first_page if page is None else page),
-                        ('sort', {'_id': 1}),
-                        ('limit', limit)]:
-        if value is not None:
-            data[name] = value
+    if page is not None:
+        warnings.warn("Keyset pagination disabled due to explicit starting page")
+        keyset_pagination = False
+
+    if keyset_pagination and 'sort' in data:
+        warnings.warn("Keyset pagination disabled due to custom sort")
+        keyset_pagination = False
+
+    if keyset_pagination and filter and '_id' in filter.keys():
+        warnings.warn("Keyset pagination disabled due to custom _id filter")
+        keyset_pagination = False
+
+    if keyset_pagination:
+        data['sort'] = {'_id': -1}
+        if limit is not None:
+            data['limit'] = limit
+
+        f = copy.copy(filter) if filter else dict()
+
+        def next_filter(resources):
+            if resources is None:
+                return filter
+
+            if len(resources) == 0:
+                return None
+
+            min_id = resources[-1].id
+            f['_id'] = {'$lt': min_id}
+            return f
+    else:
+        for name, value in [('page', first_page if page is None else page),
+                            ('sort', {'_id': 1}),
+                            ('limit', limit)]:
+            if value is not None:
+                data[name] = value
+
+        def next_filter(resources):
+            return filter
 
     resources = None
     while resources is None or len(resources) > 0:
-        resources = manager.search(**data)
+        resources = manager.search(filter=next_filter(resources), **data)
         for resource in resources:
             yield resource
 
-        data['page'] += 1
+        if not keyset_pagination:
+            data['page'] += 1
