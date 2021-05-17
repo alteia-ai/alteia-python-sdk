@@ -3,10 +3,13 @@ import urllib.parse
 
 import alteia
 
+DEFAULT_REQUESTS_TIMEOUT = 30.0
 LOGGER = logging.getLogger(__name__)
 
 
 class AbstractConnection(object):
+    request_timeout = DEFAULT_REQUESTS_TIMEOUT
+
     def __init__(self, *, base_url, disable_ssl_certificate, token_manager=None,
                  retries=None):
         self._disable_ssl_certificate = disable_ssl_certificate

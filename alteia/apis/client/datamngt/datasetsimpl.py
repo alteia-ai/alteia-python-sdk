@@ -25,8 +25,8 @@ from alteia.core.utils.utils import md5
 # TODO complete description of bands for images
 
 
-__creation_common_params = ('name', 'source_name', 'categories', 'project',
-                            'mission', 'flight', 'hidden', 'published',
+__creation_common_params = ('name', 'source_name', 'categories', 'company',
+                            'project', 'mission', 'flight', 'hidden', 'published',
                             'horizontal_srs_wkt', 'vertical_srs_wkt',
                             'dataset_format', 'geometry', 'properties')
 
@@ -76,6 +76,10 @@ def _implement_dataset_creation(f):
             dict([(k, v) for (k, v) in kwargs.items()
                   if k in __creation_common_params and
                   v is not None])
+        if all([filtered_common_params.get('company') is None,
+                filtered_common_params.get('project') is None]):
+            raise ParameterError('One of {!r} or {!r} must be specified'
+                                 .format('company', 'project'))
         try:
             v = filtered_common_params.pop('dataset_format')
         except KeyError:
@@ -101,10 +105,9 @@ def _implement_dataset_creation(f):
 
 class DatasetsImpl:
     def __init__(self, data_management_api: DataManagementAPI,
-                 auth_api, **kwargs):
+                 sdk, **kwargs):
         self._provider = data_management_api
-        self._auth_api = auth_api
-        self._connection = auth_api._connection
+        self._sdk = sdk
 
     @staticmethod
     def _generate_comp_names(base_name: str, count: int) -> List[str]:
@@ -147,6 +150,7 @@ class DatasetsImpl:
     def create_file_dataset(self, *,
                             name: str,
                             categories: Sequence[str] = None,
+                            company: ResourceId = None,
                             project: ResourceId = None,
                             mission: ResourceId = None,
                             hidden: bool = None,
@@ -161,11 +165,15 @@ class DatasetsImpl:
                             **kwargs) -> Resource:
         """Create a dataset of type ``file``.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -215,6 +223,7 @@ class DatasetsImpl:
     def create_mesh_dataset(self, *,
                             name: str,
                             categories: Sequence[str] = None,
+                            company: ResourceId = None,
                             project: ResourceId = None,
                             mission: ResourceId = None,
                             hidden: bool = None,
@@ -230,11 +239,15 @@ class DatasetsImpl:
                             **kwargs) -> Resource:
         """Create a dataset of type ``mesh``.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -286,6 +299,7 @@ class DatasetsImpl:
     def create_image_dataset(self, *,
                              name: str,
                              categories: Sequence[str] = None,
+                             company: ResourceId = None,
                              project: ResourceId = None,
                              mission: ResourceId = None,
                              flight: ResourceId = None,
@@ -306,11 +320,15 @@ class DatasetsImpl:
                              **kwargs) -> Resource:
         """Create a dataset of type ``image``.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -381,6 +399,7 @@ class DatasetsImpl:
     def create_raster_dataset(self, *,
                               name: str,
                               categories: Sequence[str] = None,
+                              company: ResourceId = None,
                               project: ResourceId = None,
                               mission: ResourceId = None,
                               hidden: bool = None,
@@ -397,11 +416,15 @@ class DatasetsImpl:
                               **kwargs) -> Resource:
         """Create a dataset of type ``raster``.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -464,6 +487,7 @@ class DatasetsImpl:
     def create_pcl_dataset(self, *,
                            name: str,
                            categories: Sequence[str] = None,
+                           company: ResourceId = None,
                            project: ResourceId = None,
                            mission: ResourceId = None,
                            hidden: bool = None,
@@ -476,11 +500,15 @@ class DatasetsImpl:
                            **kwargs) -> Resource:
         """Create a dataset of type ``pcl``.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -517,6 +545,7 @@ class DatasetsImpl:
     def create_vector_dataset(self, *,
                               name: str,
                               categories: Sequence[str] = None,
+                              company: ResourceId = None,
                               project: ResourceId = None,
                               mission: ResourceId = None,
                               hidden: bool = None,
@@ -537,11 +566,15 @@ class DatasetsImpl:
         When ``is_archive`` is True, ``is_shape_file`` and
         ``has_projection_file`` must be False.
 
+        One of ``company`` or ``project`` must be defined.
+
         Args:
             name: Name of the dataset.
 
             categories: Sequence of categories or None if there's no
                 category to set on the dataset.
+
+            company: Optional company identifier.
 
             project: Optional project identifier.
 
@@ -881,11 +914,12 @@ class DatasetsImpl:
             headers = {'Cache-Control': 'no-cache',
                        'Range': 'bytes={}-'.format(offset)}
             # https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
-            resp = self._connection.get(path=url,
-                                        headers=headers,
-                                        as_json=False,
-                                        preload_content=False,
-                                        retries=retries)
+            conn = self._provider._connection
+            resp = conn.get(path=url,
+                            headers=headers,
+                            as_json=False,
+                            preload_content=False,
+                            retries=retries)
             resp = self._stream_resp(resp, dest,
                                      file_hash=file_hash,
                                      offset=offset)
@@ -1107,12 +1141,14 @@ class DatasetsImpl:
         Example:
             >>> sdk.datasets.create_datasets(
             ... datasets=[{'name': 'My file dataset',
+            ...            'project': '4037636c9a406900074dc253',
             ...            'type': 'file',
             ...            'components': [{'name': 'kind_of_file'}]},
             ...           {'name': 'My image',
             ...            'type': 'image',
+            ...            'project': '4037636c9a406900074dc253',
             ...            'components': [{'name': 'image'}]}])
-            [<alteia.core.resources.resource.Resource... (dataset)>, ...]
+            [Resource(406ee155647ec6006df3aa21), ...]
 
         """
         for desc in datasets:
@@ -1126,16 +1162,11 @@ class DatasetsImpl:
         return [Resource(**dataset) for dataset in created_datasets]
 
     def share_tiles(self, dataset: ResourceId, *,
-                    company: ResourceId = None,
                     duration: int = None) -> str:
         """Return a URL template to share access to the tiles of a dataset.
 
         Args:
             dataset: Identifier of the dataset to create a URL for.
-
-            company: Optional identifier of a company to attach the
-               created token too. When equal to ``None`` (the
-               default), the user company is used.
 
             duration: Optional duration in seconds of the created
                 token. When equal to ``None`` (the default) the
@@ -1159,14 +1190,7 @@ class DatasetsImpl:
         if not is_raster and not is_vector_in_mapservice:
             raise UnsupportedResourceError('Unexpected dataset type or component')
 
-        data = {'scope': {'datasets': {dataset: ['6666']}}}
-        if company is not None:
-            data['company'] = company
-
-        if duration is not None:
-            data['duration'] = duration
-
-        to_desc = self._auth_api.post(path='/create-share-token', data=data)
+        to_desc = self._sdk.share_tokens.create(dataset=dataset, duration=duration)
         base_url = self._provider._connection._base_url
         token = to_desc['token']
         if is_raster:

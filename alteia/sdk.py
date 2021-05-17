@@ -4,7 +4,9 @@ import os
 from alteia.apis.client.analytics.analyticsimpl import AnalyticsImpl
 from alteia.apis.client.analytics.productsimpl import ProductsImpl
 from alteia.apis.client.annotations.annotationsimpl import AnnotationsImpl
+from alteia.apis.client.auth.companiesimpl import CompaniesImpl
 from alteia.apis.client.auth.sharetokensimpl import ShareTokensImpl
+from alteia.apis.client.auth.usersimpl import UsersImpl
 from alteia.apis.client.comments.commentsimpl import CommentsImpl
 from alteia.apis.client.datacapture.carriersimpl import CarriersImpl
 from alteia.apis.client.datacapture.carriersmodelsimpl import CarrierModelsImpl
@@ -195,6 +197,7 @@ class SDK():
         self.carrier_models = CarrierModelsImpl(**kwargs)
         self.collection_tasks = CollectionTaskImpl(**kwargs)
         self.comments = CommentsImpl(**kwargs)
+        self.companies = CompaniesImpl(**kwargs)
         self.credentials = CredentialsImpl(**kwargs)
         self.datasets = DatasetsImpl(**kwargs)
         self.flights = FlightsImpl(**kwargs)
@@ -204,3 +207,4 @@ class SDK():
         self.share_tokens = ShareTokensImpl(**kwargs)
         self.tags = TagsImpl(**kwargs)
         self.teams = TeamsImpl(**kwargs)
+        self.users = UsersImpl(**kwargs)

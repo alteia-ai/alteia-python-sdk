@@ -55,7 +55,7 @@ class Connection(AbstractConnection):
     def asynchronous(self):
         return self._async_connection
 
-    def post(self, path, headers=None, data=None, timeout=30.0, as_json=False,
+    def post(self, path, headers=None, data=None, timeout=None, as_json=False,
              preload_content=True, retries=None):
         """
             POST utility method
@@ -75,7 +75,7 @@ class Connection(AbstractConnection):
             return resp.data
         return resp
 
-    def get(self, path, headers=None, timeout=30.0, as_json=False,
+    def get(self, path, headers=None, timeout=None, as_json=False,
             preload_content=True, retries=None):
         """
              GET utility method
@@ -94,7 +94,7 @@ class Connection(AbstractConnection):
             return resp.data
         return resp
 
-    def put(self, path, headers=None, data=None, timeout=30.0, as_json=False,
+    def put(self, path, headers=None, data=None, timeout=None, as_json=False,
             preload_content=True, retries=None):
         """
             PUT utility method
@@ -114,7 +114,7 @@ class Connection(AbstractConnection):
             return resp.data
         return resp
 
-    def delete(self, path, headers=None, data=None, timeout=30.0,
+    def delete(self, path, headers=None, data=None, timeout=None,
                as_json=False, preload_content=True, retries=None):
         """
             DELETE utility method
@@ -135,6 +135,7 @@ class Connection(AbstractConnection):
 
     def _send_request(self, params):
         params['headers'] = params['headers'] or {}
+        params['timeout'] = params['timeout'] or self.request_timeout
         self._add_authorization_maybe(params['headers'], params['url'])
         self._add_user_agent(params['headers'])
         self._add_referer(params['headers'])

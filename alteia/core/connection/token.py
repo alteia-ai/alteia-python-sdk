@@ -2,6 +2,7 @@ import collections
 import json
 import logging
 import urllib.parse
+from typing import Any, Dict, Optional
 
 from alteia.core.errors import TokenRenewalError
 
@@ -53,3 +54,23 @@ class TokenManager():
         else:
             LOGGER.error(f'Unsupported response: {decoded_data}')
             raise TokenRenewalError()
+
+    def describe_token(self, token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+        """Describe an access token.
+
+        Args:
+
+            token: Optional token string (if missing, describe the current user token).
+
+        Returns:
+            token : Token description of the current SDK user.
+
+        """
+        params = kwargs
+        if token:
+            params['token'] = token
+        return self._connection.post(
+            path='/dxauth/describe-token',
+            data=params,
+            as_json=True
+        )

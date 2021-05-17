@@ -5,9 +5,25 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2021-05-17
+
+### Changed
+
+- Share token actions don't use current company anymore (DAI-9417)
+- `project` or `company` required to create a dataset (DAI-9679)
+- `company` required to create an analytic (DAI-8800)
+- `version` required to create an analytic (DAI-9746)
+
+### Added
+
+- Add `sdk._connection._token_manager.describe_token()` to describe an access token (DAI-10281)
+- Add `sdk.companies` and `sdk.users` to search or describe user and companies (DAI-10281)
+- Add `timeout` parameter in providers for get/post/put/delete methods (DAI-10100)
+
 ## [1.0.4] - 2021-03-31
 
 ### Added
+
 - Add `keyset_pagination` option in search generator to optimize searches (DAI-8987)
 
 ## [1.0.3] - 2021-03-30

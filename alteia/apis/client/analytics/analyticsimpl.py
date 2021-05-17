@@ -154,7 +154,8 @@ class AnalyticsImpl:
         desc = self._provider.post('describe-analytic', data=data)
         return Resource(**desc)
 
-    def create(self, *, name: str, docker_image: str,
+    def create(self, *, name: str, version: str, docker_image: str,
+               company: ResourceId,
                display_name: str = None, description: str = None,
                instance_type: str = None, volume_size: int = None,
                inputs: List[dict] = None, parameters: List[dict] = None,
@@ -164,11 +165,15 @@ class AnalyticsImpl:
         """Create an analytic.
 
         Args:
-            name: Analytic name (must be unique).
+            name: Analytic name (must be unique with the version).
+
+            version: Analytic version in semver format (must be unique with the name)
 
             docker_image: Docker image used for the analytic computation,
                 including the Docker registry address.
                 (example: ``"gcr.io/myproject/myanalytic:v1.0"``).
+
+            company: Id of the company owning the analytic.
 
             display_name: Optional user-friendly name of the analytic.
 
@@ -203,9 +208,11 @@ class AnalyticsImpl:
 
         Examples:
             >>> sdk.analytics.create(name="my_vehicle_detection",
+            ...     version="0.0.1",
             ...     display_name="Vehicle detection",
             ...     description="Detects vehicles in orthomosaic images",
             ...     docker_image="gcr.io/myproject/vehicule-detection:v1.0",
+            ...     company="5d3714e14c50356e2abd1f97",
             ...     instance_type='large',
             ...     volume_size=50,
             ...     inputs=[{
@@ -260,6 +267,8 @@ class AnalyticsImpl:
         data.update(kwargs)
 
         data['name'] = name
+        data['version'] = version
+        data['company'] = company
         data['algorithm']['docker_image'] = docker_image
 
         if instance_type:

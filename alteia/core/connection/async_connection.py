@@ -52,7 +52,7 @@ class AsyncConnection(AbstractConnection):
         with self._access_token_lock:
             super()._add_authorization_maybe(headers, url)
 
-    def post(self, path, headers=None, callback=None, data=None, timeout=30.0,
+    def post(self, path, headers=None, callback=None, data=None, timeout=None,
              retries=None):
         url = urljoin(self._base_url, path)
         params = {'method': 'POST',
@@ -63,7 +63,7 @@ class AsyncConnection(AbstractConnection):
                   'timeout': timeout}
         return self._send_request(params, on_finish_callback=callback)
 
-    def put(self, path, headers=None, callback=None, data=None, timeout=30.0,
+    def put(self, path, headers=None, callback=None, data=None, timeout=None,
             retries=None):
         url = urljoin(self._base_url, self._encode_spaces(path))
         params = {'method': 'PUT',
@@ -76,6 +76,7 @@ class AsyncConnection(AbstractConnection):
 
     def _send_request(self, params, on_finish_callback):
         params['headers'] = params['headers'] or {}
+        params['timeout'] = params['timeout'] or self.request_timeout
         self._add_authorization_maybe(params['headers'], params['url'])
         self._add_user_agent(params['headers'])
         try:

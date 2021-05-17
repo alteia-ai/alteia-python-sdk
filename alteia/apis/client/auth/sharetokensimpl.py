@@ -6,11 +6,11 @@ from alteia.core.utils.typing import ResourceId, ShareToken
 
 
 class ShareTokensImpl:
-    def __init__(self, auth_api: AuthAPI, **kwargs):
+    def __init__(self, auth_api: AuthAPI, sdk, **kwargs):
         self._provider = auth_api
+        self._sdk = sdk
 
     def create(self, dataset: ResourceId, *,
-               company: ResourceId = None,
                duration: int = None,
                **kwargs) -> ShareToken:
         """Create a share token for a given dataset.
@@ -20,10 +20,6 @@ class ShareTokensImpl:
 
         Args:
             dataset: Dataset to create a share token for.
-
-            company: Optional identifier of a company to attach the
-               created token too. When equal to ``None`` (the
-               default), the user company is used.
 
             duration: Optional duration in seconds of the created
                 token. When equal to ``None`` (the default) the
@@ -43,10 +39,10 @@ class ShareTokensImpl:
 
         """
         data = kwargs
-        data.update({'scope': {'datasets': {dataset: ['6666']}}})
+        data.update({'scope': {'datasets': [dataset]}})
 
-        if company is not None:
-            data['company'] = company
+        dataset = self._sdk.datasets.describe(dataset)
+        data['company'] = dataset.company
 
         if duration is not None:
             data['duration'] = duration
@@ -54,7 +50,7 @@ class ShareTokensImpl:
         desc = self._provider.post(path='/create-share-token', data=data)
         return desc
 
-    def revoke(self, token: str, company: ResourceId = None, **kwargs):
+    def revoke(self, token: str, **kwargs):
         """Revoke a share token.
 
         Share token revocation is restricted to users with admin
@@ -62,10 +58,6 @@ class ShareTokensImpl:
 
         Args:
             token: Token to revoke.
-
-            company: Optional identifier of a company to search the
-               token to revoke. When equal to ``None`` (the default),
-               the user company is used.
 
         Returns:
             **kwargs: Optional keyword arguments. Those arguments are
@@ -75,13 +67,10 @@ class ShareTokensImpl:
         data = kwargs
         data.update({'token': token})
 
-        if company is not None:
-            data['company'] = company
-
         self._provider.post(path='/revoke-share-token', data=data,
                             as_json=False)
 
-    def search(self, *, company: ResourceId = None,
+    def search(self, *, company: ResourceId,
                return_total: bool = False,
                **kwargs) -> Union[ShareTokensWithTotal, List[ShareToken]]:
         """Search share tokens.
@@ -90,9 +79,8 @@ class ShareTokensImpl:
         or a manager role on their company.
 
         Args:
-            company: Optional identifier of a company to filter
-               searched tokens. When equal to ``None`` (the default),
-               the user company is used.
+            company: Identifier of a company to filter
+               searched tokens.
 
             return_total: Return the number of results found
 
@@ -102,9 +90,7 @@ class ShareTokensImpl:
 
         """
         data = kwargs
-
-        if company is not None:
-            data['company'] = company
+        data['company'] = company
 
         desc = self._provider.post(path='/search-share-tokens', data=data)
         tokens = desc.get('results')
