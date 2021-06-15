@@ -16,7 +16,8 @@ Let's create a project on Alteia, and upload images on it:
 
   # === Create the project ===
 
-  my_project = sdk.projects.create(name="My project")
+  company = sdk.companies.search()[0]
+  my_project = sdk.projects.create(name="My project", company=company.id)
 
   # === Create the survey (mission + flight) with 2 images ===
 

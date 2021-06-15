@@ -16,7 +16,8 @@ Let's create a project on Alteia, based on a vector file, such as a geojson file
 
   # === Create the project ===
 
-  my_project = sdk.projects.create(name="My project")
+  company = sdk.companies.search()[0]
+  my_project = sdk.projects.create(name="My project", company=company.id)
 
   # === Create the vector dataset and upload it ===
 

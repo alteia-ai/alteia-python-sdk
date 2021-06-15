@@ -59,7 +59,6 @@ class ShareTokensImpl:
         Args:
             token: Token to revoke.
 
-        Returns:
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
 

@@ -17,7 +17,7 @@ class TestProjects(ResourcesTestBase):
                       body=self.__describe(), status=200,
                       content_type='application/json')
 
-        self.sdk.projects.create(name='My project')
+        self.sdk.projects.create(name='My project', company='COMPANY_ID')
 
         calls = responses.calls
 
@@ -28,7 +28,8 @@ class TestProjects(ResourcesTestBase):
         self.assertEqual(calls[0].request.method, 'POST')
         self.assertDictEqual(json.loads(calls[0].request.body),
                              {'addProjectToUsers': True,
-                              'name': 'My project'})
+                              'name': 'My project',
+                              'company': 'COMPANY_ID'})
 
     @responses.activate
     def test_create_with_extra_args(self):
@@ -36,7 +37,7 @@ class TestProjects(ResourcesTestBase):
                       body=self.__describe(), status=200,
                       content_type='application/json')
 
-        self.sdk.projects.create(name='My project', arg2=10)
+        self.sdk.projects.create(name='My project', company='COMPANY_ID', arg2=10)
 
         calls = responses.calls
 
@@ -47,7 +48,9 @@ class TestProjects(ResourcesTestBase):
         self.assertEqual(calls[0].request.method, 'POST')
         self.assertDictEqual(json.loads(calls[0].request.body),
                              {'addProjectToUsers': True,
-                              'name': 'My project', 'arg2': 10})
+                              'name': 'My project',
+                              'company': 'COMPANY_ID',
+                              'arg2': 10})
 
     @responses.activate
     def test_search(self):

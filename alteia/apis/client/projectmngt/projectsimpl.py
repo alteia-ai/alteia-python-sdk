@@ -1,7 +1,7 @@
 """Implementation of projects.
 
 """
-from typing import Optional
+from typing import List, Optional
 
 from alteia.apis.provider import ProjectManagerAPI, UIServicesAPI
 from alteia.core.errors import QueryError, ResponseError
@@ -15,11 +15,13 @@ class ProjectsImpl:
         self._provider = project_manager_api
         self._alt_provider = ui_services_api
 
-    def create(self, name: str, geometry: dict = None, **kwargs) -> Project:
+    def create(self, name: str, company: ResourceId, geometry: dict = None, **kwargs) -> Project:
         """Create a project.
 
         Args:
             name: Project name.
+
+            company: Company identifier.
 
             geometry: Optional project geometry.
 
@@ -35,7 +37,10 @@ class ProjectsImpl:
         """
         data = kwargs
 
-        data['name'] = name
+        data.update({
+            'name': name,
+            'company': company
+        })
 
         if geometry is not None:
             data['geometry'] = geometry
@@ -50,7 +55,7 @@ class ProjectsImpl:
         return Project(**project_desc)
 
     def search(self, *, name: str = None, deleted: bool = False,
-               **kwargs) -> [Project]:
+               **kwargs) -> List[Project]:
         """Search for projects.
 
         Args:

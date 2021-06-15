@@ -39,16 +39,52 @@ Errors
 .. automodule:: alteia.core.errors
    :members:
 
+Analytics
+=========
+
+.. autoclass:: alteia.apis.client.analytics.analyticsimpl.AnalyticsImpl
+   :members:
+
 Annotations
 ===========
 
 .. autoclass:: alteia.apis.client.annotations.annotationsimpl.AnnotationsImpl
    :members:
 
+Carriers
+========
+
+.. autoclass:: alteia.apis.client.datacapture.carriersimpl.CarriersImpl
+   :members:
+
+Carrier models
+==============
+
+.. autoclass:: alteia.apis.client.datacapture.carriersmodelsimpl.CarrierModelsImpl
+   :members:
+
+Collection tasks
+================
+
+.. autoclass:: alteia.apis.client.datacapture.collectiontasksimpl.CollectionTaskImpl
+   :members:
+
 Comments
 ========
 
 .. autoclass:: alteia.apis.client.comments.commentsimpl.CommentsImpl
+   :members:
+
+Companies
+=========
+
+.. autoclass:: alteia.apis.client.auth.companiesimpl.CompaniesImpl
+   :members:
+
+Credentials
+===========
+
+.. autoclass:: alteia.apis.client.externalproviders.credentialsimpl.CredentialsImpl
    :members:
 
 Datasets
@@ -75,6 +111,12 @@ Flight resource
 .. autoclass:: alteia.core.resources.projectmngt.flights.Flight
    :members: __init__
 
+Products
+========
+.. autoclass:: alteia.apis.client.analytics.productsimpl.ProductsImpl
+   :members:
+
+
 Projects
 ========
 .. autoclass:: alteia.apis.client.projectmngt.projectsimpl.ProjectsImpl
@@ -86,8 +128,26 @@ Project resource
 .. autoclass:: alteia.core.resources.projectmngt.projects.Project
    :members: __init__
 
+Share tokens
+============
+
+.. autoclass:: alteia.apis.client.auth.sharetokensimpl.ShareTokensImpl
+   :members:
+
 Tags
 ====
 
 .. autoclass:: alteia.apis.client.tags.tagsimpl.TagsImpl
+   :members:
+
+Teams
+=====
+
+.. autoclass:: alteia.apis.client.datacapture.teamsimpl.TeamsImpl
+   :members:
+
+Users
+=====
+
+.. autoclass:: alteia.apis.client.auth.usersimpl.UsersImpl
    :members:

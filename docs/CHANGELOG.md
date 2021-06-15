@@ -5,6 +5,19 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2021-06-15
+
+### Changed
+
+- `company` is now required when creating a project with `sdk.projects.create()` (DAI-10595)
+
+### Added
+
+- Add missing API reference in the documentation (DAI-10294)
+- Add type hints for every resource implementation (DAI-10041)
+- Add `py.typed` to the package to benefit from mypy type hints (DAI-10041)
+- Add 5 new arrow icons in Icons enum (DAI-10680)
+
 ## [1.1.0] - 2021-05-17
 
 ### Changed
