@@ -165,8 +165,10 @@ class ProductsImpl:
         for raw_log in sorted(raw_logs, key=lambda log: log.get('timestamp')):
             timestamp_str = raw_log.get('timestamp')
             # Ex: '2020-04-16T08:35:42.338000000+00:00'
-            # Truncate to 26 chars to keep up to milliseconds
-            d = datetime.strptime(timestamp_str[:26], '%Y-%m-%dT%H:%M:%S.%f')
+            # Truncate before Z chars to keep up to milliseconds
+            z_index = timestamp_str.rfind('Z')
+            clip_index = min(z_index, 26)
+            d = datetime.strptime(timestamp_str[:clip_index], '%Y-%m-%dT%H:%M:%S.%f')
             logs.append(ProductLog(timestamp=d, record=raw_log))
 
         return ProductLogsWithTotal(
