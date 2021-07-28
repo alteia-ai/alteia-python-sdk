@@ -34,7 +34,7 @@ class Connection(AbstractConnection):
         self._retries = Retry(total=max_retries, backoff_factor=1,
                               status_forcelist=[409, 413, 429,
                                                 500, 502, 503, 504],
-                              method_whitelist=frozenset(
+                              allowed_methods=frozenset(
                                   ['HEAD', 'GET', 'PUT', 'DELETE', 'OPTIONS',
                                    'TRACE', 'POST']))
 

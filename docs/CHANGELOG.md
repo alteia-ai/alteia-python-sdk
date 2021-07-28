@@ -5,6 +5,17 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2021-07-28
+
+### Changed
+
+- `sdk.datasets.share_tiles()` now supports creating tile URL for multiple raster datasets (DAI-11058)
+- Harmonize `sdk.share_tokens.create()` and `sdk.share_tokens.search()` instance of `Resource` class (DAI-10818)
+- Deprecates `company` argument of `sdk.share_tokens.search()` (DAI-10818)
+- Use `allowed_methods` instead of `method_whitelist` to remove deprecation warning when instantiating SDK (DAI-11056)
+- `sdk.share_tokens.create()` now support creating share tokens for multiple datasets (DAI-10782)
+- `sdk.share_tokens.search()` now support usual API search syntax (DAI-10818)
+
 ## [1.2.1] - 2021-06-23
 
 ### Changed

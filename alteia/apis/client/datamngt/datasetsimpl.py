@@ -1161,51 +1161,71 @@ class DatasetsImpl:
 
         return [Resource(**dataset) for dataset in created_datasets]
 
-    def share_tiles(self, dataset: ResourceId, *,
+    def share_tiles(self, dataset: SomeResourceIds, *,
                     duration: int = None) -> str:
-        """Return a URL template to share access to the tiles of a dataset.
+        """Return a URL template to share access to the tiles of the passed datasets.
 
         Args:
-            dataset: Identifier of the dataset to create a URL for.
+            dataset: Identifier of the dataset, or list of such identifiers
+                (for rasters only) to create a URL for.
 
             duration: Optional duration in seconds of the created
                 token. When equal to ``None`` (the default) the
                 created token won't expire.
+
+        Returns:
+            url: The URL template of the shared tiles.
+
         Raises:
             UnsupportedResourceError: In case the dataset ingestion
-               status isn't equal to ``complete`` or its type isn't
-               ``raster`` or ``vector`` with ``mapservice`` source.
+               statuses aren't equal to ``complete`` or a dataset type isn't
+               ``raster`` or ``vector`` with ``mapservice`` source, or dataset types
+               are mixed.
 
         """
-        ds_desc = self.describe(dataset)
-        ingested = (hasattr(ds_desc, 'ingestion') and
-                    ds_desc.ingestion.get('status', None) == 'completed')
-        if not ingested:
-            raise UnsupportedResourceError('Ingestion not finished')
+        if isinstance(dataset, list):
+            dataset_ids = dataset
+        else:
+            dataset_ids = [dataset]
 
-        is_raster = (ds_desc.type == 'raster')
-        is_vector_in_mapservice = (ds_desc.type == 'vector' and
-                                   ds_desc.source.get('name',
-                                                      None) == 'map-service')
-        if not is_raster and not is_vector_in_mapservice:
+        datasets = self.describe(dataset_ids)
+        for ds_desc in datasets:
+            ingested = (hasattr(ds_desc, 'ingestion') and
+                        ds_desc.ingestion.get('status', None) == 'completed')
+            if not ingested:
+                raise UnsupportedResourceError('Ingestion not finished')
+
+        are_rasters = all([ds_desc.type == 'raster' for ds_desc in datasets])
+
+        if len(datasets) == 1:
+            ds_desc = datasets[0]
+            is_vector_in_mapservice = (ds_desc.type == 'vector' and
+                                       ds_desc.source.get('name') == 'map-service')
+        else:
+            is_vector_in_mapservice = False
+
+        if not are_rasters and not is_vector_in_mapservice:
             raise UnsupportedResourceError('Unexpected dataset type or component')
 
-        to_desc = self._sdk.share_tokens.create(dataset=dataset, duration=duration)
+        share_token = self._sdk.share_tokens.create(dataset=dataset_ids, duration=duration)
         base_url = self._provider._connection._base_url
-        token = to_desc['token']
-        if is_raster:
-            url = generate_raster_tiles_url(base_url, token, dataset,
+        token = share_token.token
+
+        if are_rasters:
+            tile_formats = set([ds_desc.tiles.get('format', 'png') for ds_desc in datasets])
+            if len(tile_formats) != 1:
+                raise UnsupportedResourceError('Dataset tile formats cannot be mixed')
+
+            url = generate_raster_tiles_url(base_url, token, dataset_ids,
                                             ds_desc.tiles.get('format', 'png'))
         elif is_vector_in_mapservice:
             collection_component_match = [c['collection']['id']
                                           for c in ds_desc.components
-                                          if c.get('name', None)
-                                          == 'collection']
+                                          if c.get('name') == 'collection']
             if len(collection_component_match) != 1:
-                raise UnsupportedResourceError(
-                    'Unexpected number of components')
+                raise UnsupportedResourceError('Unexpected number of components')
 
-            coll = collection_component_match[0]
-            url = generate_vector_tiles_url(base_url, token, coll, 'pbf')
+            collection_id = collection_component_match[0]
+            url = generate_vector_tiles_url(base_url, token, collection_id, 'pbf')
 
         return url

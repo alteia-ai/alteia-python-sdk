@@ -4,7 +4,7 @@ import urllib.parse
 
 from pathvalidate import sanitize_filename
 
-from alteia.core.utils.typing import ResourceId, Union
+from alteia.core.utils.typing import ResourceId, SomeResourceIds, Union
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def extract_filename_from_headers(headers: dict) -> Union[None, str]:
 
 def generate_raster_tiles_url(base_url: str,
                               access_token: str,
-                              dataset: ResourceId,
+                              dataset: SomeResourceIds,
                               tile_format: str) -> str:
     """Returns the URL template to share raster tiles.
 
@@ -45,17 +45,26 @@ def generate_raster_tiles_url(base_url: str,
 
         access_token: Share token for ``dataset``.
 
-        dataset: Identifier of the dataset to create a URL for.
+        dataset: Identifier of the dataset, or list of such identifiers
+            to create a URL for.
 
         tile_format: Format of tiles.
 
+    Returns:
+        url: The URL template of the shared tiles.
+
     """
     scheme, netloc, _, _, _, _ = urllib.parse.urlparse(base_url)
-    query = 'access_token={}'.format(access_token)
+    query = f'access_token={access_token}'
     service = 'tileserver/tiles'
     tile = '{z}/{x}/{y}.' + tile_format
-    path_template = '{service}/{dataset}/{tile}'
-    path = path_template.format(service=service, dataset=dataset, tile=tile)
+
+    if isinstance(dataset, list):
+        dataset_ids = ','.join(dataset)
+    else:
+        dataset_ids = dataset
+
+    path = f'{service}/{dataset_ids}/{tile}'
 
     url = urllib.parse.urlunparse((scheme, netloc, path, '', query, ''))
     return url

@@ -17,6 +17,4 @@ SomeResourceIds = NewType('SomeResourceIds',
 SomeResources = NewType('SomeResources',
                         Union[Resource, List[Resource]])
 
-ShareToken = dict
-
 Offset = NewType('Offset', Tuple[float, float, float])
