@@ -1,6 +1,8 @@
 import collections
 import hashlib
 import importlib
+from getpass import getpass
+from typing import Optional
 
 from alteia.core.errors import ConfigError
 
@@ -127,3 +129,19 @@ def get_full_class_path(o):
         return o.__class__.__name__  # Avoid reporting __builtin__
     else:
         return module + '.' + o.__class__.__name__
+
+
+def prompt_user(prompt: str, current_value: Optional[str], hidden: bool = False) -> str:
+    if current_value is not None:
+        if hidden:
+            prompt += ' [or press ENTER to leave the current value]'
+        else:
+            prompt += f' [or press ENTER to leave {current_value}]'
+    prompt += ': '
+    if hidden:
+        user_value = getpass(prompt) or ''
+    else:
+        user_value = input(prompt)
+    if not user_value:
+        user_value = current_value
+    return user_value

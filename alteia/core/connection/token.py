@@ -71,6 +71,7 @@ class TokenManager():
             params['token'] = token
         return self._connection.post(
             path='/dxauth/describe-token',
-            data=params,
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(params),
             as_json=True
         )

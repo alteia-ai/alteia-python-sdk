@@ -2,19 +2,16 @@
 
 """
 import pathlib
-from typing import List, NewType, Tuple, Union
+from typing import List, Tuple, Union
 
 from alteia.core.resources.resource import Resource
 
-AnyPath = NewType('AnyPath', Union[str, pathlib.Path])
+AnyPath = Union[str, pathlib.Path]
 
-ResourceId = NewType('ResourceId', str)
+ResourceId = str
 
+SomeResourceIds = Union[ResourceId, List[ResourceId]]
 
-SomeResourceIds = NewType('SomeResourceIds',
-                          Union[ResourceId, List[ResourceId]])
+SomeResources = Union[Resource, List[Resource]]
 
-SomeResources = NewType('SomeResources',
-                        Union[Resource, List[Resource]])
-
-Offset = NewType('Offset', Tuple[float, float, float])
+Offset = Tuple[float, float, float]

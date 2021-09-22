@@ -5,6 +5,18 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2021-09-22
+
+### Changed
+
+- Use new logo (DAI-11977)
+- Use type aliases instead of `NewType` in `alteia.core.utils.typing` (DAI-11769)
+- Add missing JSON serialization in `describe_token()` (DAI-11767)
+
+### Added
+
+- Add an option `force_prompt` to ask the user to confirm or modify his credentials when instantiating the `SDK` (DAI-12083)
+
 ## [1.3.1] - 2021-08-09
 
 ### Changed

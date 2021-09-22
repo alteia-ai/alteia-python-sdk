@@ -32,6 +32,7 @@ from alteia.core.connection.connection import Connection
 from alteia.core.connection.credentials import (ClientCredentials, Credentials,
                                                 UserCredentials)
 from alteia.core.errors import ConfigError
+from alteia.core.utils.utils import prompt_user
 
 __all__ = ('SDK', )
 
@@ -114,7 +115,7 @@ class SDK():
                  user: str = None, password: str = None,
                  client_id: str = None, secret: str = None,
                  url: str = None, scope: str = None,
-                 proxy_url: str = None, **kwargs):
+                 proxy_url: str = None, force_prompt: bool = False, **kwargs):
         """Initializes Alteia Python SDK entry point.
 
         Args:
@@ -134,6 +135,9 @@ class SDK():
             scope: Optional scope.
 
             proxy_url: Optional proxy URL.
+
+            force_prompt: Option to force the user to set or confirm his connection
+                info through the prompt.
 
             kwargs: Optional keyword arguments to merge with
                            the configuration.
@@ -162,6 +166,29 @@ class SDK():
                 break
 
         connection_config = ConnectionConfig(**connection_params)
+
+        if force_prompt:
+            url = prompt_user(
+                'Platform URL',
+                current_value=getattr(connection_config, 'url', None),
+            )
+            email = prompt_user(
+                'Email',
+                current_value=getattr(connection_config, 'user', None),
+            )
+            password = prompt_user(
+                'Password (will be hidden)',
+                current_value=getattr(connection_config, 'password', None),
+                hidden=True
+            )
+
+            connection_params.update({
+                'url': url,
+                'user': email,
+                'password': password
+            })
+            connection_config = ConnectionConfig(**connection_params)
+
         credentials = _get_credentials(connection_config)
         self._connection = _create_connection(connection_config, credentials)
 
