@@ -1,9 +1,7 @@
-from typing import AnyStr
-
 from pkg_resources import resource_string
 
 
-def __name2wkt(name: AnyStr, *, wkts_path: AnyStr) -> AnyStr:
+def __name2wkt(name: str, *, wkts_path: str) -> str:
     """Convert a vert SRS name to WKT format.
 
     Args:
@@ -16,16 +14,16 @@ def __name2wkt(name: AnyStr, *, wkts_path: AnyStr) -> AnyStr:
 
     """
     name = name.lower()
-    res_name = '{}/{}.wkt'.format(wkts_path, name)
+    res_name = f'{wkts_path}/{name}.wkt'
     try:
         wkt = resource_string(__name__, res_name).decode('utf-8')
         flatten_wkt = ''.join([line.strip() for line in wkt.splitlines()])
         return flatten_wkt
     except FileNotFoundError:
-        raise ValueError('Unknown SRS name: {}'.format(name))
+        raise ValueError(f'Unknown SRS name: {name}')
 
 
-def expand_vertcrs_to_wkt(desc: AnyStr) -> AnyStr:
+def expand_vertcrs_to_wkt(desc: str) -> str:
     """Expand a vertical SRS description to WKT format.
 
     The supported SRS names are ``"arbitrary"``, ``"arbitrary_feet"``,

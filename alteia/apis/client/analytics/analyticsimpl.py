@@ -2,7 +2,7 @@
 """
 
 from collections import defaultdict
-from typing import Dict, Generator, List, Union
+from typing import Any, DefaultDict, Dict, Generator, List, Optional, Union
 
 from alteia.apis.provider import AnalyticsServiceAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -263,7 +263,7 @@ class AnalyticsImpl:
             <alteia.core.resources.Resource with id ... (analytic)>
 
         """
-        data = defaultdict(dict)
+        data: DefaultDict[str, Any] = defaultdict(dict)
         data.update(kwargs)
 
         data['name'] = name
@@ -351,14 +351,16 @@ class AnalyticsImpl:
             <alteia.core.resources.Resource with id ... (product)>
 
         """
-        data = {'analytic': analytic}
+        data: Dict[str, Any] = {'analytic': analytic}
 
         # Update to the format expected by analytics-service
+        deliverable_obj: Optional[Dict[str, None]] = None
+
         if deliverables:
-            deliverables = {d: None for d in deliverables}
+            deliverable_obj = {d: None for d in deliverables}
 
         for k, v in [('inputs', inputs), ('parameters', parameters),
-                     ('deliverables', deliverables),
+                     ('deliverables', deliverable_obj),
                      ('project', project), ('mission', mission)]:
             if v:
                 data.update({k: v})

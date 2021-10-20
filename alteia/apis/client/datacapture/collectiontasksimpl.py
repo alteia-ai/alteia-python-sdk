@@ -1,7 +1,7 @@
-from typing import Generator, List
+from typing import Generator, List, Union
 
 from alteia.apis.provider import CollectionTaskAPI, CollectionTaskManagementAPI
-from alteia.core.resources.resource import Resource
+from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 
@@ -79,8 +79,8 @@ class CollectionTaskImpl:
         return Resource(**content)
 
     def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, **kwargs
-               ) -> List[Resource]:
+               page: int = None, sort: dict = None, return_total: bool = False,
+               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search collection tasks.
 
         Args:
@@ -110,6 +110,7 @@ class CollectionTaskImpl:
             filter=filter,
             limit=limit,
             page=page,
+            return_total=return_total,
             **kwargs
         )
 

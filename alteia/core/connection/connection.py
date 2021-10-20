@@ -156,8 +156,6 @@ class Connection(AbstractConnection):
                 response = self._http.request(**params)
 
         if response.status not in range(200, 300):
-            raise ResponseError('{status}: {message}'.format(
-                status=response.status,
-                message=response.data[:256]))
+            raise ResponseError(f'{response.status}: {response.data[:256]}')
 
         return response

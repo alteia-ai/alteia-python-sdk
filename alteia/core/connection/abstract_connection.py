@@ -7,7 +7,7 @@ DEFAULT_REQUESTS_TIMEOUT = 30.0
 LOGGER = logging.getLogger(__name__)
 
 
-class AbstractConnection(object):
+class AbstractConnection:
     request_timeout = DEFAULT_REQUESTS_TIMEOUT
 
     def __init__(self, *, base_url, disable_ssl_certificate, token_manager=None,
@@ -30,7 +30,7 @@ class AbstractConnection(object):
 
         token = self._token_manager.token
         if token.token_type and token.access_token:
-            auth = '{} {}'.format(token.token_type, token.access_token)
+            auth = f'{token.token_type} {token.access_token}'
             headers['Authorization'] = auth
         elif 'Authorization' not in headers:
             LOGGER.warning('Authorization header not set')
@@ -60,9 +60,7 @@ class AbstractConnection(object):
     @property
     def user_agent(self):
         if not self._user_agent:
-            self._user_agent = '{product}/{version}'.format(
-                product='alteia-python-sdk',
-                version=alteia.__version__)
+            self._user_agent = f'alteia-python-sdk/{alteia.__version__}'
         return self._user_agent
 
     @staticmethod

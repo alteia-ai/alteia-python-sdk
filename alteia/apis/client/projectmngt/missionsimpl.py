@@ -1,7 +1,7 @@
 """Implementation of missions.
 
 """
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from alteia.apis.provider import ProjectManagerAPI, UIServicesAPI
 from alteia.core.errors import QueryError
@@ -18,7 +18,7 @@ class MissionsImpl:
 
     def create(self, *, project: ResourceId, survey_date: str,
                number_of_images: int, name: str = None, **kwargs
-               ) -> (Flight, Mission):
+               ) -> Tuple[Optional[Flight], Mission]:
         """Creates a mission.
 
         Based on the number of images to attach to the mission,
@@ -38,10 +38,12 @@ class MissionsImpl:
               mission description.
 
         Returns:
-            (Flight, Mission): A tuple with the created flight and mission.
+        Tuple[ (Flight, Mission): A tuple with the created flight and missio].
             ``Flight = None`` when the number of images is 0.
 
         """
+        flight: Optional[Flight]
+
         if name:
             kwargs.update({'name': name})
 
@@ -107,7 +109,7 @@ class MissionsImpl:
                       name: str = None,
                       coordinates: List = None,
                       area: float = 0,
-                      **kwargs) -> (Flight, Mission):
+                      **kwargs) -> Tuple[Flight, Mission]:
         """Create a survey (mission + flight).
 
         This function is used when images will be attached to the mission.
@@ -133,7 +135,7 @@ class MissionsImpl:
             QueryError: The survey creation response is incorrect.
 
         Returns:
-            (Flight, Mission): A tuple with the created flight and mission.
+        Tuple[ (Flight, Mission): A tuple with the created flight and missio].
 
         """
 
@@ -262,7 +264,7 @@ class MissionsImpl:
 
         data = {"_id": flight, "status": status}
 
-        path = "flights/{}/uploads/status".format(flight)
+        path = f"flights/{flight}/uploads/status"
         content = self._provider.post(path=path, data=data, as_json=False)
 
         if content != b'OK':
@@ -294,8 +296,7 @@ class MissionsImpl:
         else:
             return found[0]
 
-    def rename(self, mission: ResourceId, *, name: str, **kwargs
-               ) -> Optional[Mission]:
+    def rename(self, mission: ResourceId, *, name: str, **kwargs) -> Mission:
         """Rename the given mission.
 
         Args:
@@ -305,6 +306,9 @@ class MissionsImpl:
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
+
+        Returns:
+            Mission: Renamed mission resource.
 
         """
         data = kwargs

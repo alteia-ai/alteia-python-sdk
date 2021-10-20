@@ -37,7 +37,7 @@ class TokenManager():
         LOGGER.debug('Trying to get a new token...')
         self._token = Token(None, None, None, None)
         headers = {'Authorization':
-                   'Basic {}'.format(self._credentials.encoded_secret),
+                   f'Basic {self._credentials.encoded_secret}',
                    'Content-Type': 'application/json'}
         data = json.dumps(self._credentials.data)
         decoded_data = self._connection.post(path=self._path,

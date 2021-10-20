@@ -1,9 +1,10 @@
 from pkgutil import extend_path
+from typing import Iterable
 
 from alteia.sdk import SDK
 
 __all__ = ('SDK',)
 
-__version__ = '1.3.2'  # must match the version in pyproject.toml
+__version__ = '1.3.3'  # must match the version in pyproject.toml
 
-__path__ = extend_path(__path__, __name__)
+__path__: Iterable[str] = extend_path(__path__, __name__)  # type: ignore # noqa

@@ -149,14 +149,14 @@ class ProjectsImpl:
         """
         available_status = ['pending', 'available', 'failed']
         if status not in available_status:
-            raise RuntimeError('Status not in {}'.format(available_status))
+            raise RuntimeError(f'Status not in {available_status}')
 
         data = {'project': project, 'status': status}
         content = self._alt_provider.post(path=f'projects/update/{project}', data=data)
 
         if project not in str(content):
             raise ResponseError(
-                'Project {!r} has not been found'.format(project))
+                f'Project {project!r} has not been found')
         else:
             d = content.get('project')
             project_resource = Project(**d)

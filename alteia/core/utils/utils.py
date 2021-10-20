@@ -143,5 +143,5 @@ def prompt_user(prompt: str, current_value: Optional[str], hidden: bool = False)
     else:
         user_value = input(prompt)
     if not user_value:
-        user_value = current_value
+        user_value = current_value if current_value is not None else ''
     return user_value

@@ -90,7 +90,7 @@ def search_generator(manager, *,
 
     """
     if not hasattr(manager, 'search'):
-        raise RuntimeError('Search action not found on manager {!r}'.format(manager))
+        raise RuntimeError(f'Search action not found on manager {manager!r}')
 
     data = kwargs
     if page is not None:

@@ -8,7 +8,6 @@ from typing import List
 from alteia.apis.provider import UIServicesAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.comments import Comment
-from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId
 
 
@@ -107,7 +106,7 @@ class CommentsImpl:
 
     def search(self, *, project: ResourceId, type: str = None,
                target: ResourceId = None, flight: ResourceId = None,
-               **kwargs) -> List[Resource]:
+               **kwargs) -> List[Comment]:
         """Search for comments.
 
         When searching for comments on a photo. Both the ``flight`` id and
@@ -152,7 +151,7 @@ class CommentsImpl:
             query['target_id'] = target
 
         query_str = urllib.parse.urlencode(query)
-        path = 'comments?{}'.format(query_str)
+        path = f'comments?{query_str}'
 
         desc = self._provider.get(path)
 

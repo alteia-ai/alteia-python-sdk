@@ -155,7 +155,7 @@ class TagsImpl:
             query['target_id'] = target
 
         query_str = urllib.parse.urlencode(query)
-        path = 'tags?{}'.format(query_str)
+        path = f'tags?{query_str}'
 
         desc = self._provider.get(path)
 
@@ -181,4 +181,4 @@ class TagsImpl:
 
         """
 
-        self._provider.delete('tags/{}'.format(tag))
+        self._provider.delete(f'tags/{tag}')

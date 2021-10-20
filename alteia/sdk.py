@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 from alteia.apis.client.analytics.analyticsimpl import AnalyticsImpl
 from alteia.apis.client.analytics.productsimpl import ProductsImpl
@@ -39,26 +40,25 @@ __all__ = ('SDK', )
 LOGGER = logging.getLogger(__name__)
 
 
-def _get_credentials(config: ConnectionConfig) -> Credentials:
-    if getattr(config, 'user', None):
+def _get_credentials(config: ConnectionConfig) -> Optional[Credentials]:
+    if config.user is not None:
         LOGGER.debug('Using user credentials')
         return UserCredentials(config.user, config.password,
-                               client_id=getattr(config, 'client_id', None),
-                               secret=getattr(config, 'secret', None),
-                               scope=getattr(config, 'scope', None))
-    elif getattr(config, 'client_id', None):
+                               client_id=config.client_id,
+                               secret=config.secret)
+    elif config.client_id:
         LOGGER.debug('Using APIs client credentials')
         return ClientCredentials(config.client_id,
-                                 config.secret,
-                                 scope=getattr(config, 'scope', None))
+                                 config.secret)
     return None
 
 
 def _create_connection(config: ConnectionConfig,
-                       credentials: Credentials) -> Connection:
+                       credentials: Optional[Credentials]) -> Connection:
     LOGGER.info('Initializing connection')
-    access_token = getattr(config, 'access_token', None)
-    if not hasattr(config, 'url'):
+    access_token = config.access_token
+
+    if config.url is None:
         LOGGER.error('Base url not found')
         raise ConfigError('Missing url')
 
@@ -66,11 +66,11 @@ def _create_connection(config: ConnectionConfig,
                  'credentials': credentials,
                  'access_token': access_token}
 
-    if hasattr(config, 'proxy_url'):
+    if config.proxy_url is not None:
         LOGGER.info(f'Use proxy {config.proxy_url!r}')
         conn_opts.update({'proxy_url': config.proxy_url})
 
-    if hasattr(config, 'connection'):
+    if config.connection is not None:
         for key in ('disable_ssl_certificate', 'max_retries'):
             if key in config.connection:
                 conn_opts.update({key: config.connection[key]})
@@ -114,7 +114,7 @@ class SDK():
     def __init__(self,  *, config_path: str = None,
                  user: str = None, password: str = None,
                  client_id: str = None, secret: str = None,
-                 url: str = None, scope: str = None,
+                 url: str = None,
                  proxy_url: str = None, force_prompt: bool = False, **kwargs):
         """Initializes Alteia Python SDK entry point.
 
@@ -131,8 +131,6 @@ class SDK():
                 is defined).
 
             url: Optional platform URL (default ``https://app.alteia.com``).
-
-            scope: Optional scope.
 
             proxy_url: Optional proxy URL.
 
@@ -152,7 +150,6 @@ class SDK():
                                   ('password', password),
                                   ('client_id', client_id),
                                   ('secret', secret), ('url', url),
-                                  ('scope', scope),
                                   ('proxy_url', proxy_url)):
             if value is not None:
                 connection_params[param_name] = value

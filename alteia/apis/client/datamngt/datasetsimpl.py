@@ -2,8 +2,7 @@ import hashlib
 import os.path
 import sys
 import urllib.parse
-from functools import wraps
-from typing import Generator, List, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 
 import urllib3.exceptions
 
@@ -31,76 +30,51 @@ __creation_common_params = ('name', 'source_name', 'categories', 'company',
                             'dataset_format', 'geometry', 'properties')
 
 
-def _implement_dataset_creation(f):
-    """Decorator implementing dataset creation.
+def _build_component_dict_list_from_names(components: Union[List[str], List[Dict[str, Any]]]):
+    """Turn component list into a dictionary list.
 
-    The decorated function is expected to return a tuple made of:
-    - A dataset type
-    - A list of component names
-    - A dictionary of custom parameters
-
-    The parameters common to all dataset types are handled
-    automatically and should not belong to the dictionary of custom
-    parameters.
-
-    Args:
-        f: The function to decorate.
+    >> _build_component_dict_list_from_names(['material', 'texture'])
+    [{'name': 'material'}, {'name': 'texture'}]
 
     Returns:
-        Function implementing dataset creation as specified by ``f``.
+        List of components dictionaries with at least a key
+        ``name``.
 
     """
-    def _build_component_dict_list_from_names(components):
-        """Turn component list into a dictionary list.
-
-        >> _build_component_dict_list_from_names(['material', 'texture'])
-        [{'name': 'material'}, {'name': 'texture'}]
-
-        Returns:
-            List of components dictionaries with at least a key
-            ``name``.
-
-        """
-        component_dict_list = []
-        for component in components:
-            if isinstance(component, dict):
-                component_dict_list.append(component)
-            else:
-                component_dict_list.append({'name': component})
-        return component_dict_list
-
-    @wraps(f)
-    def wrapped(this, **kwargs):
-        dataset_type, component_names, custom_params = f(this, **kwargs)
-        filtered_common_params = \
-            dict([(k, v) for (k, v) in kwargs.items()
-                  if k in __creation_common_params and
-                  v is not None])
-        if all([filtered_common_params.get('company') is None,
-                filtered_common_params.get('project') is None]):
-            raise ParameterError('One of {!r} or {!r} must be specified'
-                                 .format('company', 'project'))
-        try:
-            v = filtered_common_params.pop('dataset_format')
-        except KeyError:
-            pass
+    component_dict_list = []
+    for component in components:
+        if isinstance(component, dict):
+            component_dict_list.append(component)
         else:
-            filtered_common_params['format'] = v
+            component_dict_list.append({'name': component})
+    return component_dict_list
 
-        try:
-            v = filtered_common_params.pop('source_name')
-        except KeyError:
-            pass
-        else:
-            filtered_common_params['source'] = {'name': v}
 
-        components = _build_component_dict_list_from_names(component_names)
+def _adapt_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    filtered_common_params = dict(
+        [(k, v) for (k, v) in params.items()
+         if k in __creation_common_params and v is not None]
+    )
 
-        custom_params.update(filtered_common_params)
-        return this._create(dataset_type, components, **custom_params)
+    if all([filtered_common_params.get('company') is None,
+            filtered_common_params.get('project') is None]):
+        raise ParameterError('One of "company" or "project" must be specified')
+    try:
+        v = filtered_common_params.pop('dataset_format')
+    except KeyError:
+        pass
+    else:
+        filtered_common_params['format'] = v
 
-    wrapped.__doc__ = f.__doc__
-    return wrapped
+    try:
+        v = filtered_common_params.pop('source_name')
+    except KeyError:
+        pass
+    else:
+        filtered_common_params['source'] = {'name': v}
+
+    params.update(filtered_common_params)
+    return params
 
 
 class DatasetsImpl:
@@ -126,27 +100,28 @@ class DatasetsImpl:
             return []
         elif count == 1:
             return [base_name]
-        return ['{}_{}'.format(base_name, i) for i in range(count)]
+        return [f'{base_name}_{i}' for i in range(count)]
 
     def _create(self, dataset_type: str,
-                components: Sequence[dict],
+                component_names: Union[List[str], List[Dict[str, Any]]],
                 **kwargs) -> Resource:
+        components = _build_component_dict_list_from_names(component_names)
+
         if dataset_type not in ('file', 'mesh', 'image', 'raster',
                                 'pcl', 'vector', 'file'):
-            raise ValueError('Unsupported type {}'.format(dataset_type))
+            raise ValueError(f'Unsupported type "{dataset_type}"')
 
+        adapted_params = _adapt_params(kwargs)
         if 'vertical_srs_wkt' in kwargs:
             kwargs['vertical_srs_wkt'] = \
                 expand_vertcrs_to_wkt(kwargs['vertical_srs_wkt'])
 
-        params = {'type': dataset_type,
-                  'components': components}
-        params.update(kwargs)
+        params = {'type': dataset_type, 'components': components}
+        params.update(adapted_params)
 
         desc = self._provider.post('create-dataset', data=params)
         return Resource(**desc)
 
-    @_implement_dataset_creation
     def create_file_dataset(self, *,
                             name: str,
                             categories: Sequence[str] = None,
@@ -215,11 +190,25 @@ class DatasetsImpl:
             components = self._generate_comp_names('file', file_count)
         if not isinstance(components, list):
             raise TypeError(
-                'components must be a list; '
-                '{!r} received'.format(type(components)))
-        return 'file', components, kwargs
+                f'components must be a list; {type(components)!r} received')
 
-    @_implement_dataset_creation
+        params = kwargs
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
+        return self._create('file', components, **params)
+
     def create_mesh_dataset(self, *,
                             name: str,
                             categories: Sequence[str] = None,
@@ -293,9 +282,23 @@ class DatasetsImpl:
         if offset is not None:
             params['offset'] = offset
 
-        return 'mesh', components, params
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
 
-    @_implement_dataset_creation
+        return self._create('mesh', components, **params)
+
     def create_image_dataset(self, *,
                              name: str,
                              categories: Sequence[str] = None,
@@ -393,9 +396,25 @@ class DatasetsImpl:
             if v:
                 params.update({k: v})
 
-        return 'image', ['image'], params
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'flight': flight,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
 
-    @_implement_dataset_creation
+        components = ['image']
+        return self._create('image', components, **params)
+
     def create_raster_dataset(self, *,
                               name: str,
                               categories: Sequence[str] = None,
@@ -468,6 +487,24 @@ class DatasetsImpl:
         """
         params = kwargs
 
+        if bands:
+            params['bands'] = bands
+
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
+
         components = ['raster']
         if has_projection_file:
             components.append('projection')
@@ -478,12 +515,8 @@ class DatasetsImpl:
         if has_headerfile:
             components.append('header')
 
-        if bands:
-            params['bands'] = bands
+        return self._create('raster', components, **params)
 
-        return 'raster', components, params
-
-    @_implement_dataset_creation
     def create_pcl_dataset(self, *,
                            name: str,
                            categories: Sequence[str] = None,
@@ -539,9 +572,24 @@ class DatasetsImpl:
             Resource: Resource for the created dataset.
 
         """
-        return 'pcl', ['pcl'], kwargs
+        params = kwargs
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
+        components = ['pcl']
+        return self._create('pcl', components, **params)
 
-    @_implement_dataset_creation
     def create_vector_dataset(self, *,
                               name: str,
                               categories: Sequence[str] = None,
@@ -621,6 +669,23 @@ class DatasetsImpl:
 
         """
         params = kwargs
+        params.update({
+            'name': name,
+            'categories': categories,
+            'company': company,
+            'project': project,
+            'mission': mission,
+            'hidden': hidden,
+            'published': published,
+            'horizontal_srs_wkt': horizontal_srs_wkt,
+            'vertical_srs_wkt': vertical_srs_wkt,
+            'dataset_format': dataset_format,
+            'geometry': geometry,
+            'properties': properties,
+        })
+
+        components: Union[List[str], List[Dict[str, Any]]]
+
         if collection:
             component = {'name': 'collection',
                          'collection': {'id': collection}}
@@ -630,14 +695,15 @@ class DatasetsImpl:
 
             params['source'] = {'name': 'map-service'}
 
-            if any([is_shape_file, has_projection_file, is_archive,
-                    dataset_format]):
+            if any([is_shape_file, has_projection_file, is_archive, dataset_format]):
                 raise ParameterError('Incompatible arguments')
+
         elif is_archive:
             components = ['archive']
 
             if any([is_shape_file, has_projection_file]):
                 raise ParameterError('Incompatible arguments')
+
         else:
             components = ['vector']
 
@@ -647,7 +713,7 @@ class DatasetsImpl:
             if has_projection_file:
                 components += ['projection']
 
-        return 'vector', components, params
+        return self._create('vector', components, **params)
 
     def describe(self, dataset: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a dataset or a list of datasets.
@@ -852,7 +918,7 @@ class DatasetsImpl:
                      'filename': os.path.basename(file_path),
                      'checksum': md5hash}
             query_str = urllib.parse.urlencode(query)
-            path = 'upload-component?{}'.format(query_str)
+            path = f'upload-component?{query_str}'
             with open(file_path, mode='rb') as fh:
                 self._provider.post(path, data=fh, as_json=False,
                                     sanitize=False, serialize=False)
@@ -861,27 +927,27 @@ class DatasetsImpl:
                   target_path: Union[None, str],
                   target_name: Union[None, str],
                   overwrite: bool,
-                  md5hash: str) -> str:
+                  md5hash: Optional[str]) -> str:
         if target_path is None:
             target_path = '.'
 
         if not os.path.exists(target_path):
             os.makedirs(target_path)
 
-        url_path = '{}?{}'.format(path, urllib.parse.urlencode(params))
+        url_path = f'{path}?{urllib.parse.urlencode(params)}'
         resp = self._provider.get(url_path, as_json=False,
                                   preload_content=False)
         file_name = (target_name or
                      extract_filename_from_headers(resp.headers))
         file_path = os.path.join(target_path, file_name)
         if not overwrite and os.path.exists(file_path):
-            raise FileExistsError('File found at {}'.format(file_path))
+            raise FileExistsError(f'File found at {file_path}')
 
         file_hash = hashlib.md5() if md5hash is not None else None
         with open(file_path, 'wb') as fh:
             resp = self._stream_resp(resp, fh, file_hash=file_hash)
 
-        if md5hash is not None and md5hash != file_hash.hexdigest():
+        if file_hash is not None and md5hash != file_hash.hexdigest():
             raise DownloadError('Unexpected MD5 hash')
 
         return file_path
@@ -912,7 +978,7 @@ class DatasetsImpl:
 
         if err:
             headers = {'Cache-Control': 'no-cache',
-                       'Range': 'bytes={}-'.format(offset)}
+                       'Range': f'bytes={offset}-'}
             # https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
             conn = self._provider._connection
             resp = conn.get(path=url,
@@ -1189,6 +1255,9 @@ class DatasetsImpl:
             dataset_ids = [dataset]
 
         datasets = self.describe(dataset_ids)
+        if not isinstance(datasets, list):
+            raise TypeError('Expecting a list of datasets')
+
         for ds_desc in datasets:
             ingested = (hasattr(ds_desc, 'ingestion') and
                         ds_desc.ingestion.get('status', None) == 'completed')

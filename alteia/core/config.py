@@ -9,42 +9,17 @@ import os
 from appdirs import user_data_dir
 
 from alteia.core.utils.filehelper import read_file
-from alteia.core.utils.utils import dict_merge
-
-__all__ = ('Config', 'ConnectionConfig')
 
 LOGGER = logging.getLogger(__name__)
 
 APPNAME = "alteia"
 APPAUTHOR = "Alteia"
 DEFAULT_CONF_DIR = user_data_dir(APPNAME, APPAUTHOR)
+DEFAULT_URL = 'https://app.alteia.com'
+DEFAULT_CONNECTION_CONF = {'disable_ssl_certificate': True}
 
 
-class Config(object):
-    """Base class handling configuration.
-
-    It merges multiple sources of configuration and makes all
-    configured properties available as instance attributes.
-
-    Three sources of configuration are handled:
-
-    - The optional arguments given as `kwargs`.
-
-    - A custom configuration file.
-
-    - A default configuration.
-
-    """
-    def __init__(self, defaults=None, custom=None, **kwargs):
-        conf = defaults or {}
-        conf = dict_merge(conf, custom or {})
-        conf = dict_merge(conf, kwargs)
-
-        for name, val in conf.items():
-            setattr(self, name, val)
-
-
-class ConnectionConfig(Config):
+class ConnectionConfig:
     """Connection configuration.
 
     """
@@ -52,7 +27,7 @@ class ConnectionConfig(Config):
                  user: str = None, password: str = None,
                  client_id: str = None, secret: str = None,
                  url: str = None, domain: str = None, proxy_url: str = None,
-                 **kwargs):
+                 access_token: str = None, **kwargs):
         """Initializes a connection configuration.
 
         Args:
@@ -72,6 +47,8 @@ class ConnectionConfig(Config):
             domain: Optional domain.
 
             proxy_url: Optional proxy URL.
+
+            access_token: Optional access token.
 
             kwargs: Optional keyword arguments to merge with
                             the configuration.
@@ -100,20 +77,15 @@ class ConnectionConfig(Config):
             else:
                 custom_conf = {}
 
-        defaults = {
-            'url': 'https://app.alteia.com',
-            'connection': {'disable_ssl_certificate': True}
-        }
+        self.url = url or custom_conf.get('url') or DEFAULT_URL
+        self.connection = custom_conf.get('connection') or DEFAULT_CONNECTION_CONF
+        self.user = user or custom_conf.get('user')
+        self.password = password or custom_conf.get('password')
+        self.client_id = client_id or custom_conf.get('client_id')
+        self.secret = secret or custom_conf.get('secret')
+        self.domain = domain or custom_conf.get('domain')
+        self.proxy_url = proxy_url or custom_conf.get('proxy_url')
+        self.access_token = access_token or custom_conf.get('access_token')
 
-        connection_params = kwargs
-        for param_name, value in (('user', user),
-                                  ('password', password),
-                                  ('client_id', client_id),
-                                  ('secret', secret),
-                                  ('url', url),
-                                  ('domain', domain),
-                                  ('proxy_url', proxy_url)):
-            if value is not None:
-                connection_params[param_name] = value
-
-        super().__init__(defaults=defaults, custom=custom_conf, **connection_params)
+        for name, val in kwargs.items():
+            setattr(self, name, val)

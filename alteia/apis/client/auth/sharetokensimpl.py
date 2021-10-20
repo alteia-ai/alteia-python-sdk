@@ -63,7 +63,8 @@ class ShareTokensImpl:
         if len(company_ids) != 1:
             raise RuntimeError('Expecting datasets in a single company')
 
-        data['company'] = company_ids.pop()
+        dataset_obj = self._sdk.datasets.describe(dataset)
+        data['company'] = dataset_obj.company
 
         if duration is not None:
             data['duration'] = duration

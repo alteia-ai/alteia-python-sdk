@@ -5,14 +5,14 @@
 import mimetypes
 import os
 from enum import Enum
-from typing import AnyStr, Generator, List, Tuple, Union
+from pathlib import Path
+from typing import Generator, List, Tuple, Union
 
 from alteia.apis.provider import AnnotationsAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
-from alteia.core.utils.typing import (AnyPath, ResourceId, SomeResourceIds,
-                                      SomeResources)
+from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 
 # TODO support for CSS3 colors
 
@@ -131,11 +131,11 @@ class AnnotationsImpl:
         self._sdk = sdk
 
     def __upload_files(self, *, project: ResourceId,
-                       file_paths: List[AnyPath]):
+                       file_paths: Union[List[str], List[Path]]):
         datasets = []
         for p in file_paths:
             name = os.path.basename(p)
-            file_type, _ = mimetypes.guess_type(p)
+            file_type, _ = mimetypes.guess_type(str(p))
             file_subtype = file_type.split('/')[1] if file_type else None
             if file_subtype == 'image':
                 creation_func = self._sdk.datasets.create_image_dataset
@@ -161,13 +161,13 @@ class AnnotationsImpl:
                stroke_opacity: float = None,
                fill: List[int] = None,
                fill_opacity: float = None,
-               type: AnyStr = '2d',
+               type: str = '2d',
                target: ResourceId = None,
-               name: AnyStr = None,
-               description: AnyStr = None,
+               name: str = None,
+               description: str = None,
                followers: List[ResourceId] = None,
                attachments: List[ResourceId] = None,
-               file_paths: List[AnyStr] = None,
+               file_paths: List[str] = None,
                normals: List = None,
                **kwargs) -> Resource:
         """Create an annotation.
@@ -250,7 +250,7 @@ class AnnotationsImpl:
 
         """
         if type not in ('2d', '3d', 'image'):
-            raise ValueError('Unsupported type {}'.format(type))
+            raise ValueError(f'Unsupported type {type}')
 
         data = kwargs
         data.update({'project': project,
@@ -510,7 +510,7 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        stroke = list(color)
+        stroke: List[Union[int, float]] = list(color)
         if opacity is not None:
             stroke.append(opacity)
 
@@ -644,7 +644,7 @@ class AnnotationsImpl:
 
     def add_attachments(self, annotation: ResourceId, *,
                         attachments: List[ResourceId] = None,
-                        file_paths: List[AnyStr] = None,
+                        file_paths: List[str] = None,
                         **kwargs):
         """Attach datasets to the annotation.
 
@@ -686,14 +686,18 @@ class AnnotationsImpl:
         data = kwargs
 
         if attachments is None and file_paths is None:
-            raise ParameterError('One of {!r} or {!r} must be specified'
-                                 .format('attachments', 'file_paths'))
+            raise ParameterError(
+                'One of "attachments" or "file_paths" must be specified'
+            )
 
         if file_paths is not None:
             if attachments is None:
                 attachments = []
 
             a = self.describe(annotation)
+            if not isinstance(a, Resource):
+                raise TypeError('Expecting a single Resource')
+
             datasets = self.__upload_files(project=a.project,
                                            file_paths=file_paths)
             attachments += datasets

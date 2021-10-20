@@ -6,7 +6,7 @@ from alteia.core.utils.utils import sanitize_dict
 DEFAULT_API_TIMEOUT = 30.0  # value in seconds
 
 
-class Provider(object):
+class Provider:
     _root_path = ''
     api_timeout = DEFAULT_API_TIMEOUT
 
@@ -15,7 +15,7 @@ class Provider(object):
 
     def get(self, path, *, preload_content=True, as_json=True, timeout=None):
         headers = {'Cache-Control': 'no-cache'}
-        full_path = '{root}/{path}'.format(root=self._root_path, path=path)
+        full_path = f'{self._root_path}/{path}'
         content = self._connection.get(path=full_path,
                                        headers=headers,
                                        timeout=timeout or self.api_timeout,
@@ -59,7 +59,7 @@ class Provider(object):
 
         headers = {'Cache-Control': 'no-cache'}
         headers['Content-Type'] = content_type
-        full_path = '{root}/{path}'.format(root=self._root_path, path=path)
+        full_path = f'{self._root_path}/{path}'
         content = self._connection.post(path=full_path,
                                         headers=headers,
                                         data=data,
@@ -103,7 +103,7 @@ class Provider(object):
 
         headers = {'Cache-Control': 'no-cache'}
         headers['Content-Type'] = content_type
-        path = '{root}/{path}'.format(root=self._root_path, path=path)
+        path = f'{self._root_path}/{path}'
         content = self._connection.put(path=path,
                                        headers=headers,
                                        data=data,
@@ -130,7 +130,7 @@ class Provider(object):
         """
         headers = {'Cache-Control': 'no-cache',
                    'Content-Type': 'application/json'}
-        path = '{root}/{path}'.format(root=self._root_path, path=path)
+        path = f'{self._root_path}/{path}'
         content = self._connection.delete(path=path,
                                           headers=headers,
                                           timeout=timeout or self.api_timeout,
@@ -148,9 +148,7 @@ class WithSearchRoute():
 
         """
         content = self._connection.post(
-                path='{root_path}/{path}/{search_path}'.format(root_path=self._root_path,
-                                                               path=path,
-                                                               search_path=self._search_path),
+                path=f'{self._root_path}/{path}/{self._search_path}',
                 headers={'Cache-Control': 'no-cache', 'Content-Type': 'application/json'},
                 data=json.dumps(query),
                 timeout=self.timeout,

@@ -5,6 +5,13 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2021-10-20
+
+### Changed
+
+- Fix mypy errors (DAI-4205)
+- Convert all formatted strings to the f-string syntax (DAI-12253)
+
 ## [1.3.2] - 2021-09-22
 
 ### Changed

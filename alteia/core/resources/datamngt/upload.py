@@ -13,6 +13,7 @@ import urllib
 from typing import Optional
 
 from alteia.core.errors import UploadError
+from alteia.core.utils.typing import AnyPath
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 _S3_CHUNK_MIN_SIZE = 5 * 1024 * 1024
 
 
-class Chunk(object):
+class Chunk:
     """Store the state of the upload of a file chunk.
 
     """
@@ -73,7 +74,7 @@ def prepare_chunks(*, file_size: int, chunk_size: int):
     return chunks
 
 
-class MultipartUpload(object):
+class MultipartUpload:
     """Send a given file in multiple requests.
 
     It raises a ``ValueError`` when ``chunk_size`` is < _S3_CHUNK_MIN_SIZE.
@@ -95,15 +96,14 @@ class MultipartUpload(object):
 
     @property
     def creation_url(self):
-        return '{}/create-multipart-upload'.format(self._base_url)
+        return f'{self._base_url}/create-multipart-upload'
 
     def get_upload_part_url(self, *, dataset: str,
                             component_name: str, part_number: int,
                             checksum: str) -> str:
         if part_number < 1:
             raise ValueError(
-                'part_number must be >=1; received : {}'.format(
-                    part_number)
+                f'part_number must be >=1; received : {part_number}'
             )
 
         url_template = '{}/upload-part?{}'
@@ -115,7 +115,7 @@ class MultipartUpload(object):
 
     @property
     def completion_url(self):
-        return '{}/complete-multipart-upload'.format(self._base_url)
+        return f'{self._base_url}/complete-multipart-upload'
 
     @property
     def _ongoing_chunks(self):
@@ -133,7 +133,7 @@ class MultipartUpload(object):
         return [c for c in self._chunks
                 if c.status not in ('available', 'failed') and c.req is None]
 
-    def send(self, file_path: str, *,
+    def send(self, file_path: AnyPath, *,
              dataset: str, component_name: str, md5hash: Optional[str] = None):
         """Send a file in multiple requests.
 
@@ -151,8 +151,9 @@ class MultipartUpload(object):
                 Will be computed when equal to None (the default).
 
         """
+        file_path = str(file_path)
         if not os.path.exists(file_path):
-            raise UploadError('File not found {}'.format(file_path))
+            raise UploadError(f'File not found "{file_path}"')
 
         file_size = os.path.getsize(file_path)
         params = {'file_path': file_path,

@@ -1,15 +1,16 @@
 import cgi
 import logging
 import urllib.parse
+from pathlib import Path
 
 from pathvalidate import sanitize_filename
 
-from alteia.core.utils.typing import ResourceId, SomeResourceIds, Union
+from alteia.core.utils.typing import ResourceId, SomeResourceIds
 
 LOGGER = logging.getLogger(__name__)
 
 
-def extract_filename_from_headers(headers: dict) -> Union[None, str]:
+def extract_filename_from_headers(headers: dict) -> str:
     h = headers['content-disposition']
 
     _, parsed = cgi.parse_header(h)
@@ -28,10 +29,15 @@ def extract_filename_from_headers(headers: dict) -> Union[None, str]:
             filename = None
 
     if filename is None:
-        filename = parsed.get('filename')
-        sanitized_name = sanitize_filename(filename, platform='auto')
+        if parsed.get('filename') is not None:
+            sanitized_name = sanitize_filename(
+                Path(parsed['filename']),
+                platform='auto'
+            )
+        else:
+            return 'unknown'
 
-    return sanitized_name
+    return str(sanitized_name)
 
 
 def generate_raster_tiles_url(base_url: str,
@@ -87,7 +93,7 @@ def generate_vector_tiles_url(base_url: str,
 
     """
     scheme, netloc, _, _, _, _ = urllib.parse.urlparse(base_url)
-    query = 'access_token={}'.format(access_token)
+    query = f'access_token={access_token}'
     service = 'map-service/features/collection-mvt'
     tile = '{z}/{x}/{y}.' + tile_format
     path_template = '{service}/{collection}/{tile}'
