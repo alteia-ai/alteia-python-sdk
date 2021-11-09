@@ -5,6 +5,12 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2021-11-09
+
+### Changed
+
+- Do not pass unset parameters for the dataset creation (DAI-12690)
+
 ## [1.3.3] - 2021-10-20
 
 ### Changed

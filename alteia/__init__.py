@@ -5,6 +5,6 @@ from alteia.sdk import SDK
 
 __all__ = ('SDK',)
 
-__version__ = '1.3.3'  # must match the version in pyproject.toml
+__version__ = '1.3.4'  # must match the version in pyproject.toml
 
 __path__: Iterable[str] = extend_path(__path__, __name__)  # type: ignore # noqa

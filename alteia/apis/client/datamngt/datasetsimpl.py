@@ -51,30 +51,27 @@ def _build_component_dict_list_from_names(components: Union[List[str], List[Dict
 
 
 def _adapt_params(params: Dict[str, Any]) -> Dict[str, Any]:
-    filtered_common_params = dict(
-        [(k, v) for (k, v) in params.items()
-         if k in __creation_common_params and v is not None]
-    )
+    p = params.copy()
 
-    if all([filtered_common_params.get('company') is None,
-            filtered_common_params.get('project') is None]):
+    for common_param in __creation_common_params:
+        if common_param in p:
+            if p[common_param] is not None:
+                p[common_param] = p.pop(common_param)
+            else:
+                p.pop(common_param)
+
+    if all([p.get('company') is None, p.get('project') is None]):
         raise ParameterError('One of "company" or "project" must be specified')
-    try:
-        v = filtered_common_params.pop('dataset_format')
-    except KeyError:
-        pass
-    else:
-        filtered_common_params['format'] = v
 
-    try:
-        v = filtered_common_params.pop('source_name')
-    except KeyError:
-        pass
-    else:
-        filtered_common_params['source'] = {'name': v}
+    if 'dataset_format' in p:
+        p['format'] = p.pop('dataset_format')
 
-    params.update(filtered_common_params)
-    return params
+    if 'source_name' in p:
+        p['source'] = {
+            'name': p.pop('source_name')
+        }
+
+    return p
 
 
 class DatasetsImpl:
@@ -112,8 +109,8 @@ class DatasetsImpl:
             raise ValueError(f'Unsupported type "{dataset_type}"')
 
         adapted_params = _adapt_params(kwargs)
-        if 'vertical_srs_wkt' in kwargs:
-            kwargs['vertical_srs_wkt'] = \
+        if 'vertical_srs_wkt' in adapted_params:
+            adapted_params['vertical_srs_wkt'] = \
                 expand_vertcrs_to_wkt(kwargs['vertical_srs_wkt'])
 
         params = {'type': dataset_type, 'components': components}
