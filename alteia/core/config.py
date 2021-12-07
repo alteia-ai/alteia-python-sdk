@@ -25,7 +25,7 @@ class ConnectionConfig:
     """
     def __init__(self, file_path: str = None, *,
                  user: str = None, password: str = None,
-                 client_id: str = None, secret: str = None,
+                 client_id: str = None, client_secret: str = None,
                  url: str = None, domain: str = None, proxy_url: str = None,
                  access_token: str = None, **kwargs):
         """Initializes a connection configuration.
@@ -37,10 +37,10 @@ class ConnectionConfig:
 
             password: Optional password (mandatory if ``username`` is defined).
 
-            client_id: Optional client identifier.
+            client_id: Optional OAuth client identifier.
 
-            secret: Optional client secret (mandatory if ``client_id``
-                is defined).
+            client_secret: Optional OAuth client secret (mandatory if
+                ``client_id`` is defined).
 
             url: Optional platform URL (default ``https://app.alteia.com``).
 
@@ -82,7 +82,7 @@ class ConnectionConfig:
         self.user = user or custom_conf.get('user')
         self.password = password or custom_conf.get('password')
         self.client_id = client_id or custom_conf.get('client_id')
-        self.secret = secret or custom_conf.get('secret')
+        self.client_secret = client_secret or custom_conf.get('client_secret')
         self.domain = domain or custom_conf.get('domain')
         self.proxy_url = proxy_url or custom_conf.get('proxy_url')
         self.access_token = access_token or custom_conf.get('access_token')

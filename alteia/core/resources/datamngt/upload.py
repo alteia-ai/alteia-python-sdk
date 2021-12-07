@@ -12,6 +12,7 @@ import os
 import urllib
 from typing import Optional
 
+from alteia.core.connection.abstract_connection import DEFAULT_REQUESTS_TIMEOUT
 from alteia.core.errors import UploadError
 from alteia.core.utils.typing import AnyPath
 
@@ -200,9 +201,7 @@ class MultipartUpload:
                 chunk.status = 'failed'
             chunk.req = None
 
-        connection_delay = 30.0
-        request_delay = 10.0
-        join_delay = max_simultaneous * 60.0
+        request_delay = DEFAULT_REQUESTS_TIMEOUT
         upload_part_headers = {'Cache-Control': 'no-cache',
                                'Content-Type': 'application/octet-stream'}
         with open(file_path, 'rb') as st:
@@ -240,12 +239,11 @@ class MultipartUpload:
                 chunk.req = async_conn.post(path=path,
                                             headers=upload_part_headers,
                                             data=blob,
-                                            callback=cb,
-                                            timeout=connection_delay)
+                                            callback=cb)
 
             reqs = [c.req for c in self._ongoing_chunks]
             try:
-                all(cf.as_completed(reqs, timeout=join_delay))
+                all(cf.as_completed(reqs, timeout=len(reqs) * request_delay))
             except cf.TimeoutError:
                 logger.warning('Timeout while waiting for chunk uploads '
                                'to end')

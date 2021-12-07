@@ -55,11 +55,28 @@ class TokenManager():
             LOGGER.error(f'Unsupported response: {decoded_data}')
             raise TokenRenewalError()
 
+    def revoke_token(self, token: Optional[str] = None, **kwargs):
+        """Revoke an access token.
+
+        Args:
+            token: Optional token string to revoke (if missing, revoke
+            the current user token).
+        """
+        params = kwargs
+        if token is not None:
+            params['token'] = token
+        data = json.dumps(params)
+        self._connection.post(
+            path='/dxauth/oauth2/revoke',
+            headers={'Content-Type': 'application/json'},
+            data=data,
+            as_json=False
+        )
+
     def describe_token(self, token: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """Describe an access token.
 
         Args:
-
             token: Optional token string (if missing, describe the current user token).
 
         Returns:
@@ -69,9 +86,10 @@ class TokenManager():
         params = kwargs
         if token:
             params['token'] = token
+        data = json.dumps(params)
         return self._connection.post(
             path='/dxauth/describe-token',
             headers={'Content-Type': 'application/json'},
-            data=json.dumps(params),
+            data=data,
             as_json=True
         )

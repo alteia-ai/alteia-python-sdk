@@ -29,7 +29,7 @@ class TestConnection(AlteiaTestBase):
 
     def setUp(self):
         creds = ClientCredentials(client_id='fake_client_id',
-                                  secret='fake_client_secret')
+                                  client_secret='fake_client_secret')
         conn_opts = {
             'base_url': 'https://app.alteia.com',
             'credentials': creds}
@@ -48,7 +48,7 @@ class TestConnection(AlteiaTestBase):
             'body': {},
             'headers': DEFAULT_HEADERS,
             'method': 'POST',
-            'timeout': 30.0,
+            'timeout': 600.0,
             'preload_content': True,
             'url': 'https://app.alteia.com/path'})
 
@@ -92,7 +92,7 @@ class TestConnection(AlteiaTestBase):
         self.assertDictEqual(call_args, {
             'headers': DEFAULT_HEADERS,
             'method': 'GET',
-            'timeout': 30.0,
+            'timeout': 600.0,
             'preload_content': True,
             'url': 'https://app.alteia.com/path'})
 
@@ -151,7 +151,7 @@ class TestConnection(AlteiaTestBase):
             'headers': DEFAULT_HEADERS,
             'method': 'GET',
             'preload_content': False,
-            'timeout': 30.0,
+            'timeout': 600.0,
             'url': 'https://app.alteia.com/path'})
 
     def test_put(self, mocked_req):
@@ -167,7 +167,7 @@ class TestConnection(AlteiaTestBase):
             'body': {},
             'headers': DEFAULT_HEADERS,
             'method': 'PUT',
-            'timeout': 30.0,
+            'timeout': 600.0,
             'preload_content': True,
             'url': 'https://app.alteia.com/path'})
 
@@ -212,7 +212,7 @@ class TestConnection(AlteiaTestBase):
             'body': {},
             'headers': DEFAULT_HEADERS,
             'method': 'DELETE',
-            'timeout': 30.0,
+            'timeout': 600.0,
             'url': 'https://app.alteia.com/path'})
 
         mocked_req.clear()
@@ -254,7 +254,7 @@ class TestAsynchronousConnection(AlteiaTestBase):
     def setUp(self):
         base_url = 'https://localhost'
         creds = ClientCredentials(client_id='fake_client_id',
-                                  secret='fake_client_secret')
+                                  client_secret='fake_client_secret')
         token_mngr = TokenManager(
             connection=AsyncConnection,
             credentials=creds)
@@ -283,7 +283,7 @@ class TestAsynchronousConnection(AlteiaTestBase):
             'body': {},
             'headers': DEFAULT_HEADERS,
             'method': 'PUT',
-            'timeout': 30.0,
+            'timeout': 600.0,
             'url': 'https://app.alteia.com/path'})
 
     def test_put_failure(self, mocked_session, mocked_req):

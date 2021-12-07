@@ -26,11 +26,11 @@ Here are the configurable properties:
 - ``password`` - The account password. Required if not provided
   through a configuration file and ``user`` is used.
 
-- ``client_id`` - An API client identifier. Required if not provided
+- ``client_id`` - An OAuth client identifier. Required if not provided
   through a configuration file, nor using ``user``.
 
-- ``secret`` - The API client secret. Required if not provided
-  through a configuration file and ``client_id`` is used.
+- ``client_secret`` - The OAuth client secret. Required if not
+  provided through a configuration file and ``client_id`` is used.
 
 - ``access_token`` - An optional API access token to use to
   authenticate requests as an alternative to using ``user`` or

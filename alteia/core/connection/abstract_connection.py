@@ -3,7 +3,7 @@ import urllib.parse
 
 import alteia
 
-DEFAULT_REQUESTS_TIMEOUT = 30.0
+DEFAULT_REQUESTS_TIMEOUT = 600.0
 LOGGER = logging.getLogger(__name__)
 
 

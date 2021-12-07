@@ -1,8 +1,11 @@
 import copy
 import warnings
-from typing import Generator, List, Union
+from typing import Dict, Generator, List, Optional, Union
 
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
+
+ASCENDING = 1
+DESCENDING = -1
 
 
 def search(manager, *, url: str, filter: dict = None, limit: int = None,
@@ -21,7 +24,7 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
 
         page: Page number (starting at page 1).
 
-        sort: Sort the results on the specified attributes
+        sort: Sort the results on the specified attributes (``{"_id": 1}`` for example)
             (``1`` is sorting in ascending order,
             ``-1`` is sorting in descending order).
 
@@ -59,6 +62,7 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
 def search_generator(manager, *,
                      page: int = None, first_page: int,
                      filter: dict = None, limit: int = 50,
+                     sort: Optional[Dict[str, int]] = None,
                      keyset_pagination: bool = False,
                      **kwargs) -> Generator[Resource, None, None]:
     """Return a generator to search through the given manager resources.
@@ -82,6 +86,13 @@ def search_generator(manager, *,
         limit: Optional maximum number of results by search
             request (default to 50).
 
+        sort: Sort the results on the specified attributes (``{"_id": 1}`` for example)
+            (``1`` is sorting in ascending order,
+            ``-1`` is sorting in descending order).
+
+        keyset_pagination: Optional search using keyset pagination.
+
+
         **kwargs: Optional keyword arguments. Those arguments are
             passed as is to the API provider.
 
@@ -97,7 +108,7 @@ def search_generator(manager, *,
         warnings.warn("Keyset pagination disabled due to explicit starting page")
         keyset_pagination = False
 
-    if keyset_pagination and 'sort' in data:
+    if keyset_pagination and sort:
         warnings.warn("Keyset pagination disabled due to custom sort")
         keyset_pagination = False
 
@@ -106,7 +117,7 @@ def search_generator(manager, *,
         keyset_pagination = False
 
     if keyset_pagination:
-        data['sort'] = {'_id': -1}
+        data['sort'] = {'_id': DESCENDING}
         if limit is not None:
             data['limit'] = limit
 
@@ -124,7 +135,7 @@ def search_generator(manager, *,
             return f
     else:
         for name, value in [('page', first_page if page is None else page),
-                            ('sort', {'_id': 1}),
+                            ('sort', sort or {'_id': ASCENDING}),
                             ('limit', limit)]:
             if value is not None:
                 data[name] = value

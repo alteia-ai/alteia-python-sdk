@@ -1,7 +1,7 @@
 {
     "user": "user",
     "password": "password",
-    "secret": "secret",
+    "client_secret": "secret",
     "url": "https://app.alteia.com",
     "connection" :{
         "max_retries": 10,

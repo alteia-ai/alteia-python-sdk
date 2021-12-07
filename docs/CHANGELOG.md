@@ -5,6 +5,40 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2021-12-07
+
+### Changed
+
+- Instantiating `SDK` using the `secret` argument is deprecated, use
+  the `client_secret` argument (DAI-12191)
+
+- Increase timeout for upload multipart requests (DAI-13066)
+
+- Increase timeout for API requests from 30s to 600s (10 min) (DAI-12673)
+
+### Added
+
+- New manager `sdk.oauth_clients` to manage OAuth clients (DAI-12191)
+
+- New `sdk.features` and `sdk.collections` resource managers
+  (DAI-13206)
+
+- Allow `sdk.analytics.order()` to order an analytic by name and
+  version (DAI-13133)
+
+- New `sdk.analytics.describe_by_name()` to describe an analytic by
+  name and version (DAI-13133)
+
+- Method to revoke a token on `TokenManager` class (DAI-13004)
+
+- Support `sort` parameter in `sdk.*.search_generator` (DAI-12813)
+
+### Deleted
+
+- Support for specifying OAuth client secret in configuration file
+  under the `secret` key has been removed, use `client_secret`
+  (DAI-12191)
+
 ## [1.3.4] - 2021-11-09
 
 ### Changed

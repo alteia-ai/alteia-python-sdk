@@ -6,6 +6,7 @@ from alteia.apis.client.analytics.analyticsimpl import AnalyticsImpl
 from alteia.apis.client.analytics.productsimpl import ProductsImpl
 from alteia.apis.client.annotations.annotationsimpl import AnnotationsImpl
 from alteia.apis.client.auth.companiesimpl import CompaniesImpl
+from alteia.apis.client.auth.oauthclientsimpl import OAuthClientsImpl
 from alteia.apis.client.auth.sharetokensimpl import ShareTokensImpl
 from alteia.apis.client.auth.usersimpl import UsersImpl
 from alteia.apis.client.comments.commentsimpl import CommentsImpl
@@ -17,6 +18,8 @@ from alteia.apis.client.datacapture.teamsimpl import TeamsImpl
 from alteia.apis.client.datamngt.datasetsimpl import DatasetsImpl
 from alteia.apis.client.externalproviders.credentialsimpl import \
     CredentialsImpl
+from alteia.apis.client.featuresservice.collectionsimpl import CollectionsImpl
+from alteia.apis.client.featuresservice.featuresimpl import FeaturesImpl
 from alteia.apis.client.projectmngt.flightsimpl import FlightsImpl
 from alteia.apis.client.projectmngt.missionsimpl import MissionsImpl
 from alteia.apis.client.projectmngt.projectsimpl import ProjectsImpl
@@ -27,13 +30,15 @@ from alteia.apis.provider import (AnalyticsServiceAPI, AnnotationsAPI,
                                   CollectionTaskManagementAPI,
                                   DataManagementAPI,
                                   ExternalProviderServiceAPI,
-                                  ProjectManagerAPI, UIServicesAPI)
+                                  FeaturesServiceAPI, ProjectManagerAPI,
+                                  UIServicesAPI)
 from alteia.core.config import ConnectionConfig
 from alteia.core.connection.connection import Connection
 from alteia.core.connection.credentials import (ClientCredentials, Credentials,
                                                 UserCredentials)
 from alteia.core.errors import ConfigError
 from alteia.core.utils.utils import prompt_user
+from alteia.core.utils.warnings import warn_for_deprecation
 
 __all__ = ('SDK', )
 
@@ -45,11 +50,11 @@ def _get_credentials(config: ConnectionConfig) -> Optional[Credentials]:
         LOGGER.debug('Using user credentials')
         return UserCredentials(config.user, config.password,
                                client_id=config.client_id,
-                               secret=config.secret)
+                               client_secret=config.client_secret)
     elif config.client_id:
         LOGGER.debug('Using APIs client credentials')
         return ClientCredentials(config.client_id,
-                                 config.secret)
+                                 config.client_secret)
     return None
 
 
@@ -99,12 +104,10 @@ class SDK():
 
         >>> sdk = SDK(user='admin1', password='password')
 
-
-    - Using an API client identifier and secret::
-
+    - Using an OAuth client identifier and secret::
 
         >>> sdk = SDK(client_id='72a5f676-6efc-48c5-ac07-4c534c3cdccc',
-                                 secret='52ccd77d-17e4-499b-995e-3a2731550723')
+                      client_secret='52ccd77d-17e4-499b-995e-3a2731550723')
 
     - Using a configuration file::
 
@@ -113,7 +116,7 @@ class SDK():
     """
     def __init__(self,  *, config_path: str = None,
                  user: str = None, password: str = None,
-                 client_id: str = None, secret: str = None,
+                 client_id: str = None, client_secret: str = None,
                  url: str = None,
                  proxy_url: str = None, force_prompt: bool = False, **kwargs):
         """Initializes Alteia Python SDK entry point.
@@ -125,10 +128,10 @@ class SDK():
 
             password: Optional password (mandatory if ``username`` is defined).
 
-            client_id: Optional client identifier.
+            client_id: Optional OAuth client identifier.
 
-            secret: Optional client secret (mandatory if ``client_id``
-                is defined).
+            client_secret: Optional OAuth client secret (mandatory if
+                ``client_id`` is defined).
 
             url: Optional platform URL (default ``https://app.alteia.com``).
 
@@ -143,13 +146,20 @@ class SDK():
         """
         LOGGER.info('Initializing SDK')
 
+        # Support for legacy secret argument
+        if 'secret' in kwargs:
+            client_secret = kwargs.pop('secret')
+            warn_for_deprecation('Support for `secret` argument', target='2.0.0')
+
         connection_params = kwargs
 
         # Only keep defined parameters
-        for param_name, value in (('file_path', config_path), ('user', user),
+        for param_name, value in (('file_path', config_path),
+                                  ('user', user),
                                   ('password', password),
                                   ('client_id', client_id),
-                                  ('secret', secret), ('url', url),
+                                  ('client_secret', client_secret),
+                                  ('url', url),
                                   ('proxy_url', proxy_url)):
             if value is not None:
                 connection_params[param_name] = value
@@ -209,6 +219,7 @@ class SDK():
             'external_provider_service_api': ExternalProviderServiceAPI(**provider_args),
             'project_manager_api': ProjectManagerAPI(**provider_args),
             'ui_services_api': UIServicesAPI(**provider_args),
+            'features_service_api': FeaturesServiceAPI(**provider_args),
         }
 
     def __set_resources_as_attributes(self):
@@ -226,9 +237,12 @@ class SDK():
         self.datasets: DatasetsImpl = DatasetsImpl(**kwargs)
         self.flights: FlightsImpl = FlightsImpl(**kwargs)
         self.missions: MissionsImpl = MissionsImpl(**kwargs)
+        self.oauth_clients: OAuthClientsImpl = OAuthClientsImpl(**kwargs)
         self.products: ProductsImpl = ProductsImpl(**kwargs)
         self.projects: ProjectsImpl = ProjectsImpl(**kwargs)
         self.share_tokens: ShareTokensImpl = ShareTokensImpl(**kwargs)
         self.tags: TagsImpl = TagsImpl(**kwargs)
         self.teams: TeamsImpl = TeamsImpl(**kwargs)
         self.users: UsersImpl = UsersImpl(**kwargs)
+        self.collections: CollectionsImpl = CollectionsImpl(**kwargs)
+        self.features: FeaturesImpl = FeaturesImpl(**kwargs)

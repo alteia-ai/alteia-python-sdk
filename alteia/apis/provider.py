@@ -3,7 +3,7 @@ import json
 from alteia.core.connection.connection import Connection
 from alteia.core.utils.utils import sanitize_dict
 
-DEFAULT_API_TIMEOUT = 30.0  # value in seconds
+DEFAULT_API_TIMEOUT = 600.0  # value in seconds
 
 
 class Provider:
@@ -157,51 +157,55 @@ class WithSearchRoute():
         return content
 
 
+class FeaturesServiceAPI(Provider):
+    _root_path = 'map-service/features'
+
+
 class AnnotationsAPI(Provider):
     _root_path = 'map-service/annotations'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class AuthAPI(WithSearchRoute, Provider):
     _root_path = 'dxauth'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class ProjectManagerAPI(WithSearchRoute, Provider):
     _root_path = 'dxpm'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class DataManagementAPI(Provider):
     _root_path = 'data-manager'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class UIServicesAPI(Provider):
     _root_path = 'uisrv'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class AnalyticsServiceAPI(Provider):
     _root_path = 'analytics-service'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class ExternalProviderServiceAPI(Provider):
     _root_path = 'external-providers-service'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class AssetManagementAPI(Provider):
     _root_path = 'dct-service/asset-management'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class CollectionTaskAPI(Provider):
     _root_path = 'dct-service/task'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT
 
 
 class CollectionTaskManagementAPI(Provider):
     _root_path = 'dct-service/task-management'
-    api_timeout = DEFAULT_API_TIMEOUT  # todo: define from service
+    api_timeout = DEFAULT_API_TIMEOUT

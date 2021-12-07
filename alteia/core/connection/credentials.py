@@ -8,9 +8,9 @@ import base64
 class Credentials():
     """Base class for connection credentials."""
 
-    def __init__(self, client_id, secret, *, data, **kwargs):
+    def __init__(self, client_id, client_secret, *, data, **kwargs):
         self._data = data
-        secret = f'{client_id}:{secret}'
+        secret = f'{client_id}:{client_secret}'
         self._encoded_secret = base64.b64encode(secret.encode()).decode()
 
     @property
@@ -25,21 +25,22 @@ class Credentials():
 class ClientCredentials(Credentials):
     """Client credentials."""
 
-    def __init__(self, client_id, secret, **kwargs):
+    def __init__(self, client_id, client_secret, **kwargs):
         data = {'grant_type': 'client_credentials'}
 
-        super().__init__(client_id, secret, data=data)
+        super().__init__(client_id, client_secret, data=data)
 
 
 class UserCredentials(Credentials):
     """User credentials."""
 
     __sdk_client_id = '0de76e3a-3960-48df-83cc-9d7dc9a90a7a'
-    __secret = 'a13497e6-3dab-45b5-b43e-dbd9089faf6a'
+    __sdk_client_secret = 'a13497e6-3dab-45b5-b43e-dbd9089faf6a'
 
-    def __init__(self, user, password, *, client_id=None, secret=None, scope=None, **kwargs):
+    def __init__(self, user, password, *,
+                 client_id=None, client_secret=None, scope=None, **kwargs):
         client_id = client_id or self.__sdk_client_id
-        secret = secret or self.__secret
+        client_secret = client_secret or self.__sdk_client_secret
         data = kwargs
         data.update({
             'grant_type': 'password',
@@ -50,4 +51,4 @@ class UserCredentials(Credentials):
         if scope is not None:
             data['scope'] = scope
 
-        super().__init__(client_id, secret, data=data)
+        super().__init__(client_id, client_secret, data=data)

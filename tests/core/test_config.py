@@ -8,7 +8,7 @@ from tests.alteiatest import AlteiaTestBase
 DEFAULT_MOCK_CONTENT = {
                 'password': 'default password',
                 'user': 'default user',
-                'secret': 'default secret',
+                'client_secret': 'default secret',
                 'url': 'default url',
                 'connection': {
                     'max_retries': 1,
@@ -35,7 +35,7 @@ class TestConnectionConfig(AlteiaTestBase):
         conf = ConnectionConfig(file_path=conf_path)
         self.assertEqual(conf.user, 'user')
         self.assertEqual(conf.password, 'password')
-        self.assertEqual(conf.secret, 'secret')
+        self.assertEqual(conf.client_secret, 'secret')
         self.assertEqual(conf.url, 'https://app.alteia.com')
         self.assertEqual(conf.connection['max_retries'], 10)
         self.assertEqual(conf.connection['disable_ssl_certificate'], False)

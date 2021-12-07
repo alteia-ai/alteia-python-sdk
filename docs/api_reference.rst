@@ -21,9 +21,6 @@ Alteia Python SDK has a unique entry point: The class
 Configuration
 -------------
 
-.. autoclass:: alteia.core.config.Config
-   :members: __init__
-
 .. autoclass:: alteia.core.config.ConnectionConfig
    :members: __init__
 
@@ -63,6 +60,12 @@ Carrier models
 .. autoclass:: alteia.apis.client.datacapture.carriersmodelsimpl.CarrierModelsImpl
    :members:
 
+Collections
+===========
+
+.. autoclass:: alteia.apis.client.featuresservice.collectionsimpl.CollectionsImpl
+   :members:
+
 Collection tasks
 ================
 
@@ -91,6 +94,12 @@ Datasets
 ========
 
 .. autoclass:: alteia.apis.client.datamngt.datasetsimpl.DatasetsImpl
+   :members:
+
+Features
+========
+
+.. autoclass:: alteia.apis.client.featuresservice.featuresimpl.FeaturesImpl
    :members:
 
 Missions

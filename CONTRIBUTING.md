@@ -5,9 +5,8 @@
 Unit tests are written with the `unittest` module (compatible with `pytest`):
 
 ```shell
-$ python3 -m pip install -e .[tests]
-$ python3 -m pip install -e .[coverage]
-$ pytest --cov alteia --cov-report term --cov-report html
+$ poetry install
+$ pytest
 ```
 
 ## Documentation
@@ -16,7 +15,7 @@ Building the documentation requires [pandoc](https://pandoc.org).
 
 1. First install the dependencies:
    ```shell
-   $ python3 -m pip install -e .[documentation]
+   $ python3 -m pip install .[documentation]
    ```
 
 2. Build the documentation:

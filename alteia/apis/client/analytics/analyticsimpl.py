@@ -1,13 +1,19 @@
 """Analytics implementation
 """
 
+import warnings
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, Generator, List, Optional, Union
+from typing import (Any, DefaultDict, Dict, Generator, List, Optional, Union,
+                    cast)
+
+from semantic_version import NpmSpec, Version
 
 from alteia.apis.provider import AnalyticsServiceAPI
+from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId
+from alteia.core.utils.versions import select_version
 
 
 class AnalyticsImpl:
@@ -154,6 +160,76 @@ class AnalyticsImpl:
         desc = self._provider.post('describe-analytic', data=data)
         return Resource(**desc)
 
+    def describe_by_name(self, name: str, *,
+                         version: str = None) -> Optional[Resource]:
+        """Describe an analytic by name.
+
+        When the optional ``version`` argument is ``None``, the
+        analytic with highest version is returned.
+
+        When the optional ``version`` argument is not ``None``, the
+        analytic with that version is returned. If no such analytic
+        exist, ``None`` is returned.
+
+        When ``version`` is a version range, the analytic with highest
+        version within the specified range is returned.
+
+        Note that ``version`` is expected to follow the `syntax
+        defined by npm <https://semver.npmjs.com/>`_.
+
+        Args:
+            analytic: Identifier or name of the analytic to describe.
+
+            version: Optional version or version range used to select
+                the analytic to describe.
+
+        Examples:
+            >>> sdk.analytics.describe_by_name('photogrammetry',
+            ...     version='1.0.x')
+            Resource(_id='60c331fed5ffbd0012f1fb1a')
+
+        """
+        if not name:
+            return None
+
+        search_filter = {'name': {'$eq': name}}
+
+        if version is not None:
+            try:
+                query_exact_version = Version(version)
+            except ValueError:
+                # may be a version range
+                query_exact_version = False
+
+            if query_exact_version:
+                search_filter['version'] = {'$eq': version}
+                candidates = cast(List[Resource],
+                                  self.search(filter=search_filter, limit=1))
+                return candidates[0] if len(candidates) else None
+
+            try:
+                version_spec = NpmSpec(version)
+            except ValueError:
+                # malformed version range
+                return None
+        else:
+            version_spec = None
+
+        fields = {'include': ['_id', 'name', 'version']}
+        candidates = [a for a in self.search_generator(filter=search_filter,
+                                                       fields=fields)
+                      if hasattr(a, 'version')]
+        # check on version property should not be necessary but API
+        # documentation doesn't say this property is required...
+
+        candidates_by_version = dict([(a.version, a) for a in candidates])
+        candidate_versions = [Version(a.version) for a in candidates]
+        selected_version = select_version(candidate_versions, spec=version_spec)
+        if selected_version:
+            return candidates_by_version[str(selected_version)]
+
+        return None
+
     def create(self, *, name: str, version: str, docker_image: str,
                company: ResourceId,
                display_name: str = None, description: str = None,
@@ -260,7 +336,7 @@ class AnalyticsImpl:
             ...     }],
             ...      tags=["vehicle_detection"],
             ...      groups=["GeoInt"])
-            <alteia.core.resources.Resource with id ... (analytic)>
+            Resource(_id='60c331fed5ffbd0012f1fb1c')
 
         """
         data: DefaultDict[str, Any] = defaultdict(dict)
@@ -316,14 +392,36 @@ class AnalyticsImpl:
                 as_json=False
             )
 
-    def order(self, analytic: ResourceId, *, inputs: dict = None,
+    def order(self, analytic: ResourceId = None, *,
+              name: str = None,
+              version: str = None,
+              inputs: dict = None,
               parameters: dict = None, deliverables: List[str] = None,
               project: ResourceId = None, mission: ResourceId = None,
               **kwargs) -> Resource:
         """Order an analytic.
 
+        The analytic to order can be specified by identifier using the
+        ``analytic`` argument, or by name using the ``name`` argument.
+
+        When using the ``name`` argument to select the analytic but
+        ``version`` is equal to ``None``, the analytic with highest
+        version matching ``name`` is ordered. The argument ``version``
+        can be used to order the analytic with a specific
+        version. When ``version`` is a version range, the analytic
+        with highest version within the specified range will be
+        ordered.
+
+        Note that ``version`` is expected to follow the `syntax
+        defined by npm <https://semver.npmjs.com/>`_.
+
         Args:
             analytic: Identifier of the analytic to order.
+
+            name: Name of the analytic to order.
+
+            version: Optional version or version range used to select
+                the analytic to order when specified by name.
 
             inputs: Optional inputs of the analytic.
 
@@ -343,14 +441,35 @@ class AnalyticsImpl:
             The created ``product`` description.
 
         Examples:
-            >>> sdk.analytics.order(analytic='5d5a73b58cf5360006397aa0',
+            >>> sdk.analytics.order('5d5a73b58cf5360006397aa0',
             ...     inputs={"ortho": "5d3714e14c50356e2abd1f97"},
             ...     deliverables=["vehicles"],
-            ...     parameters={"project": "5d3195209755b0349d0539ad"},
+            ...     parameters={"buffer_size": 5.0},
             ...     project='5d3195209755b0349d0539ad')
-            <alteia.core.resources.Resource with id ... (product)>
+            Resource(_id='60c331fed5ffbd0012f1f754')
+
+            >>> sdk.analytics.order(name='vehicle_detection',
+            ...     version='1.0.x',
+            ...     inputs={"ortho": "5d3714e14c50356e2abd1f97"},
+            ...     deliverables=["vehicles"],
+            ...     parameters={"buffer_size": 5.0},
+            ...     project='5d3195209755b0349d0539ad')
+            Resource(_id='60c331fed5ffbd0012f1fde8')
 
         """
+        if not name and not analytic:
+            raise ParameterError('Expecting one of analytic or parameter to be defined')
+
+        if not name and version:
+            warnings.warn('Ignoring version argument since analytic is specified by identifier')
+
+        if name:
+            found_analytic = self.describe_by_name(name, version=version)
+            if not found_analytic:
+                raise ParameterError('No analytic with matching name and version')
+
+            analytic = str(found_analytic.id)
+
         data: Dict[str, Any] = {'analytic': analytic}
 
         # Update to the format expected by analytics-service
