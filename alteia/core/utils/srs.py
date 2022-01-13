@@ -1,22 +1,35 @@
-from pkg_resources import resource_string
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    # Python < 3.7 uses `importlib_resources`.
+    import importlib_resources as pkg_resources
+
+from alteia.core.utils import vertcrs
 
 
-def __name2wkt(name: str, *, wkts_path: str) -> str:
+def read_text_from_resource(package: str, resource: str) -> str:
+    try:
+        content = pkg_resources.files(package).joinpath(resource).read_text()
+        return content
+    except AttributeError:
+        # Python < 3.9
+        return pkg_resources.read_text(package, resource)
+
+
+def __name2wkt(name: str) -> str:
     """Convert a vert SRS name to WKT format.
 
     Args:
         name: Name of vertical SRS to convert.
-
-        wkts_path: Path to the WKTs directory.
 
     Raises:
         ValueError: When ``name`` doesn't match any known WKT file.
 
     """
     name = name.lower()
-    res_name = f'{wkts_path}/{name}.wkt'
+    res_name = f'{name}.wkt'
     try:
-        wkt = resource_string(__name__, res_name).decode('utf-8')
+        wkt = read_text_from_resource(vertcrs.__name__, res_name)
         flatten_wkt = ''.join([line.strip() for line in wkt.splitlines()])
         return flatten_wkt
     except FileNotFoundError:
@@ -41,7 +54,7 @@ def expand_vertcrs_to_wkt(desc: str) -> str:
 
     """
     try:
-        return __name2wkt(desc, wkts_path='vertcrs')
+        return __name2wkt(desc)
     except ValueError:
         pass
     return desc

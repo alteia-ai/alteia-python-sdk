@@ -1,6 +1,7 @@
 import collections
 import hashlib
 import importlib
+from datetime import datetime
 from getpass import getpass
 from typing import Optional
 
@@ -145,3 +146,25 @@ def prompt_user(prompt: str, current_value: Optional[str], hidden: bool = False)
     if not user_value:
         user_value = current_value if current_value is not None else ''
     return user_value
+
+
+def parse_timestamp(timestamp: str) -> datetime:
+    """Convert a timestamp string to a ``datetime`` instance.
+
+    The timezone, if any, is ignored, since timestamps is expected to
+    be in UTC
+
+    Args:
+        timestamp: The timestamp string to parse.
+
+    Returns:
+        Timestamp string converted to ``datetime`` instance
+
+    """
+    z_index = timestamp.rfind('Z')
+    if z_index == -1:
+        z_index = timestamp.rfind('+')
+
+    clip_index = min(z_index, 26)
+    d = datetime.strptime(timestamp[:clip_index], '%Y-%m-%dT%H:%M:%S.%f')
+    return d

@@ -1,9 +1,11 @@
 import copy
+import datetime
 
 from alteia.core.config import ConnectionConfig
 from alteia.core.errors import ConfigError
 from alteia.core.utils.utils import (dict_merge, find, flatten_dict,
-                                     new_instance, sanitize_dict)
+                                     new_instance, parse_timestamp,
+                                     sanitize_dict)
 from tests.alteiatest import AlteiaTestBase
 
 d1 = {
@@ -90,3 +92,20 @@ class TestUtils(AlteiaTestBase):
     def test_merge_dict_with_add_keys(self):
         res = dict_merge(copy.deepcopy(d1), copy.deepcopy(d2), add_keys=False)
         self.assertEqual(res, {'a': {'b': {'c': 'd'}}})
+
+
+class TestParseTimestamp(AlteiaTestBase):
+    def test_timestamp_with_time_zone_separator(self):
+        timestamp = '2021-12-08T14:14:18.345541Z'
+        self.assertEqual(parse_timestamp(timestamp),
+                         datetime.datetime(2021, 12, 8, 14, 14, 18, 345541))
+
+    def test_timestamp_with_time_zone_separator_microseconds(self):
+        timestamp = '2021-12-08T14:14:18.345541374Z'
+        self.assertEqual(parse_timestamp(timestamp),
+                         datetime.datetime(2021, 12, 8, 14, 14, 18, 345541))
+
+    def test_timestamp_with_tz_hours(self):
+        timestamp = '2021-12-08T14:14:18.344673387+00:00'
+        self.assertEqual(parse_timestamp(timestamp),
+                         datetime.datetime(2021, 12, 8, 14, 14, 18, 344673))

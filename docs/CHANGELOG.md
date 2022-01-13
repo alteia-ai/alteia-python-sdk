@@ -5,6 +5,14 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2022-01-13
+
+### Changed
+
+- Use "importlib" instead of "pkg_resources" to retrieve WKT strings (DAI-13330)
+- Fix failure to parse some timestamps while retrieving products logs
+  (DAI-13266)
+
 ## [1.3.5] - 2021-12-07
 
 ### Changed
