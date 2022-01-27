@@ -2,14 +2,14 @@ try:
     import importlib.resources as pkg_resources
 except ImportError:
     # Python < 3.7 uses `importlib_resources`.
-    import importlib_resources as pkg_resources
+    import importlib_resources as pkg_resources  # type: ignore
 
 from alteia.core.utils import vertcrs
 
 
 def read_text_from_resource(package: str, resource: str) -> str:
     try:
-        content = pkg_resources.files(package).joinpath(resource).read_text()
+        content = pkg_resources.files(package).joinpath(resource).read_text()  # type: ignore
         return content
     except AttributeError:
         # Python < 3.9

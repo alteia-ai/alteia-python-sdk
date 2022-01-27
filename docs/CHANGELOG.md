@@ -5,6 +5,14 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.3.7] - 2022-01-26
+
+### Changed
+
+- Fix bug in `sdk.datasets.share_tiles` function when sharing tiles for several datasets (DAI-13735)
+- Display a warning or raise an exception if too many datasets are requested in `sdk.datasets.share_tiles` (DAI-13735)
+
 ## [1.3.6] - 2022-01-13
 
 ### Changed

@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os.path
 import sys
 import urllib.parse
@@ -23,6 +24,9 @@ from alteia.core.utils.utils import md5
 # TODO complete description of bands for rasters
 # TODO complete description of bands for images
 
+LOGGER = logging.getLogger(__name__)
+MAX_URL_LENGTH = 2000  # Can be more for some clients (used to display a warning)
+MAX_RASTER_DATASETS_PER_TILE_URL = 150  # To make sure resulting URL is < 4000 characters
 
 __creation_common_params = ('name', 'source_name', 'categories', 'company',
                             'project', 'mission', 'flight', 'hidden', 'published',
@@ -1252,27 +1256,53 @@ class DatasetsImpl:
             dataset_ids = [dataset]
 
         datasets = self.describe(dataset_ids)
+
         if not isinstance(datasets, list):
             raise TypeError('Expecting a list of datasets')
+
+        dataset_ids = [ds.id for ds in datasets]
 
         for ds_desc in datasets:
             ingested = (hasattr(ds_desc, 'ingestion') and
                         ds_desc.ingestion.get('status', None) == 'completed')
             if not ingested:
-                raise UnsupportedResourceError('Ingestion not finished')
+                raise UnsupportedResourceError(
+                    f'Ingestion not finished for dataset {ds_desc.id}'
+                )
 
-        are_rasters = all([ds_desc.type == 'raster' for ds_desc in datasets])
+        dataset_types = set(ds.type for ds in datasets)
+        if len(dataset_types) > 1:
+            raise UnsupportedResourceError(
+                'Cannot mix dataset types when sharing tiles. '
+                f'Provided: {", ".join(dataset_types)}'
+            )
 
-        if len(datasets) == 1:
+        elif dataset_types == {'vector'}:
+            if len(datasets) != 1:
+                raise UnsupportedResourceError('Cannot share more than 1 vector dataset')
+
             ds_desc = datasets[0]
-            is_vector_in_mapservice = (ds_desc.type == 'vector' and
-                                       ds_desc.source.get('name') == 'map-service')
+            if ds_desc.source.get('name') != 'map-service':
+                raise UnsupportedResourceError(
+                    'Cannot share a vector dataset. Expecting a source "map-service"'
+                )
+
+            is_vector_in_mapservice = True
+
+        elif dataset_types == {'raster'}:
+            are_rasters = True
+
         else:
-            is_vector_in_mapservice = False
+            raise UnsupportedResourceError(
+                f'Unexpected dataset type: {", ".join(dataset_types)}.'
+            )
 
-        if not are_rasters and not is_vector_in_mapservice:
-            raise UnsupportedResourceError('Unexpected dataset type or component')
-
+        if are_rasters and len(datasets) > MAX_RASTER_DATASETS_PER_TILE_URL:
+            raise RuntimeError(
+                f'Cannot share tiles for {len(datasets)} raster datasets. '
+                f'Maximum allowed: {MAX_RASTER_DATASETS_PER_TILE_URL} datasets. '
+                'Otherwise, the generated URL would be too long.'
+            )
         share_token = self._sdk.share_tokens.create(dataset=dataset_ids, duration=duration)
         base_url = self._provider._connection._base_url
         token = share_token.token
@@ -1293,5 +1323,13 @@ class DatasetsImpl:
 
             collection_id = collection_component_match[0]
             url = generate_vector_tiles_url(base_url, token, collection_id, 'pbf')
+
+        if len(url) > MAX_URL_LENGTH:
+            LOGGER.warning(
+                f'The generated URL length is {len(url)} characters. '
+                'You may encounter problems while using it on some clients. '
+                f'Generally, try to keep a URL below {MAX_URL_LENGTH} characters. '
+                'Try to reduce the number of datasets shared if needed.'
+            )
 
         return url
