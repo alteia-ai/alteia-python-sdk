@@ -38,11 +38,11 @@ class RequestsUtilsTests(TestCase):
                                         'FAKE_ACCESS_TOKEN',
                                         '5d0b9952e8d1d25df4c1dd62',
                                         'png')
-        self.assertEquals(url, RASTER_TILES_URL_TEMPLATE)
+        self.assertEqual(url, RASTER_TILES_URL_TEMPLATE)
 
     def test_generate_vector_tiles_url(self):
         url = generate_vector_tiles_url('https://app.alteia.com',
                                         'FAKE_ACCESS_TOKEN',
                                         '5d0b9952e8d1d25df4c1dd62',
                                         'pbf')
-        self.assertEquals(url, VECTOR_TILES_URL_TEMPLATE)
+        self.assertEqual(url, VECTOR_TILES_URL_TEMPLATE)

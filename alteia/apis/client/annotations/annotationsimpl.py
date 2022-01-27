@@ -13,8 +13,8 @@ from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
-
 # TODO support for CSS3 colors
+from alteia.core.utils.utils import get_chunks
 
 
 class AnnotationsImpl:
@@ -246,7 +246,7 @@ class AnnotationsImpl:
             ...    followers=['5d5fa52bc207040006390244'],
             ...    attachments=['5d63cf972fb3880011e57e32']
             ... )
-            <alteia.core.resources.resource.Resource ... (annotations)>
+            Resource(_id='5a5155ae8dcb064fcbf4ae35')
 
         """
         if type not in ('2d', '3d', 'image'):
@@ -351,10 +351,13 @@ class AnnotationsImpl:
         """
         data = kwargs
         if isinstance(annotation, list):
-            data['annotations'] = annotation
-            descs = self._provider.post('describe-annotations', data=data)
-            return [Resource(**desc)
-                    for desc in descs]
+            results = []
+            ids_chunks = get_chunks(annotation, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['annotations'] = ids_chunk
+                descs = self._provider.post('describe-annotations', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['annotation'] = annotation
             desc = self._provider.post('describe-annotation', data=data)
@@ -381,8 +384,10 @@ class AnnotationsImpl:
         if not isinstance(annotation, list):
             annotation = [annotation]
 
-        data['annotations'] = annotation
-        self._provider.post('delete-annotations', data=data, as_json=False)
+        ids_chunks = get_chunks(annotation, self._provider.max_per_delete)
+        for ids_chunk in ids_chunks:
+            data['annotations'] = ids_chunk
+            self._provider.post('delete-annotations', data=data, as_json=False)
 
     def restore(self, annotation: SomeResourceIds, **kwargs):
         """Restore an annotation or multiple annotations.
@@ -764,21 +769,25 @@ class AnnotationsImpl:
 
         Args:
             project: Optional identifier of a project to search
-                annotatons for.
+                annotations for.
 
             filter: Search filter dictionary (refer to ``/search-annotations``
                 in the Annotation API specification for a detailed
                 description).
 
-            limit: Maximum number of results.
+            limit: Optional Maximum number of results.
 
-            page: Page number (starting at page 0).
+            page: Optional Page number (starting at page 1).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional. Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.

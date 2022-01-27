@@ -1,9 +1,12 @@
 import logging
+import platform
 import urllib.parse
 
-import alteia
-
 DEFAULT_REQUESTS_TIMEOUT = 600.0
+DEFAULT_USER_AGENTS = [
+    f'({platform.platform()})',
+    f'Python/{platform.python_version()}',
+]
 LOGGER = logging.getLogger(__name__)
 
 
@@ -17,6 +20,7 @@ class AbstractConnection:
         self._token_manager = token_manager
         self._retries = retries
         self._user_agent = None
+        self._user_agents = DEFAULT_USER_AGENTS.copy()
         self._netloc = urllib.parse.urlsplit(base_url).netloc
 
     def _renew_token(self):
@@ -57,10 +61,22 @@ class AbstractConnection:
         if 'referer' not in headers:
             headers['referer'] = self._base_url
 
+    def set_user_agent(self, user_agent: str, *,
+                       remove_last=False, reset_to_default=False, remove_all=False):
+        if remove_last and len(self._user_agents) > 0:
+            self._user_agents.pop()
+        if reset_to_default:
+            self._user_agents = DEFAULT_USER_AGENTS.copy()
+        if remove_all:
+            self._user_agents = []
+        if user_agent:
+            self._user_agents.append(user_agent)
+        self._user_agent = None
+
     @property
     def user_agent(self):
         if not self._user_agent:
-            self._user_agent = f'alteia-python-sdk/{alteia.__version__}'
+            self._user_agent = ' '.join(reversed(self._user_agents))
         return self._user_agent
 
     @staticmethod

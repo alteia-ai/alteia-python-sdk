@@ -4,7 +4,7 @@ import datetime
 from alteia.core.config import ConnectionConfig
 from alteia.core.errors import ConfigError
 from alteia.core.utils.utils import (dict_merge, find, flatten_dict,
-                                     new_instance, parse_timestamp,
+                                     get_chunks, new_instance, parse_timestamp,
                                      sanitize_dict)
 from tests.alteiatest import AlteiaTestBase
 
@@ -92,6 +92,19 @@ class TestUtils(AlteiaTestBase):
     def test_merge_dict_with_add_keys(self):
         res = dict_merge(copy.deepcopy(d1), copy.deepcopy(d2), add_keys=False)
         self.assertEqual(res, {'a': {'b': {'c': 'd'}}})
+
+    def test_chunks(self):
+        my_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                   'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                   's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+        self.assertEqual(len(get_chunks(my_list, 10)), 3)
+        self.assertEqual(len(get_chunks(my_list, 26)), 1)
+        self.assertEqual(len(get_chunks(my_list, 30)), 1)
+
+        results = []
+        for chunk in get_chunks(my_list, 4):
+            results += chunk
+        self.assertEqual(results, my_list)
 
 
 class TestParseTimestamp(AlteiaTestBase):

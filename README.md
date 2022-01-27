@@ -14,7 +14,7 @@
 pip install alteia
 ```
 
-**requires Python >= 3.6.1*
+**requires Python >= 3.6.1, pip >= 20.3*
 
 ## Basic usage
 
@@ -23,7 +23,7 @@ import alteia
 
 sdk = alteia.SDK(user="YOUR_EMAIL_ADDRESS", password="YOUR_ALTEIA_PASSWORD")
 
-projects = sdk.projects.search(name="*")
+projects = sdk.projects.search()
 
 for project in projects:
     print(project.name)

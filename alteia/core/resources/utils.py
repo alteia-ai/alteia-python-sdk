@@ -8,8 +8,9 @@ ASCENDING = 1
 DESCENDING = -1
 
 
-def search(manager, *, url: str, filter: dict = None, limit: int = None,
-           page: int = None, sort: dict = None, return_total: bool = False,
+def search(manager, *, url: str, filter: dict = None, fields: dict = None,
+           limit: int = None, page: int = None,
+           sort: dict = None, return_total: bool = False,
            **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
     """Generic search function.
 
@@ -18,17 +19,26 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
 
         url: URL for the search request.
 
-        filter: Search filter dictionary.
+        filter: Optional Search filter dictionary.
 
-        limit: Maximum number of results to extract.
+        fields: Optional Field names to include or exclude from the response.
+            `{"include: ["name", "creation_date"]}`
+            `{"exclude: ["name", "creation_date"]}`
+            Do not use both `include` and `exclude`.
 
-        page: Page number (starting at page 1).
+        limit: Optional Maximum number of results to extract.
 
-        sort: Sort the results on the specified attributes (``{"_id": 1}`` for example)
+        page: Optional Page number (starting at page 1).
+
+        sort: Optional. Sort the results on the specified attributes (``{"_id": 1}`` for example)
             (``1`` is sorting in ascending order,
             ``-1`` is sorting in descending order).
 
-        return_total: Return the number of results found.
+        return_total: Optional. Change the type of return:
+            If ``False`` (default), the method will return a
+            limited list of resources (limited by ``limit`` value).
+            If ``True``, the method will return a namedtuple with the
+            total number of all results, and the limited list of resources.
 
         **kwargs: Optional keyword arguments. Those arguments are
             passed as is to the API provider.
@@ -40,6 +50,7 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
     """
     data = kwargs
     for name, value in [('filter', filter or {}),
+                        ('fields', fields),
                         ('limit', limit),
                         ('page', page),
                         ('sort', sort)]:
@@ -61,8 +72,8 @@ def search(manager, *, url: str, filter: dict = None, limit: int = None,
 
 def search_generator(manager, *,
                      page: int = None, first_page: int,
-                     filter: dict = None, limit: int = 50,
-                     sort: Optional[Dict[str, int]] = None,
+                     filter: dict = None, fields: dict = None,
+                     limit: int = 50, sort: Optional[Dict[str, int]] = None,
                      keyset_pagination: bool = False,
                      **kwargs) -> Generator[Resource, None, None]:
     """Return a generator to search through the given manager resources.
@@ -81,12 +92,17 @@ def search_generator(manager, *,
 
         page: Optional page number to start the search at (default is `first_page`).
 
-        filter: Search filter dictionary.
+        filter: Optional Search filter dictionary.
+
+        fields: Optional Field names to include or exclude from the response.
+            `{"include: ["name", "creation_date"]}`
+            `{"exclude: ["name", "creation_date"]}`
+            Do not use both `include` and `exclude`.
 
         limit: Optional maximum number of results by search
             request (default to 50).
 
-        sort: Sort the results on the specified attributes (``{"_id": 1}`` for example)
+        sort: Optional. Sort the results on the specified attributes (``{"_id": 1}`` for example)
             (``1`` is sorting in ascending order,
             ``-1`` is sorting in descending order).
 
@@ -107,6 +123,9 @@ def search_generator(manager, *,
     if page is not None:
         warnings.warn("Keyset pagination disabled due to explicit starting page")
         keyset_pagination = False
+
+    if fields is not None:
+        data['fields'] = fields
 
     if keyset_pagination and sort:
         warnings.warn("Keyset pagination disabled due to custom sort")

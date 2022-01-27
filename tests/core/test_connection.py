@@ -8,15 +8,16 @@ from unittest.mock import MagicMock, patch
 
 import urllib3
 
-import alteia
+from alteia.core.connection.abstract_connection import DEFAULT_USER_AGENTS
 from alteia.core.connection.connection import AsyncConnection, Connection
 from alteia.core.connection.credentials import ClientCredentials
 from alteia.core.connection.token import TokenManager
 from alteia.core.errors import ResponseError
 from tests.alteiatest import AlteiaTestBase
 
+BASE_USER_AGENT = ' '.join(reversed(DEFAULT_USER_AGENTS))
 DEFAULT_HEADERS = {
-    'User-Agent': f'alteia-python-sdk/{alteia.__version__}',
+    'User-Agent': BASE_USER_AGENT,
     'referer': 'https://app.alteia.com',
 }
 
@@ -241,6 +242,29 @@ class TestConnection(AlteiaTestBase):
             self.conn.delete('/path')
 
         mocked_req.assert_called_once()
+
+    def test_user_agent(self, *args):
+        """Test playing with User-Agent"""
+
+        self.assertEqual(self.conn.user_agent, BASE_USER_AGENT)
+
+        self.conn.set_user_agent('new-UA/1.0')
+        self.assertEqual(self.conn.user_agent, f'new-UA/1.0 {BASE_USER_AGENT}')
+
+        self.conn.set_user_agent('another/0.6')
+        self.assertEqual(self.conn.user_agent, f'another/0.6 new-UA/1.0 {BASE_USER_AGENT}')
+
+        self.conn.set_user_agent('another/2.0', remove_last=True)
+        self.assertEqual(self.conn.user_agent, f'another/2.0 new-UA/1.0 {BASE_USER_AGENT}')
+
+        self.conn.set_user_agent('foobar/1.0', reset_to_default=True)
+        self.assertEqual(self.conn.user_agent, f'foobar/1.0 {BASE_USER_AGENT}')
+
+        self.conn.set_user_agent('the-last/1.0', remove_all=True)
+        self.assertEqual(self.conn.user_agent, 'the-last/1.0')
+
+        self.conn.set_user_agent('', reset_to_default=True)
+        self.assertEqual(self.conn.user_agent, BASE_USER_AGENT)
 
 
 @unittest.skip('Work in progress...')

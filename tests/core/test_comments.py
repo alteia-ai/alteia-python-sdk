@@ -89,7 +89,7 @@ class TestComments(ResourcesTestBase):
     """
     @responses.activate
     def test_create(self):
-        responses.add('POST', '/uisrv/comments',
+        responses.add('POST', '/project-manager/comments',
                       body=COMMENT_CREATION_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -103,7 +103,7 @@ class TestComments(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/comments')
+        self.assertEqual(calls[0].request.url, '/project-manager/comments')
         self.assertEqual(calls[0].request.method, 'POST')
 
         request_body = json.loads(calls[0].request.body)
@@ -119,7 +119,7 @@ class TestComments(ResourcesTestBase):
 
     @responses.activate
     def test_create_photo_comment(self):
-        responses.add('POST', '/uisrv/comments',
+        responses.add('POST', '/project-manager/comments',
                       body=PHOTO_COMMENT_CREATION_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -143,7 +143,7 @@ class TestComments(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/comments')
+        self.assertEqual(calls[0].request.url, '/project-manager/comments')
         self.assertEqual(calls[0].request.method, 'POST')
 
         request_body = json.loads(calls[0].request.body)
@@ -176,7 +176,7 @@ class TestComments(ResourcesTestBase):
 
     @responses.activate
     def test_search_comments(self):
-        responses.add('GET', '/uisrv/comments',
+        responses.add('GET', '/project-manager/comments',
                       body=SEARCH_COMMENTS_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -199,12 +199,12 @@ class TestComments(ResourcesTestBase):
         assert comment.creation_date == '2019-12-25T00:00:00.000Z'
 
         self.assertEqual(calls[0].request.url,
-                         '/uisrv/comments?project_id=project-id')
+                         '/project-manager/comments?project_id=project-id')
         self.assertEqual(calls[0].request.method, 'GET')
 
     @responses.activate
     def test_search_photo_comments(self):
-        responses.add('GET', '/uisrv/comments',
+        responses.add('GET', '/project-manager/comments',
                       body=SEARCH_COMMENTS_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -231,7 +231,7 @@ class TestComments(ResourcesTestBase):
 
     @responses.activate
     def test_mark_comment_as_read(self):
-        responses.add('POST', '/uisrv/comments/mark-as-read',
+        responses.add('POST', '/project-manager/comments/mark-as-read',
                       body=MARK_AS_READ_BODY,
                       status=200,
                       content_type='text/plain')
@@ -243,7 +243,7 @@ class TestComments(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/comments/mark-as-read')
+        self.assertEqual(calls[0].request.url, '/project-manager/comments/mark-as-read')
         self.assertEqual(calls[0].request.method, 'POST')
 
         request_body = json.loads(calls[0].request.body)

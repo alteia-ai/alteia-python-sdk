@@ -2,3 +2,24 @@ div.sphinxsidebarwrapper p.logo {
     text-align: left;
     width: 150px;
 }
+
+div.document {
+    width: 1300px;
+}
+
+dl.py.class, dl.py.method, dl.py.attribute {
+    margin-bottom: 30px;
+}
+
+div.body {
+    max-width: 1000px;
+}
+
+div.section div.section {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 20px;
+}
+
+div.section div.section div.section{
+    border-bottom: none;
+}

@@ -3,6 +3,7 @@ from typing import List
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class TeamsImpl:
@@ -55,8 +56,6 @@ class TeamsImpl:
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
-
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
 
@@ -95,9 +94,13 @@ class TeamsImpl:
         """
         data = kwargs
         if isinstance(team, list):
-            data['teams'] = team
-            descs = self._provider.post('describe-teams', data=data)
-            return [Resource(**desc) for desc in descs]
+            results = []
+            ids_chunks = get_chunks(team, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['teams'] = ids_chunk
+                descs = self._provider.post('describe-teams', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['team'] = team
             desc = self._provider.post('describe-team', data=data)

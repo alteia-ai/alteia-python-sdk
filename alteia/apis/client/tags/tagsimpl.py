@@ -5,16 +5,16 @@
 import urllib.parse
 from typing import List
 
-from alteia.apis.provider import UIServicesAPI
+from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.tags import Tag
 from alteia.core.utils.typing import ResourceId
 
 
 class TagsImpl:
-    def __init__(self, ui_services_api: UIServicesAPI,
+    def __init__(self, project_manager_api: ProjectManagerAPI,
                  sdk, **kwargs):
-        self._provider = ui_services_api
+        self._provider = project_manager_api
         self._sdk = sdk
 
     def create(self, name: str, *, project: ResourceId,
@@ -48,7 +48,7 @@ class TagsImpl:
             ...    project='5d63cf972fb3880011e57f22',
             ...    type='dataset',
             ...    target='5d63cf972fb3880011e57e34')
-            <alteia.core.resources.tags.Tag with id ... (tags)>
+            Tag(_id='5f6155ae8dcb064fcbf4ae35')
 
         """
         data = kwargs
@@ -136,7 +136,7 @@ class TagsImpl:
 
         Examples:
             >>> sdk.tags.search(project='5d63cf972fb3880011e57f22')
-            [<alteia.core.resources.tags.Tag with id ... (tags)>]
+            [Tag(_id='5f6155ae8dcb064fcbf4ae35'), ...]
 
         """
         query = kwargs

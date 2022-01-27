@@ -59,8 +59,8 @@ Any usage starts with the creation of a :py:mod:`alteia.sdk.SDK` instance::
 
       >>> import alteia
       >>> sdk = alteia.SDK(url="https://app.alteia.com/",
-      ...                      user="YOUR_EMAIL_ADDRESS",
-      ...                      password="YOUR_ALTEIA_PASSWORD")
+      ...                  user="YOUR_EMAIL_ADDRESS",
+      ...                  password="YOUR_ALTEIA_PASSWORD")
 
 
 Get all the projects available
@@ -68,7 +68,7 @@ Get all the projects available
 
 .. doctest::
 
-   >>> projects = sdk.projects.search()
+   >>> projects = sdk.projects.search(limit=100)
 
 See the :py:class:`projects.search() <alteia.apis.client.projectmngt.projectsimpl.ProjectsImpl.search>` documentation.
 
@@ -77,8 +77,8 @@ Get the missions of a project
 
 .. doctest::
 
-   >>> my_project = sdk.projects.search(name='My_project')[0]
-   >>> missions = sdk.missions.search(project=my_project.id)
+   >>> my_project = sdk.projects.search(filter={'name': {'$eq': 'My_project'}})[0]
+   >>> missions = sdk.missions.search(filter={'project': {'$eq': my_project.id}})
 
 See the :py:class:`missions.search() <alteia.apis.client.projectmngt.missionsimpl.MissionsImpl.search>` documentation.
 
@@ -126,7 +126,8 @@ To download a dataset component in the current directory:
 .. doctest::
 
    >>> component = my_dataset.components[0]
-   >>> sdk.datasets.download_component(dataset=my_dataset.id, component=component.get("name"))
+   >>> sdk.datasets.download_component(dataset=my_dataset.id,
+   ...                                 component=component.get("name"))
 
 
 See the :py:class:`datasets.download_component() <alteia.apis.client.datamngt.datasetsimpl.DatasetsImpl.download_component>` documentation.

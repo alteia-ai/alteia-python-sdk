@@ -109,7 +109,7 @@ class TestTags(ResourcesTestBase):
     """
     @responses.activate
     def test_create(self):
-        responses.add('POST', '/uisrv/tags',
+        responses.add('POST', '/project-manager/tags',
                       body=TAG_CREATION_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -124,7 +124,7 @@ class TestTags(ResourcesTestBase):
         assert tag.project == 'project-id'
         assert tag.type == 'dataset'
         assert tag.target == 'ds-id'
-        assert not hasattr(tag, 'flight')
+        assert tag.flight is None
         assert tag.name == 'my tag'
         assert tag.creation_user == 'user-id'
         assert tag.creation_date == '2019-12-25T00:00:00.000Z'
@@ -132,7 +132,7 @@ class TestTags(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/tags')
+        self.assertEqual(calls[0].request.url, '/project-manager/tags')
         self.assertEqual(calls[0].request.method, 'POST')
 
         request_body = json.loads(calls[0].request.body)
@@ -148,7 +148,7 @@ class TestTags(ResourcesTestBase):
 
     @responses.activate
     def test_create_photo_tag(self):
-        responses.add('POST', '/uisrv/tags',
+        responses.add('POST', '/project-manager/tags',
                       body=PHOTO_TAG_CREATION_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -172,7 +172,7 @@ class TestTags(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/tags')
+        self.assertEqual(calls[0].request.url, '/project-manager/tags')
         self.assertEqual(calls[0].request.method, 'POST')
 
         request_body = json.loads(calls[0].request.body)
@@ -205,7 +205,7 @@ class TestTags(ResourcesTestBase):
 
     @responses.activate
     def test_search_tags(self):
-        responses.add('GET', '/uisrv/tags',
+        responses.add('GET', '/project-manager/tags',
                       body=SEARCH_TAGS_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -227,12 +227,12 @@ class TestTags(ResourcesTestBase):
         self.assertEqual(len(calls), 1)
 
         self.assertEqual(calls[0].request.url,
-                         '/uisrv/tags?project_id=project-id')
+                         '/project-manager/tags?project_id=project-id')
         self.assertEqual(calls[0].request.method, 'GET')
 
     @responses.activate
     def test_search_photo_tags(self):
-        responses.add('GET', '/uisrv/tags',
+        responses.add('GET', '/project-manager/tags',
                       body=SEARCH_TAGS_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -261,7 +261,7 @@ class TestTags(ResourcesTestBase):
 
     @responses.activate
     def test_delete_tags(self):
-        responses.add('DELETE', '/uisrv/tags/tag-id',
+        responses.add('DELETE', '/project-manager/tags/tag-id',
                       body=TAG_DELETION_RESP_BODY,
                       status=200,
                       content_type='application/json')
@@ -271,7 +271,7 @@ class TestTags(ResourcesTestBase):
         calls = responses.calls
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/tags/tag-id')
+        self.assertEqual(calls[0].request.url, '/project-manager/tags/tag-id')
         self.assertEqual(calls[0].request.method, 'DELETE')
 
     def test_convert_uisrv_desc_to_Tag(self):

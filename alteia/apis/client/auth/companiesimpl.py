@@ -4,6 +4,7 @@ from alteia.apis.provider import AuthAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class CompaniesImpl:
@@ -27,9 +28,13 @@ class CompaniesImpl:
         """
         data = kwargs
         if isinstance(company, list):
-            data['companies'] = company
-            descs = self._provider.post('describe-companies', data=data)
-            return [Resource(**desc) for desc in descs]
+            results = []
+            ids_chunks = get_chunks(company, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['companies'] = ids_chunk
+                descs = self._provider.post('describe-companies', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['company'] = company
             desc = self._provider.post('describe-company', data=data)
@@ -46,15 +51,19 @@ class CompaniesImpl:
                 and company management API for a detailed description
                 of supported operators).
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 1).
+            page: Optional Page number (starting at page 1).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional. Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.

@@ -5,7 +5,6 @@ from alteia.apis.provider import AuthAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import ResourceId
-from alteia.core.utils.warnings import warn_for_deprecation
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +91,6 @@ class ShareTokensImpl:
 
     def search(self, *, filter: dict = None, limit: int = None,
                page: int = None, return_total: bool = False,
-               company: ResourceId = None,
                **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search share tokens.
 
@@ -104,26 +102,21 @@ class ShareTokensImpl:
                 definition in the Authentication API specification for
                 a detailed description of supported operators).
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 1).
+            page: Optional Page number (starting at page 1).
 
-            return_total: Return the number of results found
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
         Returns:
-            Array of dictionnaries with ``token``, ``expiration_date``
-            and ``scope`` keys.
+            List of share token resources (with ``token``, ``expiration_date`` and ``scope`` keys)
+            or a namedtuple with total number of results and the list of resources.
 
         """
-        if company is not None:
-            warn_for_deprecation('Support for `company` argument',
-                                 target='2.0.0')
-
-            if filter is None:
-                filter = {'company': {'$eq': company}}
-            else:
-                msg = """Specifying both `company` and `filter` is not supported, (`company` ignored)"""
-                LOGGER.warning(msg)
 
         # sort is not supported yet
         if kwargs.get('sort') is not None:

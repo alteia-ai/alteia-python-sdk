@@ -10,7 +10,10 @@ import urllib3.exceptions
 from alteia.apis.provider import DataManagementAPI
 from alteia.core.errors import (DownloadError, ParameterError,
                                 UnsupportedResourceError)
-from alteia.core.resources.datamngt.upload import MultipartUpload
+from alteia.core.resources.datamngt.upload import (DM_CHUNK_MAX_SIZE,
+                                                   S3_CHUNK_MAX_SIZE,
+                                                   S3_CHUNK_MIN_SIZE,
+                                                   MultipartUpload)
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.requests import (extract_filename_from_headers,
@@ -19,7 +22,7 @@ from alteia.core.utils.requests import (extract_filename_from_headers,
 from alteia.core.utils.srs import expand_vertcrs_to_wkt
 from alteia.core.utils.typing import (AnyPath, Offset, ResourceId,
                                       SomeResourceIds, SomeResources)
-from alteia.core.utils.utils import md5
+from alteia.core.utils.utils import get_chunks, md5
 
 # TODO complete description of bands for rasters
 # TODO complete description of bands for images
@@ -732,10 +735,13 @@ class DatasetsImpl:
         """
         data = kwargs
         if isinstance(dataset, list):
-            data['datasets'] = dataset
-            descs = self._provider.post('describe-datasets', data=data)
-            return [Resource(**desc)
-                    for desc in descs]
+            results = []
+            ids_chunks = get_chunks(dataset, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['datasets'] = ids_chunk
+                descs = self._provider.post('describe-datasets', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['dataset'] = dataset
             desc = self._provider.post('describe-dataset', data=data)
@@ -756,8 +762,10 @@ class DatasetsImpl:
         if not isinstance(dataset, list):
             dataset = [dataset]
 
-        data['datasets'] = dataset
-        self._provider.post('delete-datasets', data=data, as_json=False)
+        ids_chunks = get_chunks(dataset, self._provider.max_per_delete)
+        for ids_chunk in ids_chunks:
+            data['datasets'] = ids_chunk
+            self._provider.post('delete-datasets', data=data, as_json=False)
 
     def restore(self, dataset: SomeResourceIds, **kwargs):
         """Restore a dataset or multiple datasets.
@@ -894,9 +902,8 @@ class DatasetsImpl:
 
         """
 
-        chunk_size = max(chunk_size or 0, 5 * 1024**2)  # cannot be less than 5MB (S3)
-        chunk_size = min(chunk_size, 5 * 1024**3)       # cannot be more than 5GB (S3)
-        chunk_size = min(chunk_size, 50 * 1024**2)      # data-manager limit: 50MB max
+        chunk_size = max(chunk_size or 0, S3_CHUNK_MIN_SIZE)
+        chunk_size = min(chunk_size, S3_CHUNK_MAX_SIZE, DM_CHUNK_MAX_SIZE)
 
         file_size = os.path.getsize(file_path)
         if file_size < chunk_size:
@@ -1075,14 +1082,18 @@ class DatasetsImpl:
                               target_name=target_name, overwrite=overwrite,
                               md5hash=md5hash)
 
-    def download_preview(self, dataset: ResourceId, target_path: str = None,
-                         target_name: str = None, overwrite=False) -> str:
+    def download_preview(self, dataset: ResourceId, kind: str = None,
+                         target_path: str = None, target_name: str = None,
+                         overwrite=False) -> str:
         """Download a dataset preview.
 
         If the path ``target_path`` doesn't exists, it is created.
 
         Args:
             dataset: Identifier of the dataset to download from.
+
+            kind: Size of the preview, only for datasets type image.
+                Must be `tiny` or `small`
 
             target_path: Path of directory where to save the downloaded
                 file. Default to current directory.
@@ -1098,6 +1109,8 @@ class DatasetsImpl:
 
         """
         params = {'dataset': dataset}
+        if kind is not None:
+            params['kind'] = kind
         path = 'download-preview'
         return self._download(path, params=params, target_path=target_path,
                               target_name=target_name, overwrite=overwrite,
@@ -1114,15 +1127,19 @@ class DatasetsImpl:
                 definition in the Data Manager API for a detailed description
                 of ``filter``).
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 0).
+            page: Optional Page number (starting at page 0).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional. Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
@@ -1133,13 +1150,13 @@ class DatasetsImpl:
 
         Examples:
             >>> sdk.datasets.search(filter={'name': {'$eq': 'My image'}})
-            [<alteia.core.resources.resource.Resource ... (dataset)>, ...]
+            [Resource(_id='5c5155ae8dcb064fcbf4ae35'), ...]
 
             >>> sdk.datasets.search(filter={'name': {'$eq': 'My image'}},
             ...                     return_total=True)
             ResourcesWithTotal(
                 total=...,
-                results=[<alteia.core.resources.resource.Resource..., ...]
+                results=[Resource(_id='5c5155ae8dcb064fcbf4ae35'), ...]
             )
 
         """
@@ -1215,7 +1232,7 @@ class DatasetsImpl:
             ...            'type': 'image',
             ...            'project': '4037636c9a406900074dc253',
             ...            'components': [{'name': 'image'}]}])
-            [Resource(406ee155647ec6006df3aa21), ...]
+            [Resource(_id='406ee155647ec6006df3aa21'), ...]
 
         """
         for desc in datasets:

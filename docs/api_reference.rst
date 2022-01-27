@@ -114,6 +114,12 @@ Mission resource
 .. autoclass:: alteia.core.resources.projectmngt.missions.Mission
    :members: __init__
 
+Flights
+========
+
+.. autoclass:: alteia.apis.client.projectmngt.flightsimpl.FlightsImpl
+   :members:
+
 Flight resource
 ----------------
 

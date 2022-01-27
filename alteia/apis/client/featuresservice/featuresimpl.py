@@ -4,6 +4,7 @@ from alteia.apis.provider import FeaturesServiceAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class FeaturesImpl:
@@ -98,10 +99,13 @@ class FeaturesImpl:
         """
         data = kwargs
         if isinstance(feature, list):
-            data['features'] = feature
-            descs = self._provider.post('describe-features', data=data)
-            return [Resource(**desc)
-                    for desc in descs]
+            results = []
+            ids_chunks = get_chunks(feature, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['features'] = ids_chunk
+                descs = self._provider.post('describe-features', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['feature'] = feature
             desc = self._provider.post('describe-feature', data=data)
@@ -126,13 +130,15 @@ class FeaturesImpl:
         if isinstance(feature, list):
             path = 'delete-features' if not permanent \
                 else 'delete-features-permanently'
-            data['features'] = feature
+            ids_chunks = get_chunks(feature, self._provider.max_per_delete)
+            for ids_chunk in ids_chunks:
+                data['features'] = ids_chunk
+                self._provider.post(path, data=data, as_json=False)
         else:
             path = 'delete-feature' if not permanent \
                 else 'delete-feature-permanently'
             data['feature'] = feature
-
-        self._provider.post(path=path, data=data, as_json=False)
+            self._provider.post(path, data=data, as_json=False)
 
     def restore(self, feature: SomeResourceIds, **kwargs):
         """Restore a feature or multiple features.
@@ -184,15 +190,19 @@ class FeaturesImpl:
                 definition in the Feature Service API for a detailed description
                 of ``filter``).
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 1).
+            page: Optional Page number (starting at page 1).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional. Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
@@ -203,13 +213,13 @@ class FeaturesImpl:
 
         Examples:
             >>> sdk.features.search(filter={'collection': {'$eq': '5f5155ae8dcb064fcbf4ae35'}})
-            [<alteia.core.resources.resource.Resource ... (feature)>, ...]
+            [Resource(_id='5f5155ae8dcb064fcbf4ae35'), ...]
 
             >>> sdk.features.search(filter={'properties.name': {'$eq': 'Truck'}},
             ...                     return_total=True)
             ResourcesWithTotal(
                 total=...,
-                results=[<alteia.core.resources.resource.Resource..., ...]
+                results=[Resource(_id='5f5155ae8dcb064fcbf4ae35'), ...]
             )
 
         """

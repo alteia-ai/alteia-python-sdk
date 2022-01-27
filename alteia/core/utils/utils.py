@@ -3,7 +3,8 @@ import hashlib
 import importlib
 from datetime import datetime
 from getpass import getpass
-from typing import Optional
+from math import floor, log
+from typing import List, Optional
 
 from alteia.core.errors import ConfigError
 
@@ -168,3 +169,22 @@ def parse_timestamp(timestamp: str) -> datetime:
     clip_index = min(z_index, 26)
     d = datetime.strptime(timestamp[:clip_index], '%Y-%m-%dT%H:%M:%S.%f')
     return d
+
+
+def human_bytes(bytes_value, digits: int = None, si=False, power_max=5) -> str:
+    if bytes_value is None:
+        return 'Unknown'
+    if bytes_value <= 0:
+        return '0'
+    s = ('Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB')
+    ratio = 1024
+    if si:
+        s = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')
+        ratio = 1000
+    e = min(floor(log(bytes_value) / log(ratio)), power_max)
+    return '%s %s' % (round(bytes_value / ratio ** e, digits), s[e])
+
+
+def get_chunks(lst: list, max_per_chunk: int) -> List[list]:
+    """make chunks from a list with max elements per chunk"""
+    return [lst[i:i + max_per_chunk] for i in range(0, len(lst), max_per_chunk)]

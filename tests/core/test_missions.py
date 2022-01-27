@@ -2,7 +2,6 @@ import json
 
 from urllib3_mock import Responses
 
-from alteia.core.errors import QueryError
 from alteia.core.resources.projectmngt.projects import Project
 from alteia.core.resources.resource import Resource
 from tests.core.resource_test_base import ResourcesTestBase
@@ -46,7 +45,7 @@ class TestMissions(ResourcesTestBase):
 
     @responses.activate
     def test_create_mission(self):
-        responses.add('POST', '/uisrv/missions',
+        responses.add('POST', '/project-manager/missions',
                       body=self.__create_mission_post_response(), status=200,
                       content_type='application/json')
 
@@ -62,13 +61,13 @@ class TestMissions(ResourcesTestBase):
         # test responses
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/missions')
+        self.assertEqual(calls[0].request.url, '/project-manager/missions')
         self.assertEqual(json.loads(calls[0].request.body),
                          json.loads(MISSION_CREATION_RESP_BODY))
 
     @responses.activate
     def test_create_survey(self):
-        responses.add('POST', '/uisrv/projects/survey',
+        responses.add('POST', '/project-manager/projects/survey',
                       body=self.__create_survey_post_response(), status=200,
                       content_type='application/json')
 
@@ -87,13 +86,13 @@ class TestMissions(ResourcesTestBase):
         # test responses
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/projects/survey')
+        self.assertEqual(calls[0].request.url, '/project-manager/projects/survey')
         self.assertEqual(json.loads(calls[0].request.body),
                          json.loads(SURVEY_CREATION_RESP_BODY))
 
     @responses.activate
     def test_create_mission_without_name(self):
-        responses.add('POST', '/uisrv/missions',
+        responses.add('POST', '/project-manager/missions',
                       body=self.__create_mission_post_response(), status=200,
                       content_type='application/json')
 
@@ -111,12 +110,12 @@ class TestMissions(ResourcesTestBase):
         req = json.loads(MISSION_CREATION_RESP_BODY)
         req.pop('name')
 
-        self.assertEqual(calls[0].request.url, '/uisrv/missions')
+        self.assertEqual(calls[0].request.url, '/project-manager/missions')
         self.assertEqual(json.loads(calls[0].request.body), req)
 
     @responses.activate
     def test_create_survey_without_name(self):
-        responses.add('POST', '/uisrv/projects/survey',
+        responses.add('POST', '/project-manager/projects/survey',
                       body=self.__create_survey_post_response(), status=200,
                       content_type='application/json')
 
@@ -138,54 +137,34 @@ class TestMissions(ResourcesTestBase):
         req.pop('mission_name')
         req['name'] = ''
 
-        self.assertEqual(calls[0].request.url, '/uisrv/projects/survey')
+        self.assertEqual(calls[0].request.url, '/project-manager/projects/survey')
         self.assertEqual(json.loads(calls[0].request.body),
                          req)
 
     @responses.activate
     def test_search_without_error(self):
-        responses.add('POST', '/uisrv/missions/search',
+        responses.add('POST', '/project-manager/search-missions',
                       body=self.__search_post_response(), status=200,
                       content_type='application/json')
         calls = responses.calls
 
-        self.sdk.missions.search(missions=['mission-id'])
+        self.sdk.missions.search(filter={'_id': {'$in': ['mission-id']}}, sort={'_id': -1})
         self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0].request.url, '/uisrv/missions/search')
-        self.assertDictEqual(
-            json.loads(calls[0].request.body),
-            {"_id": ["mission-id"], "deleted": False})
+        self.assertEqual(calls[0].request.url, '/project-manager/search-missions')
+        self.assertEqual(
+            calls[0].request.body,
+            '{"filter": {"_id": {"$in": ["mission-id"]}}, "limit": 100, "sort": {"_id": -1}}'
+        )
 
-        self.sdk.missions.search(project='pid')
+        self.sdk.missions.search(filter={'project': {'$eq': 'project-id'}}, limit=50)
         self.assertEqual(len(calls), 2)
-        self.assertEqual(calls[1].request.url, '/uisrv/missions/search')
-        self.assertDictEqual(
-            json.loads(calls[1].request.body),
-            {"project": "pid", "deleted": False})
-
-    @responses.activate
-    def test_search_with_error(self):
-        # Test with an empty response body > raises a QueryError
-        responses.add('POST', '/uisrv/missions/search',
-                      body='{}', status=200,
-                      content_type='application/json')
-
-        with self.assertRaises(QueryError):
-            self.sdk.missions.search(missions=['mission-id'])
-
-        calls = responses.calls
-
-        # test responses
-        self.assertEqual(len(calls), 1)
-
-        self.assertEqual(calls[0].request.url, '/uisrv/missions/search')
-        self.assertDictEqual(
-            json.loads(calls[0].request.body),
-            {"_id": ["mission-id"], "deleted": False})
+        self.assertEqual(calls[1].request.url, '/project-manager/search-missions')
+        self.assertEqual(calls[1].request.body,
+                         '{"filter": {"project": {"$eq": "project-id"}}, "limit": 50}')
 
     @responses.activate
     def test_delete(self):
-        responses.add('POST', '/uisrv/missions/delete-survey',
+        responses.add('POST', '/project-manager/missions/delete-survey',
                       body='{}', status=200,
                       content_type='application/json')
 
@@ -196,7 +175,7 @@ class TestMissions(ResourcesTestBase):
         # test responses
         self.assertEqual(len(calls), 1)
 
-        self.assertEqual(calls[0].request.url, '/uisrv/missions/delete-survey')
+        self.assertEqual(calls[0].request.url, '/project-manager/missions/delete-survey')
         self.assertEqual(calls[0].request.body, '{"mission": "mission_id"}')
 
     @staticmethod
@@ -213,8 +192,9 @@ class TestMissions(ResourcesTestBase):
     @staticmethod
     def __search_post_response():
         return json.dumps({
-            'missions': [{'_id': 'mission-id'}]
-            })
+            'results': [{'_id': 'mission-id', 'project': 'project-id'}],
+            'total': 1,
+        })
 
     @staticmethod
     def __flight_Resource():
@@ -222,34 +202,59 @@ class TestMissions(ResourcesTestBase):
             '_id': 'flight-id'
             })
 
+    @staticmethod
+    def __describe():
+        return json.dumps({"_id": "mission-id"})
+
+    @staticmethod
+    def __describes():
+        return json.dumps([{"_id": "mission-id-1"}, {"_id": "mission-id-2"}])
+
     @responses.activate
-    def test_complete_survey_upload(self):
-        responses.add('POST', '/dxpm/flights/flight-id/uploads/status',
-                      body='OK', status=200,
+    def test_describe(self):
+        responses.add('POST', '/project-manager/describe-mission',
+                      body=self.__describe(), status=200,
                       content_type='application/json')
-
-        obj = json.loads(self.__flight_Resource())
-
-        flight = Resource(**obj)
-
-        self.sdk.missions.complete_survey_upload(flight=flight.id)
-
-        self.sdk.missions.complete_survey_upload(
-            flight=flight.id, status='failed')
+        responses.add('POST', '/project-manager/describe-missions',
+                      body=self.__describes(), status=200,
+                      content_type='application/json')
 
         calls = responses.calls
 
-        # test responses
+        result_one = self.sdk.missions.describe('mission-id')
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].request.url, '/project-manager/describe-mission')
+        self.assertEqual(calls[0].request.body, '{"mission": "mission-id"}')
+        self.assertTrue(isinstance(result_one, Resource))
+        assert result_one.id == 'mission-id'
+
+        result_many = self.sdk.missions.describe(['mission-id-1', 'mission-id-2'])
         self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[1].request.url, '/project-manager/describe-missions')
+        self.assertEqual(calls[1].request.body, '{"missions": ["mission-id-1", "mission-id-2"]}')
+        self.assertTrue(isinstance(result_many, list))
+        self.assertTrue(isinstance(result_many[0], Resource))
+        assert result_many[0].id == 'mission-id-1'
+        assert result_many[1].id == 'mission-id-2'
 
-        self.assertEqual(
-            calls[0].request.url, '/dxpm/flights/flight-id/uploads/status')
-        self.assertDictEqual(
-            json.loads(calls[0].request.body),
-            {'_id': 'flight-id', 'status': 'complete'})
+    @responses.activate
+    def test_update_name(self):
+        responses.add('POST', '/project-manager/update-mission-name',
+                      body=self.__update_name_post_response(),
+                      status=200, content_type='application/json')
 
-        self.assertEqual(
-            calls[1].request.url, '/dxpm/flights/flight-id/uploads/status')
-        self.assertDictEqual(
-            json.loads(calls[1].request.body),
-            {'_id': 'flight-id', 'status': 'failed'})
+        mission = self.sdk.missions.update_name('mission-id', name='new-name')
+        calls = responses.calls
+
+        # test responses
+        self.assertEqual(len(calls), 1)
+
+        self.assertEqual(calls[0].request.url, '/project-manager/update-mission-name')
+        self.assertEqual(calls[0].request.body, '{"mission": "mission-id", "name": "new-name"}')
+
+        assert mission.id == 'mission-id'
+        assert mission.name == 'new-name'
+
+    @staticmethod
+    def __update_name_post_response():
+        return json.dumps({'_id': 'mission-id', 'name': 'new-name'})

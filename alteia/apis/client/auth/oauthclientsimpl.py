@@ -52,15 +52,19 @@ class OAuthClientsImpl:
         Args:
             filter: Search filter dictionary.
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 1).
+            page: Optional Page number (starting at page 1).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional. Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
         Returns:
             A list of resources or a namedtuple with total number of

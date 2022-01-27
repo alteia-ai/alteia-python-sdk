@@ -5,16 +5,16 @@
 import urllib.parse
 from typing import List
 
-from alteia.apis.provider import UIServicesAPI
+from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.comments import Comment
 from alteia.core.utils.typing import ResourceId
 
 
 class CommentsImpl:
-    def __init__(self, ui_services_api: UIServicesAPI,
+    def __init__(self, project_manager_api: ProjectManagerAPI,
                  sdk, **kwargs):
-        self._provider = ui_services_api
+        self._provider = project_manager_api
         self._sdk = sdk
 
     def create(self, text: str, *, project: ResourceId,
@@ -48,7 +48,7 @@ class CommentsImpl:
             ...    project='5d63cf972fb3880011e57f22',
             ...    type='dataset',
             ...    target='5d63cf972fb3880011e57e34')
-            <alteia.core.resources.comments.Comment ... (comments)>
+            Comment(_id='5d5155ae8dcb064fcbf4ae35')
 
         """
         data = kwargs
@@ -132,7 +132,7 @@ class CommentsImpl:
 
         Examples:
             >>> sdk.comments.search(project='5d63cf972fb3880011e57f22')
-            [<alteia.core.resources.comments.Comment ... (comments)>]
+            [Comment(_id='5d5155ae8dcb064fcbf4ae35'), ...]
 
         """
         query = kwargs

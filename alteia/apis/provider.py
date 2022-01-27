@@ -4,11 +4,15 @@ from alteia.core.connection.connection import Connection
 from alteia.core.utils.utils import sanitize_dict
 
 DEFAULT_API_TIMEOUT = 600.0  # value in seconds
+DEFAULT_MAX_ELEMENTS_PER_DESCRIBE_REQUEST = 1000
+DEFAULT_MAX_ELEMENTS_PER_DELETE_REQUEST = 100
 
 
 class Provider:
     _root_path = ''
     api_timeout = DEFAULT_API_TIMEOUT
+    max_per_describe = DEFAULT_MAX_ELEMENTS_PER_DESCRIBE_REQUEST
+    max_per_delete = DEFAULT_MAX_ELEMENTS_PER_DELETE_REQUEST
 
     def __init__(self, connection: Connection):
         self._connection = connection
@@ -171,18 +175,13 @@ class AuthAPI(WithSearchRoute, Provider):
     api_timeout = DEFAULT_API_TIMEOUT
 
 
-class ProjectManagerAPI(WithSearchRoute, Provider):
-    _root_path = 'dxpm'
-    api_timeout = DEFAULT_API_TIMEOUT
-
-
 class DataManagementAPI(Provider):
     _root_path = 'data-manager'
     api_timeout = DEFAULT_API_TIMEOUT
 
 
-class UIServicesAPI(Provider):
-    _root_path = 'uisrv'
+class ProjectManagerAPI(Provider):
+    _root_path = 'project-manager'  # alias of uisrv
     api_timeout = DEFAULT_API_TIMEOUT
 
 

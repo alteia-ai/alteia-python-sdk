@@ -2,8 +2,10 @@ import json
 from unittest import mock
 
 import alteia
+from alteia.core.connection.abstract_connection import DEFAULT_USER_AGENTS
 from tests.core.resource_test_base import ResourcesTestBase
 
+BASE_USER_AGENT = ' '.join(reversed(DEFAULT_USER_AGENTS))
 DEFAULT_MOCK_CONTENT = {'url': 'some url',
                         'connection': {
                             'max_retries': 1,
@@ -44,3 +46,13 @@ class TestSDK(ResourcesTestBase):
     def test_renew_token_at_init(self, mock):
         alteia.SDK(user='username', password='password')
         self.assertTrue(mock.called)
+
+    @mock.patch('alteia.core.connection.token.TokenManager.renew_token')
+    def test_user_agent(self, *args):
+        sdk = alteia.SDK(user='username', password='password')
+        self.assertEqual(sdk._connection.user_agent,
+                         f'{sdk._name} {BASE_USER_AGENT}')
+
+        sdk = alteia.SDK(user='username', password='password', service='service-foobar')
+        self.assertEqual(sdk._connection.user_agent,
+                         f'service-foobar {sdk._name} {BASE_USER_AGENT}')

@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'Python SDK'
-copyright = '2021, Alteia'
+copyright = '2022, Alteia'
 author = 'Alteia Backend Team'
 
 version = alteia.__version__

@@ -4,14 +4,14 @@ from typing import List, NamedTuple
 
 
 class Resource(SimpleNamespace):
-    def __init__(self, *, id: str = None, __remove_undefined: bool = True, **kwargs):
+    def __init__(self, *, id: str = None, __remove_undefined: bool = False, **kwargs):
         """Resource class.
 
         Args:
             id: Resource identifier (if missing, ``_id`` must be defined).
 
             __remove_undefined: Optional option to remove undefined properties before
-                storing it in the Resource (default is ``True``).
+                storing it in the Resource (default is ``False``).
 
             **kwargs: Keyword arguments to initialize the resource properties.
 

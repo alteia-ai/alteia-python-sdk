@@ -10,17 +10,21 @@ import logging
 import math
 import os
 import urllib
-from typing import Optional
+from typing import Optional, Tuple
 
 from alteia.core.connection.abstract_connection import DEFAULT_REQUESTS_TIMEOUT
 from alteia.core.errors import UploadError
 from alteia.core.utils.typing import AnyPath
+from alteia.core.utils.utils import human_bytes
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 # Minimal chunk size for multipart upload on AWS S3 (in bytes),
 # last part can be any size > 0
-_S3_CHUNK_MIN_SIZE = 5 * 1024 * 1024
+S3_CHUNK_MAX_PARTS = 10000
+S3_CHUNK_MIN_SIZE = 5 * 1024 ** 2  # cannot be less than 5MB (S3)
+S3_CHUNK_MAX_SIZE = 5 * 1024 ** 3  # cannot be more than 5GB (S3)
+DM_CHUNK_MAX_SIZE = 50 * 1024 ** 2  # data-manager limit: 50MB max
 
 
 class Chunk:
@@ -44,7 +48,7 @@ class Chunk:
                                req=req_maybe)
 
 
-def prepare_chunks(*, file_size: int, chunk_size: int):
+def prepare_chunks(*, file_size: int, chunk_size: int) -> Tuple[list, int]:
     """Prepare chunks for upload of a file of given size.
 
     It raises a ``ValueError`` when ``chunk_size``
@@ -66,13 +70,20 @@ def prepare_chunks(*, file_size: int, chunk_size: int):
         raise ValueError('Expecting a positive file size')
 
     chunk_count = max(0, math.ceil(file_size / chunk_size))
+    if chunk_count > S3_CHUNK_MAX_PARTS:
+        LOGGER.warning(f'Too many chunks with chunk size = {human_bytes(chunk_size)}, '
+                       f'for file size = {human_bytes(file_size)}')
+        chunk_size = math.ceil(file_size / S3_CHUNK_MAX_PARTS)
+        chunk_count = math.ceil(file_size / chunk_size)
+        LOGGER.info(f'New chunk size = {human_bytes(chunk_size)}, '
+                    f'with {chunk_count} chunks')
     chunks = []
     if chunk_count > 0:
         for index in range(chunk_count):
             size = min(chunk_size, file_size - index * chunk_size)
             chunk = Chunk(index, size=size)
             chunks.append(chunk)
-    return chunks
+    return chunks, chunk_size
 
 
 class MultipartUpload:
@@ -81,11 +92,17 @@ class MultipartUpload:
     It raises a ``ValueError`` when ``chunk_size`` is < _S3_CHUNK_MIN_SIZE.
 
     """
-    def __init__(self, connection, base_url, *, chunk_size=_S3_CHUNK_MIN_SIZE):
-        if chunk_size < _S3_CHUNK_MIN_SIZE:
+    def __init__(self, connection, base_url, *, chunk_size=S3_CHUNK_MIN_SIZE):
+        if chunk_size < S3_CHUNK_MIN_SIZE:
             raise ValueError(
-                "Chunk size must be >= {} bytes; received : {}".format(
-                    _S3_CHUNK_MIN_SIZE, chunk_size)
+                f'Chunk size must be >= {human_bytes(S3_CHUNK_MIN_SIZE)}; '
+                f'received : {human_bytes(chunk_size)}'
+            )
+        max_size = min(DM_CHUNK_MAX_SIZE, S3_CHUNK_MAX_SIZE)
+        if chunk_size > max_size:
+            raise ValueError(
+                f'Chunk size must be <= {human_bytes(max_size)}; '
+                f'received : {human_bytes(chunk_size)}'
             )
 
         self._base_url = base_url
@@ -161,8 +178,9 @@ class MultipartUpload:
                   'dataset': dataset,
                   'component_name': component_name}
         try:
-            self._chunks = prepare_chunks(file_size=file_size,
-                                          chunk_size=self._chunk_size)
+            self._chunks, self._chunk_size = prepare_chunks(file_size=file_size,
+                                                            chunk_size=self._chunk_size)
+
             self._create(md5hash=md5hash, **params)
             self._start(**params)
             self._complete(**params)
@@ -245,7 +263,7 @@ class MultipartUpload:
             try:
                 all(cf.as_completed(reqs, timeout=len(reqs) * request_delay))
             except cf.TimeoutError:
-                logger.warning('Timeout while waiting for chunk uploads '
+                LOGGER.warning('Timeout while waiting for chunk uploads '
                                'to end')
 
         if any(map(lambda ch: ch.status != 'available', self._chunks)):

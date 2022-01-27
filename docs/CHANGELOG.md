@@ -5,6 +5,60 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2022-02-02
+
+### Changed
+- Improve documentation readability (DAI-13485)
+- Change the default UserAgent value by adding Python and OS versions. Now is like this: `alteia-sdk/x.x.x Python/x.x.x (Linux-x.x.x-x-amd64-x86_64)` (DAI-12882)
+- Change signature `flights.describe()`: handle one or many IDs, and returns `Resource` or list of `Resource` (DAI-11598)
+- Change signature `flights.search()`: new usage with `filter` parameter. Delete `project` and `mission` parameters (DAI-11598)
+- Change signature `missions.describe()`: handle one or many IDs, and returns `Resource` or list of `Resource` (DAI-11598)
+- Change signature `missions.search()`: new usage with `filter` parameter. Delete `missions`, `flights`, `project` and `deleted` parameters (DAI-11598)
+- Change signature `projects.describe()`: handle one or many IDs, and returns `Resource` or list of `Resource` (DAI-11598)
+- Change signature `projects.search()`: new usage with `filter` parameter. Delete `name` and `deleted` parameters (DAI-11598)
+- Improve all `describe()` methods when using a very big list of IDs (DAI-13548)
+- Improve all `delete()` methods when using a very big list of IDs (DAI-13607)
+- Initialization of `Resource` do not remove fields equals to `None` by default.
+
+### Added
+- Add argument `kind` for `datasets.download_preview()`, allowing to download small previews, not only tiny (DAI-13014)
+- Add `AbstractConnection.set_user_agent()`: allow to add multiples information to UserAgent request's headers (DAI-12882)
+- New argument `service` for SDK init, to add a service name in UserAgent (DAI-12882)
+- Upload big file: fix chunk size calculation if more than 10000 parts (DAI-12669)
+- Add `utils.human_bytes()` to display bytes as human readable (DAI-12669)
+- Add `fields` parameter in `utils.search()` and `utils.search_generator()`
+- Add `flights.describe_uploads_status()` (DAI-11598)
+- Add `flights.search_generator()` (DAI-11598)
+- Add `flights.update_name()` (DAI-11598)
+- Add `flights.update_survey_date()` (DAI-11598)
+- Add `flights.update_geodata()` (DAI-11598)
+- Add `flights.update_bbox()` (DAI-11598)
+- Add `flights.update_status()` (DAI-11598)
+- Add `missions.search_generator()` (DAI-11598)
+- Add `missions.update_name()` (DAI-11598)
+- Add `missions.update_survey_date()` (DAI-11598)
+- Add `missions.update_geometry()` (DAI-11598)
+- Add `missions.update_bbox()` (DAI-11598)
+- Add `missions.compute_bbox()` (DAI-11598)
+- Add `missions.create_archive()` (DAI-11598)
+- Add `projects.search_generator()` (DAI-11598)
+- Add `projects.update_name()` (DAI-11598)
+- Add `projects.update_geometry()` (DAI-11598)
+- Add `projects.update_bbox()` (DAI-11598)
+- Add `projects.compute_bbox()` (DAI-11598)
+- Add `projects.update_units()` (DAI-11598)
+- Add `projects.update_srs()` (DAI-11598)
+- Add `projects.update_local_coordinates_dataset()` (DAI-11598)
+- Add `projects.update_location()` (DAI-11598)
+- Add "How to upgrade" section in the documentation (DAI-13510)
+
+### Deleted
+- Remove legacy `secret` argument in SDK init. Use `client_secret` instead.
+- Remove legacy `company` argument in `share_tokens.search()`. Use `filter` instead.
+- Replaced `UIServicesAPI` by a new `ProjectManagerAPI` (DAI-11598)
+- Delete `missions.complete_survey_upload()`: use `flights.update_status()` instead (DAI-11598)
+- Delete `missions.rename()`: use `missions.update_name()` instead (DAI-11598)
+- Delete `projects.rename()`: use `projects.update_name()` instead (DAI-11598)
 
 ## [1.3.7] - 2022-01-26
 

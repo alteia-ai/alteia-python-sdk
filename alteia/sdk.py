@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Optional
+from typing import List, Optional, Union
 
+import alteia
 from alteia.apis.client.analytics.analyticsimpl import AnalyticsImpl
 from alteia.apis.client.analytics.productsimpl import ProductsImpl
 from alteia.apis.client.annotations.annotationsimpl import AnnotationsImpl
@@ -30,15 +31,13 @@ from alteia.apis.provider import (AnalyticsServiceAPI, AnnotationsAPI,
                                   CollectionTaskManagementAPI,
                                   DataManagementAPI,
                                   ExternalProviderServiceAPI,
-                                  FeaturesServiceAPI, ProjectManagerAPI,
-                                  UIServicesAPI)
+                                  FeaturesServiceAPI, ProjectManagerAPI)
 from alteia.core.config import ConnectionConfig
 from alteia.core.connection.connection import Connection
 from alteia.core.connection.credentials import (ClientCredentials, Credentials,
                                                 UserCredentials)
 from alteia.core.errors import ConfigError
 from alteia.core.utils.utils import prompt_user
-from alteia.core.utils.warnings import warn_for_deprecation
 
 __all__ = ('SDK', )
 
@@ -107,7 +106,7 @@ class SDK():
     - Using an OAuth client identifier and secret::
 
         >>> sdk = SDK(client_id='72a5f676-6efc-48c5-ac07-4c534c3cdccc',
-                      client_secret='52ccd77d-17e4-499b-995e-3a2731550723')
+        ...           client_secret='52ccd77d-17e4-499b-995e-3a2731550723')
 
     - Using a configuration file::
 
@@ -117,8 +116,9 @@ class SDK():
     def __init__(self,  *, config_path: str = None,
                  user: str = None, password: str = None,
                  client_id: str = None, client_secret: str = None,
-                 url: str = None,
-                 proxy_url: str = None, force_prompt: bool = False, **kwargs):
+                 url: str = None, proxy_url: str = None,
+                 force_prompt: bool = False,
+                 service: Union[str, List[str]] = None, **kwargs):
         """Initializes Alteia Python SDK entry point.
 
         Args:
@@ -140,16 +140,14 @@ class SDK():
             force_prompt: Option to force the user to set or confirm his connection
                 info through the prompt.
 
+            service: Optional service name, to add in UserAgent in requests' headers.
+
             kwargs: Optional keyword arguments to merge with
                            the configuration.
 
         """
-        LOGGER.info('Initializing SDK')
-
-        # Support for legacy secret argument
-        if 'secret' in kwargs:
-            client_secret = kwargs.pop('secret')
-            warn_for_deprecation('Support for `secret` argument', target='2.0.0')
+        self._name = f'alteia-sdk/{alteia.__version__}'
+        LOGGER.info(f'Initializing SDK: {self._name}')
 
         connection_params = kwargs
 
@@ -199,6 +197,14 @@ class SDK():
         credentials = _get_credentials(connection_config)
         self._connection = _create_connection(connection_config, credentials)
 
+        user_agents = [self._name]
+        if isinstance(service, list):
+            user_agents.extend(service)
+        elif isinstance(service, str):
+            user_agents.append(service)
+        for ua in user_agents:
+            self._connection.set_user_agent(ua)
+
         token = self._connection._token_manager.token
         if not token.access_token or not token.token_type:
             self._connection._renew_token()
@@ -218,7 +224,6 @@ class SDK():
             'data_management_api': DataManagementAPI(**provider_args),
             'external_provider_service_api': ExternalProviderServiceAPI(**provider_args),
             'project_manager_api': ProjectManagerAPI(**provider_args),
-            'ui_services_api': UIServicesAPI(**provider_args),
             'features_service_api': FeaturesServiceAPI(**provider_args),
         }
 

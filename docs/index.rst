@@ -19,7 +19,7 @@ Reference
 ==============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    reference
 
@@ -30,6 +30,7 @@ Changelog
    :maxdepth: 2
 
    CHANGELOG.md
+   how_to_upgrade
 
 Indices and tables
 ===================

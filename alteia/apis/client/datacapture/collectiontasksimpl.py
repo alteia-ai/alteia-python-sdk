@@ -4,6 +4,7 @@ from alteia.apis.provider import CollectionTaskAPI, CollectionTaskManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class CollectionTaskImpl:
@@ -86,15 +87,19 @@ class CollectionTaskImpl:
         Args:
             filter: Search filter dictionary.
 
-            limit: Maximum number of results to extract.
+            limit: Optional Maximum number of results to extract.
 
-            page: Page number (starting at page 0).
+            page: Optional Page number (starting at page 0).
 
-            sort: Sort the results on the specified attributes
+            sort: Optional Sort the results on the specified attributes
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
+            return_total: Optional. Change the type of return:
+                If ``False`` (default), the method will return a
+                limited list of resources (limited by ``limit`` value).
+                If ``True``, the method will return a namedtuple with the
+                total number of all results, and the limited list of resources.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
@@ -110,6 +115,7 @@ class CollectionTaskImpl:
             filter=filter,
             limit=limit,
             page=page,
+            sort=sort,
             return_total=return_total,
             **kwargs
         )
@@ -157,9 +163,13 @@ class CollectionTaskImpl:
         """
         data = kwargs
         if isinstance(task, list):
-            data['tasks'] = task
-            descs = self._provider.post('describe-tasks', data=data)
-            return [Resource(**desc) for desc in descs]
+            results = []
+            ids_chunks = get_chunks(task, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['tasks'] = ids_chunk
+                descs = self._provider.post('describe-tasks', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['task'] = task
             desc = self._provider.post('describe-task', data=data)

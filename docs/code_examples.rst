@@ -15,4 +15,5 @@ This section describes code examples that demonstrate how to use the Python Alte
    create_project_with_images
    create_project_with_vector
    projects
+   missions
    datasets

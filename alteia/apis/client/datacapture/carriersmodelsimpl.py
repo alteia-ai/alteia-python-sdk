@@ -3,6 +3,7 @@ from typing import List
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class CarrierModelsImpl:
@@ -81,8 +82,6 @@ class CarrierModelsImpl:
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            return_total: Return the number of results found.
-
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
 
@@ -122,9 +121,13 @@ class CarrierModelsImpl:
         """
         data = kwargs
         if isinstance(carrier_models, list):
-            data['carrier_models'] = carrier_models
-            descs = self._provider.post('describe-carrier-models', data=data)
-            return [Resource(**desc) for desc in descs]
+            results = []
+            ids_chunks = get_chunks(carrier_models, self._provider.max_per_describe)
+            for ids_chunk in ids_chunks:
+                data['carrier_models'] = ids_chunk
+                descs = self._provider.post('describe-carrier-models', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['carrier_model'] = carrier_models
             desc = self._provider.post('describe-carrier-model', data=data)

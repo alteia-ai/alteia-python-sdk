@@ -4,6 +4,7 @@ from typing import Iterable, List
 from alteia.apis.provider import FeaturesServiceAPI
 from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
+from alteia.core.utils.utils import get_chunks
 
 
 class CollectionsImpl:
@@ -86,11 +87,16 @@ class CollectionsImpl:
         """
         data = kwargs
         if isinstance(collection, list):
-            data['collections'] = collection
-            descs = self._provider.post('describe-collections',
-                                        data=data)
-            return [Resource(**desc)
-                    for desc in descs]
+            # Do not request too many collections at a time, the provider can do better
+            # for other describes, but we have to use smaller value for collections
+            max_per_chunk = min(10, self._provider.max_per_describe)
+            results = []
+            ids_chunks = get_chunks(collection, max_per_chunk)
+            for ids_chunk in ids_chunks:
+                data['collections'] = ids_chunk
+                descs = self._provider.post('describe-collections', data=data)
+                results += [Resource(**desc) for desc in descs]
+            return results
         else:
             data['collection'] = collection
             desc = self._provider.post('describe-collection', data=data)
@@ -115,13 +121,15 @@ class CollectionsImpl:
         if isinstance(collection, list):
             path = 'delete-collections' if not permanent \
                 else 'delete-collections-permanently'
-            data['collections'] = collection
+            ids_chunks = get_chunks(collection, self._provider.max_per_delete)
+            for ids_chunk in ids_chunks:
+                data['collections'] = ids_chunk
+                self._provider.post(path, data=data, as_json=False)
         else:
             path = 'delete-collection' if not permanent \
                 else 'delete-collection-permanently'
             data['collection'] = collection
-
-        self._provider.post(path=path, data=data, as_json=False)
+            self._provider.post(path, data=data, as_json=False)
 
     def restore(self, collection: SomeResourceIds, **kwargs):
         """Restore a collection or multiple collections.
