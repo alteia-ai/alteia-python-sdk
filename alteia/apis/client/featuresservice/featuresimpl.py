@@ -272,3 +272,21 @@ class FeaturesImpl:
         """
         return search_generator(self, first_page=1, filter=filter, limit=limit,
                                 page=page, **kwargs)
+
+    def add_attachments(self, *, feature: ResourceId, attachments: List[ResourceId],
+                        **kwargs):
+        """Add attachments to a feature
+
+        Args:
+            feature: Identifier of the feature.
+
+            attachments: List datasets.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = kwargs
+        data.update({'feature': feature,
+                     'attachments': attachments})
+        self._provider.post(path='add-attachments', data=data)

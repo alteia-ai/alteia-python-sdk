@@ -27,6 +27,28 @@ S3_CHUNK_MAX_SIZE = 5 * 1024 ** 3  # cannot be more than 5GB (S3)
 DM_CHUNK_MAX_SIZE = 50 * 1024 ** 2  # data-manager limit: 50MB max
 
 
+def cfg_multipart_upload(file_size, multipart: bool = True, chunk_size: int = None) -> Tuple[bool, int]:
+    """Configure multipart upload.
+
+    Args:
+        file_size: byte size of the file
+        multipart: Optional bool to enable/disable multipart upload
+        chunk_size: Optional target size in byte of each part for a multipart upload.
+        Must stay within backend limitations (storage provider and Data-Manager).
+
+    Returns:
+        multipart
+        chunk_size
+    """
+    chunk_size = max(chunk_size or math.ceil(file_size / S3_CHUNK_MAX_PARTS), S3_CHUNK_MIN_SIZE)
+    chunk_size = min(chunk_size, S3_CHUNK_MAX_SIZE, DM_CHUNK_MAX_SIZE)
+
+    # Only last chunk can have a size < to S3_CHUNK_MIN_SIZE, but > 0
+    if file_size <= chunk_size:
+        multipart = False
+    return multipart, chunk_size
+
+
 class Chunk:
     """Store the state of the upload of a file chunk.
 

@@ -5,6 +5,16 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2022-06-06
+
+### Added
+- Add 'core.resources.datamngt.upload.cfg_multipart_upload' (DAI-15147 DAI-15167)
+
+## [2.1.0] - 2022-04-13
+
+### Added
+- Add 'features.add_attachments()' (DAI-14397)
+
 ## [2.0.0] - 2022-02-02
 
 ### Changed

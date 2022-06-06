@@ -10,9 +10,7 @@ import urllib3.exceptions
 from alteia.apis.provider import DataManagementAPI
 from alteia.core.errors import (DownloadError, ParameterError,
                                 UnsupportedResourceError)
-from alteia.core.resources.datamngt.upload import (DM_CHUNK_MAX_SIZE,
-                                                   S3_CHUNK_MAX_SIZE,
-                                                   S3_CHUNK_MIN_SIZE,
+from alteia.core.resources.datamngt.upload import (cfg_multipart_upload,
                                                    MultipartUpload)
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
@@ -893,22 +891,18 @@ class DatasetsImpl:
                 Will be computed when equal to None (the default).
 
             multipart: Whether to upload the file using multipart
-                upload. Default to ``True`` unless the file size is
-                less than 5MB the file is upload in one request.
+                upload. Default to ``True`` unless the total number of part is < 2.
 
             chunk_size: The size in byte of each part for a multipart upload.
-                If file size is less than this number, multipart will not used.
-                The value should be between 5MB and 50MB. 5MB is default.
+                If file size is less than this number, multipart will not be used.
+                The value is limited by storage provider and Data-Manager capabilities.
+                5MiB is the min value.
 
         """
-
-        chunk_size = max(chunk_size or 0, S3_CHUNK_MIN_SIZE)
-        chunk_size = min(chunk_size, S3_CHUNK_MAX_SIZE, DM_CHUNK_MAX_SIZE)
-
         file_size = os.path.getsize(file_path)
-        if file_size < chunk_size:
-            multipart = False
-            # hack for data-manager multipart upload limitation
+        multipart, chunk_size = cfg_multipart_upload(file_size, multipart, chunk_size)
+
+        md5hash = md5hash or md5(file_path)
 
         if multipart:
             conn = self._provider._connection
@@ -920,7 +914,6 @@ class DatasetsImpl:
                 md5hash=md5hash
             )
         else:
-            md5hash = md5hash or md5(file_path)
             query = {'dataset': dataset,
                      'component': component,
                      'filename': os.path.basename(file_path),
