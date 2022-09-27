@@ -68,7 +68,7 @@ class CollectionTaskImpl:
                                         ('scheduled_date_range', scheduled_date_range),
                                         ('team', team),
                                         ('pic', pic),
-                                        ('comment',  comment),
+                                        ('comment', comment),
                                         ('custom_props', custom_props),
                                         ('requirement', requirement),
                                         ('purpose', purpose),):
@@ -149,12 +149,16 @@ class CollectionTaskImpl:
         return search_generator(self, first_page=0, filter=filter, limit=limit,
                                 page=page, **kwargs)
 
-    def describe(self, task: SomeResourceIds, **kwargs) -> SomeResources:
+    def describe(self, task: SomeResourceIds, *, fields: dict = None, **kwargs) -> SomeResources:
         """Describe a collection task.
 
         Args:
             task: Identifier of the collection task to describe, or list of
                 such identifiers.
+            fields: Optional Field names to include or exclude from the response.
+                ``{"include: ["name", "creation_date"]}``
+                ``{"exclude: ["name", "creation_date"]}``
+                Do not use both `include` and `exclude`.
 
         Returns:
             Resource: The collection task description
@@ -162,6 +166,8 @@ class CollectionTaskImpl:
 
         """
         data = kwargs
+        if fields:
+            data["fields"] = fields
         if isinstance(task, list):
             results = []
             ids_chunks = get_chunks(task, self._provider.max_per_describe)
@@ -205,7 +211,7 @@ class CollectionTaskImpl:
 
         self._alt_provider.post('create-or-update-task-flight-log', data=data)
 
-    def rename(self,  task: ResourceId, *, name: str, **kwargs):
+    def rename(self, task: ResourceId, *, name: str, **kwargs):
         """Rename a collection task.
 
         Args:
@@ -280,7 +286,7 @@ class CollectionTaskImpl:
                                         ('scheduled_date_range', scheduled_date_range),
                                         ('team', team),
                                         ('pic', pic),
-                                        ('comment',  comment),
+                                        ('comment', comment),
                                         ('custom_props', custom_props),
                                         ('requirement', requirement),
                                         ('purpose', purpose),):
@@ -289,4 +295,21 @@ class CollectionTaskImpl:
 
         content = self._provider.post(path='update-task', data=data)
 
+        return Resource(**content)
+
+    def set_task_status(self, task: ResourceId, *, status: str, **kwargs) -> Resource:
+        """
+        Update the status of a collection task
+
+        Args:
+            task: Collection task identifier.
+            status: The new status to set among "pending", "ready", "assigned",
+             "scheduled", "data-captured", "data-submitted" and "completed"
+        Returns:
+            Resource: A collection task resource.
+        """
+        data = kwargs
+        data["task"] = task
+        data["status"] = status
+        content = self._provider.post(path='set-task-status', data=data)
         return Resource(**content)

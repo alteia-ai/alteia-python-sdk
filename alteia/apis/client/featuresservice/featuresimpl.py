@@ -1,4 +1,4 @@
-from typing import Dict, Generator, Iterable, List, Union
+from typing import Any, Dict, Generator, Iterable, List, Union
 
 from alteia.apis.provider import FeaturesServiceAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -66,22 +66,84 @@ class FeaturesImpl:
         return [Resource(**desc)
                 for desc in descs]
 
+    def update_feature_properties(
+            self,
+            feature: ResourceId,
+            properties: Dict[str, Any]
+    ) -> Resource:
+        """Update feature properties
+
+        Args:
+            feature: The feature id.
+            properties: The dictionary of properties to update.
+
+        Returns:
+            The updated feature resource.
+        """
+        desc = self._provider.post(
+            'update-feature-properties',
+            data={'feature': feature, 'properties': properties}
+        )
+        return Resource(**desc)
+
     def update_features_properties(
             self,
             features_properties: Dict[ResourceId, Dict]
-    ):
+    ) -> List[Resource]:
         """Update features properties
 
-              Args:
-                  features: Map : featureId -> properties description.
+        Args:
+            features_properties: Map : featureId -> properties description.
 
-              Returns:
-                Nothing
-              """
-        self._provider.post(
+        Returns:
+            List of updated features resources.
+        """
+        descs = self._provider.post(
             'update-features-properties',
             data=features_properties
         )
+        return [Resource(**desc)
+                for desc in descs]
+
+    def delete_feature_properties(
+            self,
+            feature: ResourceId,
+            properties: List[str]
+    ) -> Resource:
+        """Delete feature properties
+
+        Args:
+            feature: The feature id.
+            properties: List of properties to delete.
+
+        Returns:
+            The updated feature resource.
+        """
+        desc = self._provider.post(
+            'delete-feature-properties',
+            data={'feature': feature, 'properties': properties}
+        )
+        return Resource(**desc)
+
+    def delete_features_properties(
+            self,
+            features_properties: Dict[ResourceId, List[str]]
+    ) -> List[Resource]:
+        """Delete features properties
+
+        Args:
+            features_properties: The dictionary key is the feature ID and
+                its value is the list of properties to remove.
+
+        Returns:
+            List of updated features resources.
+        """
+        descs = self._provider.post(
+            'delete-features-properties',
+            data=features_properties
+        )
+        return [Resource(**desc)
+                for desc in descs]
 
     def describe(self, feature: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a feature or a list of features.
@@ -94,7 +156,7 @@ class FeaturesImpl:
                 passed as is to the API provider.
 
         Returns:
-            The fature description or a list of feature description.
+            The feature description or a list of feature description.
 
         """
         data = kwargs
@@ -290,3 +352,21 @@ class FeaturesImpl:
         data.update({'feature': feature,
                      'attachments': attachments})
         self._provider.post(path='add-attachments', data=data)
+
+    def remove_attachments(self, *, feature: ResourceId, attachments: List[ResourceId],
+                           **kwargs):
+        """Remove attachments to a feature
+
+        Args:
+            feature: Identifier of the feature.
+
+            attachments: List datasets.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        """
+        data = kwargs
+        data.update({'feature': feature,
+                     'attachments': attachments})
+        self._provider.post(path='remove-attachments', data=data)

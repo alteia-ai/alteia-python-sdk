@@ -5,15 +5,38 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2022-09-27
+
+### Added
+
+- Add `features.remove_attachments()` (DAI-16196)
+- Add `features.update_feature_properties()` (DAI-16106)
+- Add `features.delete_feature_properties()` (DAI-16106)
+- Add `features.delete_features_properties()` (DAI-16106)
+- Add `geometry` to `missions.create_survey()` + update doc about `coordinates` (DAI-15520)
+
+### Changed
+
+-  Change `features.update_features_properties()` return, now return a list of `Resource` (DAI-16106)
+
+### Deleted
+
+## [2.3.0] - 2022-06-20
+
+### Added
+
+- Add `collection_tasks.set_task_status` (DAI-15351)
+- Add `pilots.describe` and `collection_tasks.describe` now accept a `fields` parameter to include or exclude fields from the response (DAI-15383)
+
 ## [2.2.0] - 2022-06-06
 
 ### Added
-- Add 'core.resources.datamngt.upload.cfg_multipart_upload' (DAI-15147 DAI-15167)
+- Add `core.resources.datamngt.upload.cfg_multipart_upload()` (DAI-15147 DAI-15167)
 
 ## [2.1.0] - 2022-04-13
 
 ### Added
-- Add 'features.add_attachments()' (DAI-14397)
+- Add `features.add_attachments()` (DAI-14397)
 
 ## [2.0.0] - 2022-02-02
 

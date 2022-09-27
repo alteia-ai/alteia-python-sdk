@@ -10,8 +10,8 @@ import urllib3.exceptions
 from alteia.apis.provider import DataManagementAPI
 from alteia.core.errors import (DownloadError, ParameterError,
                                 UnsupportedResourceError)
-from alteia.core.resources.datamngt.upload import (cfg_multipart_upload,
-                                                   MultipartUpload)
+from alteia.core.resources.datamngt.upload import (MultipartUpload,
+                                                   cfg_multipart_upload)
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.requests import (extract_filename_from_headers,

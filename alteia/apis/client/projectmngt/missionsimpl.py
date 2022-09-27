@@ -1,7 +1,7 @@
 """Implementation of missions.
 
 """
-from typing import Generator, List, Optional, Tuple, Union
+from typing import Dict, Generator, List, Optional, Tuple, Union
 
 from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import QueryError
@@ -31,6 +31,8 @@ class MissionsImpl:
 
         Based on the number of images to attach to the mission,
         this function calls ``create_survey()`` or ``create_mission()``.
+        If you have images, you also have to send ``coordinates`` or
+        ``geometry`` (not both).
 
         Args:
             project: Identifier of the project on which the mission is added.
@@ -116,12 +118,15 @@ class MissionsImpl:
                       number_of_images: int,
                       name: str = None,
                       coordinates: List = None,
+                      geometry: Dict = None,
                       area: float = 0,
                       **kwargs) -> Tuple[Flight, Mission]:
         """Create a survey (mission + flight).
 
         This function is used when images will be attached to the mission.
         As a consequence, a flight will be created as well.
+        The survey creation need the bounds of the mission. So, one of
+        ``coordinates`` or ``geometry`` (not both) must be sent.
 
         Args:
             survey_date: Survey date (format: ``YYYY-MM-DDTHH:MM:SS.sssZ``).
@@ -133,6 +138,12 @@ class MissionsImpl:
             name: Optional mission name.
 
             coordinates: Optional Coordinates bounding the mission to create.
+                The last coordinate of the list should be the same as the first one.
+                Do not use with ``geometry``.
+
+            geometry: Optional Geometry bounding the mission to create. The geometry
+                must be a type "GeometryCollection" with at least one "Polygon" inside.
+                Do not use with ``coordinates``.
 
             area: Optional survey area.
 
@@ -143,7 +154,7 @@ class MissionsImpl:
             QueryError: The survey creation response is incorrect.
 
         Returns:
-        Tuple[ (Flight, Mission): A tuple with the created flight and missio].
+            Tuple[Flight, Mission]: A tuple with the created flight and mission.
 
         """
 
@@ -163,7 +174,12 @@ class MissionsImpl:
             # 'name' is required for the flight name (but never displayed)
             params_survey.update({'name': ''})
 
+        if geometry is not None:
+            params_survey['geometry'] = geometry
+
         if coordinates is not None:
+            if geometry is not None:
+                raise QueryError('Do not use "coordinates" and "geometry"')
             params_survey['geometry'] = {
                 'type': 'GeometryCollection',
                 'geometries': [

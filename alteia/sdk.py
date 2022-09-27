@@ -15,6 +15,7 @@ from alteia.apis.client.datacapture.carriersimpl import CarriersImpl
 from alteia.apis.client.datacapture.carriersmodelsimpl import CarrierModelsImpl
 from alteia.apis.client.datacapture.collectiontasksimpl import \
     CollectionTaskImpl
+from alteia.apis.client.datacapture.pilotsimpl import PilotsImpl
 from alteia.apis.client.datacapture.teamsimpl import TeamsImpl
 from alteia.apis.client.datamngt.datasetsimpl import DatasetsImpl
 from alteia.apis.client.externalproviders.credentialsimpl import \
@@ -251,3 +252,4 @@ class SDK():
         self.users: UsersImpl = UsersImpl(**kwargs)
         self.collections: CollectionsImpl = CollectionsImpl(**kwargs)
         self.features: FeaturesImpl = FeaturesImpl(**kwargs)
+        self.pilots: PilotsImpl = PilotsImpl(**kwargs)

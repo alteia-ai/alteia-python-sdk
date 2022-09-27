@@ -4,8 +4,11 @@
 
 from unittest import TestCase
 
-from alteia.core.resources.datamngt.upload import cfg_multipart_upload, S3_CHUNK_MIN_SIZE, S3_CHUNK_MAX_PARTS, \
-    S3_CHUNK_MAX_SIZE, DM_CHUNK_MAX_SIZE
+from alteia.core.resources.datamngt.upload import (DM_CHUNK_MAX_SIZE,
+                                                   S3_CHUNK_MAX_PARTS,
+                                                   S3_CHUNK_MAX_SIZE,
+                                                   S3_CHUNK_MIN_SIZE,
+                                                   cfg_multipart_upload)
 
 
 class UploadTest(TestCase):
