@@ -4,6 +4,8 @@ from typing import List, Optional, Union
 
 import alteia
 from alteia.apis.client.analytics.analyticsimpl import AnalyticsImpl
+from alteia.apis.client.analytics.configurationsimpl import \
+    AnalyticConfigurationsImpl
 from alteia.apis.client.analytics.productsimpl import ProductsImpl
 from alteia.apis.client.annotations.annotationsimpl import AnnotationsImpl
 from alteia.apis.client.auth.companiesimpl import CompaniesImpl
@@ -11,6 +13,7 @@ from alteia.apis.client.auth.oauthclientsimpl import OAuthClientsImpl
 from alteia.apis.client.auth.sharetokensimpl import ShareTokensImpl
 from alteia.apis.client.auth.usersimpl import UsersImpl
 from alteia.apis.client.comments.commentsimpl import CommentsImpl
+from alteia.apis.client.credentials.credentialsimpl import CredentialsImpl
 from alteia.apis.client.datacapture.carriersimpl import CarriersImpl
 from alteia.apis.client.datacapture.carriersmodelsimpl import CarrierModelsImpl
 from alteia.apis.client.datacapture.collectiontasksimpl import \
@@ -18,8 +21,8 @@ from alteia.apis.client.datacapture.collectiontasksimpl import \
 from alteia.apis.client.datacapture.pilotsimpl import PilotsImpl
 from alteia.apis.client.datacapture.teamsimpl import TeamsImpl
 from alteia.apis.client.datamngt.datasetsimpl import DatasetsImpl
-from alteia.apis.client.externalproviders.credentialsimpl import \
-    CredentialsImpl
+from alteia.apis.client.datastreamtemplate.datastreamtemplateimpl import \
+    DatastreamTemplateImpl
 from alteia.apis.client.featuresservice.collectionsimpl import CollectionsImpl
 from alteia.apis.client.featuresservice.featuresimpl import FeaturesImpl
 from alteia.apis.client.projectmngt.flightsimpl import FlightsImpl
@@ -30,9 +33,9 @@ from alteia.apis.provider import (AnalyticsServiceAPI, AnnotationsAPI,
                                   AssetManagementAPI, AuthAPI,
                                   CollectionTaskAPI,
                                   CollectionTaskManagementAPI,
-                                  DataManagementAPI,
-                                  ExternalProviderServiceAPI,
-                                  FeaturesServiceAPI, ProjectManagerAPI)
+                                  CredentialsServiceAPI, DataflowServiceAPI,
+                                  DataManagementAPI, FeaturesServiceAPI,
+                                  ProjectManagerAPI)
 from alteia.core.config import ConnectionConfig
 from alteia.core.connection.connection import Connection
 from alteia.core.connection.credentials import (ClientCredentials, Credentials,
@@ -223,9 +226,10 @@ class SDK():
             'collection_task_api': CollectionTaskAPI(**provider_args),
             'collection_task_management_api': CollectionTaskManagementAPI(**provider_args),
             'data_management_api': DataManagementAPI(**provider_args),
-            'external_provider_service_api': ExternalProviderServiceAPI(**provider_args),
+            'credentials_service_api': CredentialsServiceAPI(**provider_args),
             'project_manager_api': ProjectManagerAPI(**provider_args),
             'features_service_api': FeaturesServiceAPI(**provider_args),
+            'dataflow_service_api': DataflowServiceAPI(**provider_args)
         }
 
     def __set_resources_as_attributes(self):
@@ -233,6 +237,7 @@ class SDK():
         kwargs.update(self._providers)
 
         self.analytics: AnalyticsImpl = AnalyticsImpl(**kwargs)
+        self.analytic_configurations: AnalyticConfigurationsImpl = AnalyticConfigurationsImpl(**kwargs)
         self.annotations: AnnotationsImpl = AnnotationsImpl(**kwargs)
         self.carriers: CarriersImpl = CarriersImpl(**kwargs)
         self.carrier_models: CarrierModelsImpl = CarrierModelsImpl(**kwargs)
@@ -253,3 +258,4 @@ class SDK():
         self.collections: CollectionsImpl = CollectionsImpl(**kwargs)
         self.features: FeaturesImpl = FeaturesImpl(**kwargs)
         self.pilots: PilotsImpl = PilotsImpl(**kwargs)
+        self.datastreamtemplates: DatastreamTemplateImpl = DatastreamTemplateImpl(**kwargs)

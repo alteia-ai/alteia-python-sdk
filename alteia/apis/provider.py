@@ -190,8 +190,8 @@ class AnalyticsServiceAPI(Provider):
     api_timeout = DEFAULT_API_TIMEOUT
 
 
-class ExternalProviderServiceAPI(Provider):
-    _root_path = 'external-providers-service'
+class CredentialsServiceAPI(Provider):
+    _root_path = 'credentials-service'
     api_timeout = DEFAULT_API_TIMEOUT
 
 
@@ -207,4 +207,9 @@ class CollectionTaskAPI(Provider):
 
 class CollectionTaskManagementAPI(Provider):
     _root_path = 'dct-service/task-management'
+    api_timeout = DEFAULT_API_TIMEOUT
+
+
+class DataflowServiceAPI(Provider):
+    _root_path = 'dataflow'
     api_timeout = DEFAULT_API_TIMEOUT

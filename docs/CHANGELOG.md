@@ -5,6 +5,14 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2022-10-25
+
+### Added
+
+- Add `sdk.datastreamtemplates` with create/describe/describes/search/delete/ (DAI-16691)
+- Add `sdk.analytic_configurations` with create/describe/search/update/delete/assign/unassign (DAI-15894, DAI-17064)
+- Change `external-provider-service` provider by `credentials-service` provider, the sdk will now use the credential service in order to store and interact with credential ressources (DAI-16717)
+
 ## [2.4.0] - 2022-09-27
 
 ### Added
@@ -17,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--  Change `features.update_features_properties()` return, now return a list of `Resource` (DAI-16106)
+- Change `features.update_features_properties()` return, now return a list of `Resource` (DAI-16106)
 
 ### Deleted
 

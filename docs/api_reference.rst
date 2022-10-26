@@ -42,6 +42,12 @@ Analytics
 .. autoclass:: alteia.apis.client.analytics.analyticsimpl.AnalyticsImpl
    :members:
 
+Analytic Configurations
+=======================
+
+.. autoclass:: alteia.apis.client.analytics.configurationsimpl.AnalyticConfigurationsImpl
+   :members:
+
 Annotations
 ===========
 
@@ -87,7 +93,7 @@ Companies
 Credentials
 ===========
 
-.. autoclass:: alteia.apis.client.externalproviders.credentialsimpl.CredentialsImpl
+.. autoclass:: alteia.apis.client.credentials.credentialsimpl.CredentialsImpl
    :members:
 
 Datasets
@@ -165,4 +171,10 @@ Users
 =====
 
 .. autoclass:: alteia.apis.client.auth.usersimpl.UsersImpl
+   :members:
+
+Datastream
+===========
+
+.. autoclass:: alteia.apis.client.datastreamtemplate.datastreamtemplateimpl.DatastreamTemplateImpl
    :members:
