@@ -22,37 +22,80 @@ class DatastreamTemplateImpl:
         """Create a datastream template.
 
         Args:
-            name: Datastream name.
+            name: Datastream template name.
 
             source: Storage source.
 
-            import_dataster: dataset paramter.
+            import_dataset: dataset parameter, information for the creating of dataset.
 
-            contextualisation: contextualisation.
+                type: dataset type(pcl, file, image, raster, maesh, vector)
 
-            transform: transform.
+                categories: Sequence of categories or None if there's no
+                    category to set on the dataset.
+
+                horizontal_srs_wkt: Optional geographic coordinate system
+                    for horizontal coordinattes in WKT format.
+
+                ingestion: ingestion parameters
+
+            contextualisation: contextualisation parameters.
+
+                assets_schema_repository: name of assets schema repository
+
+                geographic_buffer: buffer enlarging the search box
+
+                assets_schema: name of asset schema
+
+                assets_schema_property_name: name of assets schema property
+
+            transform: information for the analytic process.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
 
         Returns:
-            The created datastream description.
+            The created datastream template description.
 
         Examples:
-            >>> sdk.datastream.create(
-            ...     name="My datastream",
-            ...     source= "object-storage",
-            ...     import_dataset= {"dataset_parameters": {}},
+            >>> sdk.datastreamtemplates.create(
+            ...     name="My datastream template",
+            ...     source= {"type":"object-storage"},
+            ...     import_dataset= {"dataset_parameters":
+            ...         {
+            ...             "type": "pcl",
+            ...             "categories": [],
+            ...             "horizontal_srs_wkt": 'PROJCS["WGS 84 / UTM zone 31N",GEOGCS["WGS 84",
+            ...                                           DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,
+            ...                                           AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],
+            ...                                           PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],
+            ...                                           UNIT["degree",0.0174532925199433,
+            ...                                           AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],
+            ...                                           PROJECTION["Transverse_Mercator"],
+            ...                                           PARAMETER["latitude_of_origin",0],
+            ...                                           PARAMETER["central_meridian",3],
+            ...                                           PARAMETER["scale_factor",0.9996],
+            ...                                           PARAMETER["false_easting",500000],
+            ...                                           PARAMETER["false_northing",0],
+            ...                                           UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],
+            ...                                           AXIS["Northing",NORTH],AUTHORITY["EPSG","32631"]]',
+            ...             "ingestion": {"parameters": {"compute_boundary": True}},
+            ...         }
+            ...     },
             ...     contextualisation= {
             ...         "type": "geographic",
-            ...          "parameters": {
-            ...             "assets_schema_repository": "XXX",
-            ...             "assets_schema": "",
+            ...         "parameters": {
+            ...             "assets_schema_repository": "My Asset Repository",
             ...             "geographic_buffer": 50,
-            ...          },
+            ...             "schemas": [
+            ...                 {
+            ...                     "assets_schema": "My_asset",
+            ...                     "assets_schema_property_name": "My asset property,
+            ...                     "geographic_buffer": 150,
+            ...                 }
+            ...             ],
+            ...         },
             ...     },
-            ...     "description": "My datastream description",
-            ...     "transform": {
+            ...     transform= {
             ...         "analytic": {
             ...             "name": "datastream",
             ...             "version_range": "XXX YYY",
@@ -63,6 +106,7 @@ class DatastreamTemplateImpl:
             ...      },
             ...     "aggregate": {"type": "", "parameters": {}, "strategy": {}},
             ...     "company": "XXX"
+            ...     "description": "My datastream description",
             ... )
             Resource(_id='5e5155ae8dcb064fcbf4ae35')
 
@@ -84,10 +128,10 @@ class DatastreamTemplateImpl:
         return Resource(**desc)
 
     def delete(self, template: ResourceId) -> None:
-        """Delete a datastream entry.
+        """Delete a datastream template entry.
 
         Args:
-            datastream: datastream identifier.
+            template: datastream template identifier.
 
         """
 
@@ -106,7 +150,7 @@ class DatastreamTemplateImpl:
         return_total: bool = False,
         **kwargs
     ) -> Union[ResourcesWithTotal, List[Resource]]:
-        """Search for a list of datastream.
+        """Search for a list of datastream templates.
 
         Args:
             company: Company id.
@@ -123,7 +167,7 @@ class DatastreamTemplateImpl:
                 (``1`` is sorting in ascending order,
                 ``-1`` is sorting in descending order).
 
-            exclude: The properties to exclude art the response
+            exclude: The properties to exclude from the response
 
             return_total: Optional. Change the type of return:
                 If ``False`` (default), the method will return a
@@ -135,8 +179,8 @@ class DatastreamTemplateImpl:
                 passed as is to the API provider.
 
         Returns:
-            Datastream: A list of datastream resources OR a namedtuple
-                with total number of results and list of datastream resources.
+            A list of datastream template resources OR a namedtuple
+                with total number of results and list of datastream template resources.
 
         """
         data = kwargs
@@ -163,17 +207,11 @@ class DatastreamTemplateImpl:
 
         return results
 
-    def describe(self, *, template: ResourceId = None) -> Resource:
-        """Describe an datastream template.
+    def describe(self, *, template: ResourceId) -> Resource:
+        """Describe a datastream template.
 
         Args:
             templates: Identifier of the datastream template to describe.
-
-            return_total: Optional. Change the type of return:
-                If ``False`` (default), the method will return a
-                limited list of resources (limited by ``limit`` value).
-                If ``True``, the method will return a namedtuple with the
-                total number of all results, and the limited list of resources.
 
         Returns:
             The datastream template description.
@@ -186,20 +224,14 @@ class DatastreamTemplateImpl:
 
         return Resource(**desc)
 
-    def describes(self, *, templates: List[ResourceId] = None) -> List[Resource]:
+    def describes(self, *, templates: List[ResourceId]) -> List[Resource]:
         """Describe datastream templates.
 
         Args:
-            templates: Identifier of the datastream templates to describe.
-
-            return_total: Optional. Change the type of return:
-                If ``False`` (default), the method will return a
-                limited list of resources (limited by ``limit`` value).
-                If ``True``, the method will return a namedtuple with the
-                total number of all results, and the limited list of resources.
+            templates: List of such identifiers.
 
         Returns:
-            Datastream: A list of datastream resources.
+           A list of datastream template description.
 
         """
 

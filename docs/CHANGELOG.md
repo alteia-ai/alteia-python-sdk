@@ -5,6 +5,29 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2023-03-14
+
+### Added
+- Add `sdk.analytics.expose()` and `sdk.analytics.unexpose()` (DAI-16466)
+- Add `sdk.analytics.enable()` and `sdk.analytics.disable()` instead (DAI-17814)
+
+### Changed
+- Deprecate `sdk.analytics.share_with_company()`, use `expose()` and `enable()` instead (DAI-16466, DAI-17814)
+- Deprecate `sdk.analytics.unshare_with_company()`, use `unexpose()` or `disable()` instead (DAI-16466, DAI-17814)
+
+### Deleted
+
+## [2.6.0] - 2023-02-03
+
+### Added
+- Add `sdk.datastreams` with create/describe/search/search-generator/delete (DAI-17176)
+- Add `sdk.datastreamsfiles` with search/search-generator (DAI-17176)
+- Add `sdk.datastreamsassetsmonitored` with search/search-generator (DAI-17176)
+
+### Changed
+
+### Deleted
+
 ## [2.5.1] - 2022-10-25
 
 ### Added

@@ -15,7 +15,7 @@ Building the documentation requires [pandoc](https://pandoc.org).
 
 1. First install the dependencies:
    ```shell
-   $ python3 -m pip install .[documentation]
+  $ python3 -m pip install .[documentation]
    ```
 
 2. Build the documentation:

@@ -21,6 +21,11 @@ from alteia.apis.client.datacapture.collectiontasksimpl import \
 from alteia.apis.client.datacapture.pilotsimpl import PilotsImpl
 from alteia.apis.client.datacapture.teamsimpl import TeamsImpl
 from alteia.apis.client.datamngt.datasetsimpl import DatasetsImpl
+from alteia.apis.client.datastream.datastreamassetmonitoredimpl import \
+    DatastreamsAssetMonitoredImpl
+from alteia.apis.client.datastream.datastreamsfilesimpl import \
+    DatastreamsFilesImpl
+from alteia.apis.client.datastream.datastreamsimpl import DatastreamsImpl
 from alteia.apis.client.datastreamtemplate.datastreamtemplateimpl import \
     DatastreamTemplateImpl
 from alteia.apis.client.featuresservice.collectionsimpl import CollectionsImpl
@@ -259,3 +264,6 @@ class SDK():
         self.features: FeaturesImpl = FeaturesImpl(**kwargs)
         self.pilots: PilotsImpl = PilotsImpl(**kwargs)
         self.datastreamtemplates: DatastreamTemplateImpl = DatastreamTemplateImpl(**kwargs)
+        self.datastreams: DatastreamsImpl = DatastreamsImpl(**kwargs)
+        self.datastreamsfiles: DatastreamsFilesImpl = DatastreamsFilesImpl(**kwargs)
+        self.datastreamsassetsmonitored: DatastreamsAssetMonitoredImpl = DatastreamsAssetMonitoredImpl(**kwargs)

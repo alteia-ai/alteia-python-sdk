@@ -173,8 +173,14 @@ Users
 .. autoclass:: alteia.apis.client.auth.usersimpl.UsersImpl
    :members:
 
-Datastream
-===========
+Datastream template
+===================
 
 .. autoclass:: alteia.apis.client.datastreamtemplate.datastreamtemplateimpl.DatastreamTemplateImpl
+   :members:
+
+Datastream
+==========
+
+.. autoclass:: alteia.apis.client.datastream.datastreamimpl.DatastreamImpl
    :members:

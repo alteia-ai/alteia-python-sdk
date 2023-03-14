@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import (Any, DefaultDict, Dict, Generator, List, Optional, Union,
                     cast)
 
+from alteia.core.utils.warnings import deprecated, warn_for_deprecation
 from semantic_version import NpmSpec, Version
 
 from alteia.apis.provider import AnalyticsServiceAPI
@@ -20,9 +21,11 @@ class AnalyticsImpl:
     def __init__(self, analytics_service_api: AnalyticsServiceAPI, **kwargs):
         self._provider = analytics_service_api
 
+    @deprecated(target='3.0.0')
     def share_with_company(self, analytic: ResourceId, *,
                            company: ResourceId, **kwargs):
         """Allow a company to view, order, etc. the analytic.
+           *Deprecated* in favor of expose() and enable()
 
         Args:
             analytic: Identifier of the analytic to update.
@@ -33,14 +36,19 @@ class AnalyticsImpl:
                 passed as is to the API provider.
 
         """
-        data = {'analytic': analytic,
-                'company': company}
-        data.update(kwargs)
-        self._provider.post(path='share-analytic-with-company', data=data)
+        warn_for_deprecation(
+            f'Do not use this method `{self.share_with_company.__name__}()`. '
+            f'Use `expose()` method instead, with the analytic name of analytic "{analytic}" '
+            f'and the root company of the company "{company}". '
+            f'And then optionally use `enable()` method with your company "{company}"',
+            target='3.0.0'
+        )
 
+    @deprecated(target='3.0.0')
     def unshare_with_company(self, analytic: ResourceId, *,
                              company: ResourceId, **kwargs):
         """Stop sharing the analytic with a company.
+           *Deprecated* in favor of unexpose() and disable()
 
         Args:
             analytic: Identifier of the analytic to update.
@@ -51,10 +59,13 @@ class AnalyticsImpl:
                 passed as is to the API provider.
 
         """
-        data = {'analytic': analytic,
-                'company': company}
-        data.update(kwargs)
-        self._provider.post(path='unshare-analytic-with-company', data=data)
+        warn_for_deprecation(
+            f'Do not use this method `{self.share_with_company.__name__}()`. '
+            f'Use `unexpose()` method instead, with the analytic name of analytic "{analytic}" '
+            f'and the root company of company "{company}". '
+            f'And optionally use `disable()` method with your company "{company}"',
+            target='3.0.0'
+        )
 
     def search(self, *, name: str = None, filter: Dict = None,
                limit: int = None, page: int = None, sort: dict = None,
@@ -387,7 +398,7 @@ class AnalyticsImpl:
             analytic_list = analytic
 
         for analytic in analytic_list:
-            data = {'analytic':  analytic}
+            data = {'analytic': analytic}
             data.update(kwargs)
 
             self._provider.post(
@@ -493,3 +504,180 @@ class AnalyticsImpl:
         desc = self._provider.post(path='order-analytic', data=data)
 
         return Resource(**desc)
+
+    def expose(self,
+               analytics: Union[str, List[str]],
+               root_companies: Union[str, List[str]],
+               **kwargs) -> Dict:
+        """Make the given analytics visible to the given domains.
+
+        Args:
+            analytics: Name of the analytic to expose or list of such names.
+
+            root_companies: Root company identifier of the domain you want
+                to expose the analytics, or list of such identifiers.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> # expose analytics "helloworld" to the root company 406e0dcc965a0f56891f3860
+            >>> sdk.analytics.expose('helloworld', '406e0dcc965a0f56891f3860')
+
+            >>> # expose both analytics "helloworld" and "helloworld2"
+            >>> sdk.analytics.expose(['helloworld', 'helloworld2'], '406e0dcc965a0f56891f3860')
+
+            >>> # expose both analytics "helloworld" and "helloworld2" to many root companies
+            >>> sdk.analytics.expose(['helloworld', 'helloworld2'],
+            ...                      ['406e0dcc965a0f56891f3860', '406e0dcc965a0f56891f3861'])
+        """
+        data = kwargs
+
+        if isinstance(analytics, str):
+            analytics = [analytics]
+        if isinstance(root_companies, str):
+            root_companies = [root_companies]
+
+        if 'expose' not in data:
+            relations = []
+            for root_company in root_companies:
+                relations.append({
+                    'root_company': root_company,
+                    'analytics_names': analytics,
+                })
+            data['expose'] = relations
+
+        return self._provider.post(path='expose-analytics', data=data)
+
+    def unexpose(self,
+                 analytics: Union[str, List[str]],
+                 root_companies: Union[str, List[str]],
+                 **kwargs) -> Dict:
+        """Make the given analytics invisible to the given domains.
+
+        Args:
+            analytics: Name of the analytic to unexpose or list of such names.
+
+            root_companies: Root company identifier of the domain you want
+                to unexpose the analytics, or list of such identifiers.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> # unexpose analytics "helloworld" from the root company 406e0dcc965a0f56891f3860
+            >>> sdk.analytics.unexpose('helloworld', '406e0dcc965a0f56891f3860')
+
+            >>> # unexpose both analytics "helloworld" and "helloworld2"
+            >>> sdk.analytics.unexpose(['helloworld', 'helloworld2'], '406e0dcc965a0f56891f3860')
+
+            >>> # unexpose both analytics "helloworld" and "helloworld2" from many root companies
+            >>> sdk.analytics.unexpose(['helloworld', 'helloworld2'],
+            ...                        ['406e0dcc965a0f56891f3860', '406e0dcc965a0f56891f3861'])
+        """
+        data = kwargs
+
+        if isinstance(analytics, str):
+            analytics = [analytics]
+        if isinstance(root_companies, str):
+            root_companies = [root_companies]
+
+        if 'unexpose' not in data:
+            relations = []
+            for root_company in root_companies:
+                relations.append({
+                    'root_company': root_company,
+                    'analytics_names': analytics,
+                })
+            data['unexpose'] = relations
+
+        return self._provider.post(path='unexpose-analytics', data=data)
+
+    def enable(self,
+               analytics: Union[str, List[str]],
+               companies: Union[str, List[str]],
+               **kwargs) -> Dict:
+        """Make the given analytics orderable by the given comanies,
+        provided they are already exposed on the domains of those companies.
+
+        Args:
+            analytics: Name of the analytic to enable, or list of such names.
+
+            companies: Identifier of the company you want
+                to expose the analytics, or list of such identifiers.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> # enable analytics "helloworld" on the company 406e0dcc965a0f56891f3862
+            >>> sdk.analytics.enable('helloworld', '406e0dcc965a0f56891f3862')
+
+            >>> # enable both analytics "helloworld" and "helloworld2"
+            >>> sdk.analytics.enable(['helloworld', 'helloworld2'], '406e0dcc965a0f56891f3862')
+
+            >>> # enable both analytics "helloworld" and "helloworld2" on many companies
+            >>> sdk.analytics.enable(['helloworld', 'helloworld2'],
+            ...                      ['406e0dcc965a0f56891f3863', '406e0dcc965a0f56891f3862'])
+        """
+        data = kwargs
+
+        if isinstance(analytics, str):
+            analytics = [analytics]
+        if isinstance(companies, str):
+            companies = [companies]
+
+        if 'enable' not in data:
+            relations = []
+            for company in companies:
+                relations.append({
+                    'company': company,
+                    'analytics_names': analytics,
+                })
+            data['enable'] = relations
+
+        return self._provider.post(path='enable-analytics', data=data)
+
+    def disable(self,
+                analytics: Union[str, List[str]],
+                companies: Union[str, List[str]],
+                **kwargs) -> Dict:
+        """Make the given analytics not orderable by the given companies.
+
+        Args:
+            analytics: Name of the analytic to disable, or list of such names.
+
+            companies: Identifier of the company you want
+                to disable the analytics, or list of such identifiers.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> # disable analytics "helloworld" from the company 406e0dcc965a0f56891f3862
+            >>> sdk.analytics.disable('helloworld', '406e0dcc965a0f56891f3862')
+
+            >>> # disable both analytics "helloworld" and "helloworld2"
+            >>> sdk.analytics.disable(['helloworld', 'helloworld2'], '406e0dcc965a0f56891f3862')
+
+            >>> # disable both analytics "helloworld" and "helloworld2" from many companies
+            >>> sdk.analytics.disable(['helloworld', 'helloworld2'],
+            ...                       ['406e0dcc965a0f56891f3863', '406e0dcc965a0f56891f3862'])
+        """
+        data = kwargs
+
+        if isinstance(analytics, str):
+            analytics = [analytics]
+        if isinstance(companies, str):
+            companies = [companies]
+
+        if 'disable' not in data:
+            relations = []
+            for company in companies:
+                relations.append({
+                    'company': company,
+                    'analytics_names': analytics,
+                })
+            data['disable'] = relations
+
+        return self._provider.post(path='disable-analytics', data=data)
