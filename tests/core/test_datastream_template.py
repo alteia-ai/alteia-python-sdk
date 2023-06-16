@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from urllib3_mock import Responses
 
@@ -10,44 +11,6 @@ DATA_CREATE = {
     "description": "description",
     "aggregate": {"type": "", "parameters": {}, "strategy": {}},
     "company": "507f191e810c19729de860eb",
-}
-
-DATA_RESULT = {
-    "name": "My datastream",
-    "description": "string",
-    "source": "object-storage",
-    "import": {"dataset_parameters": {}},
-    "contextualisation": {
-        "type": "geographic",
-        "parameters": {
-            "assets_schema_repository": "string",
-            "assets_schema": "string",
-            "assets_schema_property_name": "circuit id",
-            "geographic_buffer": 0,
-        },
-    },
-    "transform": {
-        "analytic": {
-            "name": "string",
-            "version_range": "string",
-            "inputs_mapping": {},
-            "parameters": {},
-            "outputs_mapping": "string",
-        }
-    },
-    "aggregate": {
-        "type": "string",
-        "parameters": {},
-        "strategy": {},
-    },
-    "company": "5b8e79dccec9d16607e0955f",
-    "_id": "5b8e79dccec9d16607e0955f",
-    "creation_user": "5b8e79dccec9d16607e0955f",
-    "creation_date": "2022-09-27T14:09:55.691Z",
-    "modification_user": "5b8e79dccec9d16607e0955f",
-    "modification_date": "2022-09-27T14:09:55.691Z",
-    "deletion_user": "5b8e79dccec9d16607e0955f",
-    "deletion_date": "2022-09-27T14:09:55.691Z",
 }
 
 CONTEXTUALISATION = {
@@ -68,8 +31,28 @@ TRANSFORM = {
     },
 }
 
+DATA_RESULT = {
+    "name": "My datastream",
+    "description": "string",
+    "source": "object-storage",
+    "import": {"dataset_parameters": {}},
+    "aggregate": {
+        "type": "string",
+        "parameters": {},
+        "strategy": {},
+    },
+    "company": "5b8e79dccec9d16607e0955f",
+    "_id": "5b8e79dccec9d16607e0955f",
+    "creation_user": "5b8e79dccec9d16607e0955f",
+    "creation_date": "2022-09-27T14:09:55.691Z",
+    "modification_user": "5b8e79dccec9d16607e0955f",
+    "modification_date": "2022-09-27T14:09:55.691Z",
+    "deletion_user": "5b8e79dccec9d16607e0955f",
+    "deletion_date": "2022-09-27T14:09:55.691Z",
+}
 
-class TestCredentials(ResourcesTestBase):
+
+class TestDatastreamTemplate(ResourcesTestBase):
     @staticmethod
     def __legacy_search():
         return json.dumps(
@@ -80,7 +63,23 @@ class TestCredentials(ResourcesTestBase):
         )
 
     @staticmethod
+    def __legacy_create_no_contextualisation_and_transform():
+        return json.dumps(DATA_RESULT)
+
+    @staticmethod
+    def __legacy_create_with_contextualisation():
+        DATA_RESULT["contextualisation"] = CONTEXTUALISATION
+        return json.dumps(DATA_RESULT)
+
+    @staticmethod
+    def __legacy_create_with_transform():
+        DATA_RESULT["transform"] = TRANSFORM
+        return json.dumps(DATA_RESULT)
+
+    @staticmethod
     def __legacy_create():
+        DATA_RESULT["contextualisation"] = CONTEXTUALISATION
+        DATA_RESULT["transform"] = TRANSFORM
         return json.dumps(DATA_RESULT)
 
     @staticmethod
@@ -93,6 +92,8 @@ class TestCredentials(ResourcesTestBase):
 
     @responses.activate
     def test_datastream_template_create(self):
+        data_create = deepcopy(DATA_CREATE)
+        data_create.update({"contextualisation": CONTEXTUALISATION, "transform": TRANSFORM})
         responses.add(
             "POST",
             "/dataflow/create-datastream-template",
@@ -100,24 +101,108 @@ class TestCredentials(ResourcesTestBase):
             status=200,
             content_type="application/json",
         )
+
         calls = responses.calls
         self.sdk.datastreamtemplates.create(
             name="My datastream",
             import_dataset={"dataset_parameters": {}},
-            contextualisation=CONTEXTUALISATION,
-            source={"type":"object-storage"},
-            transform=TRANSFORM,
-            **DATA_CREATE
+            source={"type": "object-storage"},
+            **data_create
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dataflow/create-datastream-template"
-        )
-        print(calls[0].request.body)
+        self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
         self.assertEqual(
             calls[0].request.body,
-            '{"description": "description", "aggregate": {"type": "", "parameters": {}, "strategy": {}}, "company": "507f191e810c19729de860eb", "name": "My datastream", "source": {"type": "object-storage"}, "import": {"dataset_parameters": {}}, "contextualisation": {"type": "geographic", "parameters": {"assets_schema_repository": "XXX", "assets_schema": "", "geographic_buffer": 50}}, "transform": {"analytic": {"name": "datastream", "version_range": "XXX YYY", "inputs_mapping": {}, "parameters": {}, "outputs_mapping": ""}}}',
+            '{"description": "description", "aggregate": {"type": "", "parameters": {}, "strategy": {}},'
+            ' "company": "507f191e810c19729de860eb", "contextualisation": {"type": "geographic", "parameters":'
+            ' {"assets_schema_repository": "XXX", "assets_schema": "", "geographic_buffer": 50}},'
+            ' "transform": {"analytic": {"name": "datastream", "version_range": "XXX YYY",'
+            ' "inputs_mapping": {}, "parameters": {}, "outputs_mapping": ""}}, "name": "My datastream",'
+            ' "source": {"type": "object-storage"}, "import": {"dataset_parameters": {}}}',
+        )
+
+    @responses.activate
+    def test_datastream_template_create_with_contextualisation_without_transfrom(self):
+        data_create = deepcopy(DATA_CREATE)
+        data_create.update({"contextualisation": CONTEXTUALISATION})
+
+        responses.add(
+            "POST",
+            "/dataflow/create-datastream-template",
+            body=self.__legacy_create_with_contextualisation(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.datastreamtemplates.create(
+            name="My datastream",
+            import_dataset={"dataset_parameters": {}},
+            source={"type": "object-storage"},
+            **data_create
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
+        self.assertEqual(
+            calls[0].request.body,
+            '{"description": "description", "aggregate": {"type": "", "parameters": {}, "strategy": {}},'
+            ' "company": "507f191e810c19729de860eb", "contextualisation": {"type": "geographic",'
+            ' "parameters": {"assets_schema_repository": "XXX", "assets_schema": "", "geographic_buffer": 50}},'
+            ' "name": "My datastream", "source": {"type": "object-storage"}, "import": {"dataset_parameters": {}}}',
+        )
+
+    @responses.activate
+    def test_datastream_template_create_with_transform_without_contextualisation(self):
+        data_create = deepcopy(DATA_CREATE)
+        data_create.update({"transform": TRANSFORM})
+        responses.add(
+            "POST",
+            "/dataflow/create-datastream-template",
+            body=self.__legacy_create_with_transform(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.datastreamtemplates.create(
+            name="My datastream",
+            import_dataset={"dataset_parameters": {}},
+            source={"type": "object-storage"},
+            **data_create
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
+        self.assertEqual(
+            calls[0].request.body,
+            '{"description": "description", "aggregate": {"type": "", "parameters": {}, "strategy": {}},'
+            ' "company": "507f191e810c19729de860eb", "transform": {"analytic": {"name": "datastream",'
+            ' "version_range": "XXX YYY", "inputs_mapping": {}, "parameters": {}, "outputs_mapping": ""}},'
+            ' "name": "My datastream", "source": {"type": "object-storage"}, "import": {"dataset_parameters": {}}}',
+        )
+
+    @responses.activate
+    def test_datastream_template_create_without_transform_nor_contextualisation(self):
+        responses.add(
+            "POST",
+            "/dataflow/create-datastream-template",
+            body=self.__legacy_create_no_contextualisation_and_transform(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.datastreamtemplates.create(
+            name="My datastream",
+            import_dataset={"dataset_parameters": {}},
+            source={"type": "object-storage"},
+            **DATA_CREATE
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
+        self.assertEqual(
+            calls[0].request.body,
+            '{"description": "description", "aggregate": {"type": "", "parameters": {}, "strategy": {}},'
+            ' "company": "507f191e810c19729de860eb", "name": "My datastream", "source":'
+            ' {"type": "object-storage"}, "import": {"dataset_parameters": {}}}',
         )
 
     @responses.activate
@@ -139,12 +224,11 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dataflow/search-datastream-templates"
-        )
+        self.assertEqual(calls[0].request.url, "/dataflow/search-datastream-templates")
         self.assertEqual(
             calls[0].request.body,
-            '{"filter": {"company": {"$eq": "507f191e810c19729de860eb"}, "name": {"$match": "My datastream"}}, "limit": 100}',
+            '{"filter": {"company": {"$eq": "507f191e810c19729de860eb"},'
+            ' "name": {"$match": "My datastream"}}, "limit": 100}',
         )
 
     @responses.activate
@@ -161,9 +245,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dataflow/delete-datastream-template"
-        )
+        self.assertEqual(calls[0].request.url, "/dataflow/delete-datastream-template")
         self.assertEqual(
             calls[0].request.body,
             '{"datastreamtemplate": "507f191e810c19729de860eb"}',
@@ -184,9 +266,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dataflow/describe-datastream-template"
-        )
+        self.assertEqual(calls[0].request.url, "/dataflow/describe-datastream-template")
         self.assertEqual(
             calls[0].request.body,
             '{"datastreamtemplate": "507f191e810c19729de860eb"}',

@@ -2,7 +2,7 @@
     Credential implementation
 """
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from alteia.apis.provider import CredentialsServiceAPI
 from alteia.core.errors import ParameterError
@@ -11,6 +11,9 @@ from alteia.core.utils.typing import Resource, ResourceId
 
 DOCKER = 'docker'
 OBJECT_STORAGE = 'object-storage'
+
+OBJECT_STORAGE_TYPES = ("s3", "azure-blob")
+DOCKER_TYPES = ("aws", "docker")
 
 
 class CredentialsImpl:
@@ -84,14 +87,14 @@ class CredentialsImpl:
 
         return results
 
-    def create(self, *, name: str, credentials_type: str = DOCKER, credentials: Dict[str, str],
+    def create(self, *, name: str, credentials: Dict[str, str], credentials_type: Optional[str] = None,
                **kwargs) -> Resource:
         """Create a credential entry.
 
         Args:
             name: Credential name (must be unique).
 
-            credentials_type : Credentials type (docker or object-storage), default: docker
+            credentials_type : Credentials type (docker or object-storage)
 
             credentials: Credential dict.
 
@@ -103,6 +106,7 @@ class CredentialsImpl:
 
         Examples:
             >>> sdk.credentials.create(name="My Docker registry",
+            ...     credentials_type="docker"
             ...     credentials={
             ...         "type": "docker",
             ...         "login": "my_login",
@@ -112,32 +116,52 @@ class CredentialsImpl:
             ... )
             Resource(_id='5e5155ae8dcb064fcbf4ae35')
 
-            >>> sdk.credentials.create(name="My Docker registry",
+            >>> sdk.credentials.create(name="My aws registry",
+            ...     credentials_type="docker"
             ...     credentials={
             ...         "type": "aws",
             ...         "aws_access_key_id": "key_id",
             ...         "aws_secret_access_key": "password_test",
             ...         "aws_region": "us-east-1",
-            ...         "registry": "XXX..dkr.ecr.us-east-1.amazonaws.com"
+            ...         "registry": "XXX.dkr.ecr.us-east-1.amazonaws.com"
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
 
             >>> sdk.credentials.create(name="My bucket S3",
+            ...     credentials_type="object-storage"
             ...     credentials={
             ...         "type": "s3",
             ...         "aws_access_key_id": "key_id",
             ...         "aws_secret_access_key": "password_test",
             ...         "aws_region": "us-east-1",
-            ...         "registry": "XXX..s3.us-east-1.amazonaws.com/key"
+            ...         "bucket": "XXX.s3.us-east-1.amazonaws.com/key"
+            ...     }
+            ... )
+            Resource(_id='5e6155ae8dcb064fcbf4ae35')
+
+            >>> sdk.credentials.create(name="My azure blob",
+            ...     credentials_type="object-storage"
+            ...     credentials={
+            ...         "type": "azure-blob",
+            ...         "azure_client_id": "key_id",
+            ...         "azure_tenant_id": "password_test",
+            ...         "azure_client_secret": "us-east-1",
+            ...         "account_url": "https://mystorage.blob.core.windows.net"
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
 
         """
         data = kwargs
-
-        if credentials_type not in [DOCKER, OBJECT_STORAGE]:
+        if not credentials_type:
+            if credentials["type"] in DOCKER_TYPES:
+                credentials_type = DOCKER
+            elif credentials["type"] in OBJECT_STORAGE_TYPES:
+                credentials_type = OBJECT_STORAGE
+            else:
+                raise ParameterError(f'Impossible to retrieve credentials type from {credentials["type"]}')
+        elif credentials_type not in (DOCKER, OBJECT_STORAGE):
             raise ParameterError('Type of credentials is wrong')
 
         data.update({

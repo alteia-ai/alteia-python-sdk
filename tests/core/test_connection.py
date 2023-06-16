@@ -119,8 +119,9 @@ class TestConnection(AlteiaTestBase):
         """Test GET with failure."""
         mocked_req.return_value = MagicMock(status=500, data='received data')
 
-        with self.assertRaises(ResponseError):
+        with self.assertRaises(ResponseError) as rex:
             self.conn.get('/path')
+            assert rex.exception.status == 500
 
         mocked_req.assert_called_once()
 

@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from urllib3_mock import Responses
 
 from tests.core.resource_test_base import ResourcesTestBase
@@ -31,16 +32,32 @@ class TestCredentials(ResourcesTestBase):
         )
 
     @staticmethod
-    def __legacy_create():
+    def __legacy_create_docker():
         return json.dumps(
             {
                 "_id": "632da638c1414e6fced3aef2",
                 "type": "docker",
-                "name": "Docker registry production",
+                "name": "Docker registry",
                 "credentials": {
                     "type": "docker",
                     "registry": "https://harbor.dev-tool.delair-stack.com",
                     "login": "login_test",
+                },
+                "company": "507f191e810c19729de860ea",
+                "creation_date": "2022-09-23T12:27:36.719Z",
+            }
+        )
+
+    @staticmethod
+    def __legacy_create_object_storage():
+        return json.dumps(
+            {
+                "_id": "632da638c1414e6fced3aef2",
+                "type": "object-storage",
+                "name": "aws s3",
+                "credentials": {
+                    "type": "s3",
+                    "bucket": "bucket.s3.us-east-1.amazonaws.com",
                 },
                 "company": "507f191e810c19729de860ea",
                 "creation_date": "2022-09-23T12:27:36.719Z",
@@ -58,7 +75,10 @@ class TestCredentials(ResourcesTestBase):
         )
         calls = responses.calls
         self.sdk.credentials.search(
-            filter={"company": {"$eq": "507f191e810c19729de860eb"}, "name": {"$eq": "Docker registry production"}}
+            filter={
+                "company": {"$eq": "507f191e810c19729de860eb"},
+                "name": {"$eq": "Docker registry production"},
+            }
         )
 
         self.assertEqual(len(calls), 1)
@@ -67,21 +87,22 @@ class TestCredentials(ResourcesTestBase):
         )
         self.assertEqual(
             calls[0].request.body,
-            '{"filter": {"company": {"$eq": "507f191e810c19729de860eb"}, "name": {"$eq": "Docker registry production"}}}',
+            '{"filter": {"company": {"$eq": "507f191e810c19729de860eb"},'
+            ' "name": {"$eq": "Docker registry production"}}}',
         )
 
     @responses.activate
-    def test_credentials_create(self):
+    def test_credentials_create_docker(self):
         responses.add(
             "POST",
             "/credentials-service/create-credentials",
-            body=self.__legacy_create(),
+            body=self.__legacy_create_docker(),
             status=200,
             content_type="application/json",
         )
         calls = responses.calls
         self.sdk.credentials.create(
-            name="test",
+            name="Docker registry",
             credentials_type="docker",
             credentials={
                 "type": "docker",
@@ -98,8 +119,180 @@ class TestCredentials(ResourcesTestBase):
         )
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "test", "type": "docker", "credentials": {"type": "docker", "login": "login_test", "password": "password_test", "registry": "https://harbor.dev-tool.delair-stack.com"}}'
-         )
+            '{"company": "507f191e810c19729de860eb", "name": "Docker registry",'
+            ' "type": "docker", "credentials": {"type": "docker", "login": "login_test",'
+            ' "password": "password_test", "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+        )
+
+    @responses.activate
+    def test_credentials_create_object_storage(self):
+        responses.add(
+            "POST",
+            "/credentials-service/create-credentials",
+            body=self.__legacy_create_object_storage(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.credentials.create(
+            name="aws s3",
+            credentials_type="object-storage",
+            credentials={
+                "type": "s3",
+                "aws_access_key_id": "key_id",
+                "aws_secret_access_key": "password_test",
+                "aws_region": "us-east-1",
+                "bucket": "bucket.s3.us-east-1.amazonaws.com",
+            },
+            company="507f191e810c19729de860eb",
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/create-credentials"
+        )
+
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860eb", "name": "aws s3", "type": "object-storage",'
+            ' "credentials": {"type": "s3", "aws_access_key_id": "key_id", "aws_secret_access_key": "password_test",'
+            ' "aws_region": "us-east-1", "bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
+        )
+
+    @responses.activate
+    def test_credentials_create_type_None(self):
+        responses.add(
+            "POST",
+            "/credentials-service/create-credentials",
+            body=self.__legacy_create_docker(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.credentials.create(
+            name="Docker registry",
+            credentials_type=None,
+            credentials={
+                "type": "docker",
+                "login": "login_test",
+                "password": "password_test",
+                "registry": "https://harbor.dev-tool.delair-stack.com",
+            },
+            company="507f191e810c19729de860eb",
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/create-credentials"
+        )
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
+            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
+            ' "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+        )
+
+    @responses.activate
+    def test_credentials_no_create_bad_type(self):
+        with pytest.raises(Exception) as excinfo:
+            self.sdk.credentials.create(
+                name="Docker registry",
+                credentials_type="bad_type",
+                credentials={
+                    "type": "docker",
+                    "login": "login_test",
+                    "password": "password_test",
+                    "registry": "https://harbor.dev-tool.delair-stack.com",
+                },
+                company="507f191e810c19729de860eb",
+            )
+
+        self.assertEqual(str(excinfo.value), "Type of credentials is wrong")
+
+    @responses.activate
+    def test_credentials_no_create_unknwon_type(self):
+        with pytest.raises(Exception) as excinfo:
+            self.sdk.credentials.create(
+                name="test",
+                credentials_type=None,
+                credentials={
+                    "type": "unknwon_type",
+                    "login": "login_test",
+                    "password": "password_test",
+                    "registry": "https://harbor.dev-tool.delair-stack.com",
+                },
+                company="507f191e810c19729de860eb",
+            )
+
+        self.assertEqual(
+            str(excinfo.value), "Impossible to retrieve credentials type from unknwon_type"
+        )
+
+    @responses.activate
+    def test_credentials_create_docker_without_credentials_type(self):
+        responses.add(
+            "POST",
+            "/credentials-service/create-credentials",
+            body=self.__legacy_create_docker(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.credentials.create(
+            name="Docker registry",
+            credentials={
+                "type": "docker",
+                "login": "login_test",
+                "password": "password_test",
+                "registry": "https://harbor.dev-tool.delair-stack.com",
+            },
+            company="507f191e810c19729de860eb",
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/create-credentials"
+        )
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
+            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
+            ' "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+        )
+
+    @responses.activate
+    def test_credentials_create_s3_without_credentials_type(self):
+        responses.add(
+            "POST",
+            "/credentials-service/create-credentials",
+            body=self.__legacy_create_object_storage(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.credentials.create(
+            name="aws s3",
+            credentials={
+                "type": "s3",
+                "aws_access_key_id": "key_id",
+                "aws_secret_access_key": "password_test",
+                "aws_region": "us-east-1",
+                "bucket": "bucket.s3.us-east-1.amazonaws.com",
+            },
+            company="507f191e810c19729de860eb",
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/create-credentials"
+        )
+
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860eb", "name": "aws s3", "type": "object-storage",'
+            ' "credentials": {"type": "s3", "aws_access_key_id": "key_id", "aws_secret_access_key": "password_test",'
+            ' "aws_region": "us-east-1", "bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
+        )
 
     @responses.activate
     def test_credentials_delete(self):

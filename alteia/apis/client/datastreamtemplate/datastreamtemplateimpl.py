@@ -15,8 +15,6 @@ class DatastreamTemplateImpl:
         name: str,
         source: Dict,
         import_dataset: Dict,
-        contextualisation: Dict,
-        transform: Dict,
         **kwargs
     ) -> Resource:
         """Create a datastream template.
@@ -37,18 +35,6 @@ class DatastreamTemplateImpl:
                     for horizontal coordinattes in WKT format.
 
                 ingestion: ingestion parameters
-
-            contextualisation: contextualisation parameters.
-
-                assets_schema_repository: name of assets schema repository
-
-                geographic_buffer: buffer enlarging the search box
-
-                assets_schema: name of asset schema
-
-                assets_schema_property_name: name of assets schema property
-
-            transform: information for the analytic process.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
@@ -112,16 +98,13 @@ class DatastreamTemplateImpl:
 
         """
         data: Dict = kwargs
+        template = {
+            "name": name,
+            "source": source,
+            "import": import_dataset,
+        }
 
-        data.update(
-            {
-                "name": name,
-                "source": source,
-                "import": import_dataset,
-                "contextualisation": contextualisation,
-                "transform": transform,
-            }
-        )
+        data.update(template)
 
         desc = self._provider.post(path="create-datastream-template", data=data)
 

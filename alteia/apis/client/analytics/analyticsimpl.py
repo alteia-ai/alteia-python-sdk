@@ -6,7 +6,6 @@ from collections import defaultdict
 from typing import (Any, DefaultDict, Dict, Generator, List, Optional, Union,
                     cast)
 
-from alteia.core.utils.warnings import deprecated, warn_for_deprecation
 from semantic_version import NpmSpec, Version
 
 from alteia.apis.provider import AnalyticsServiceAPI
@@ -15,6 +14,7 @@ from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId
 from alteia.core.utils.versions import select_version
+from alteia.core.utils.warnings import deprecated, warn_for_deprecation
 
 
 class AnalyticsImpl:

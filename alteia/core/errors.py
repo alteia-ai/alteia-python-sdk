@@ -13,6 +13,7 @@ class _Error(Exception):
     """Base class for all package exceptions.
 
     """
+
     def __init__(self, msg=''):
         super().__init__(msg)
 
@@ -49,7 +50,9 @@ class QueryError(_Error):
 
 
 class ResponseError(_Error):
-    pass
+    def __init__(self, msg, status: int = 0):
+        super(ResponseError, self).__init__(msg=msg)
+        self.status = status
 
 
 class MissingCredentialsError(_Error):

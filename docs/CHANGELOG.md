@@ -5,6 +5,17 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2023-06-08
+
+### Added
+- Add status code to ResponseError, default to 0 when not used
+
+### Changed
+- Fix bug in `sdk.credentials.create` use the correct type of credentials (DAI-19718)
+- Contextualization and transformation are now optionnal for datastream template creation (DAI-21227)
+
+### Deleted
+
 ## [2.7.0] - 2023-03-14
 
 ### Added

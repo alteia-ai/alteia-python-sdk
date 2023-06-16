@@ -22,7 +22,7 @@ repos:
   - id: seed-isort-config
 
 - repo: https://github.com/timothycrosley/isort
-  rev: 5.10.1   # pick the isort version you'd like to use from https://github.com/timothycrosley/isort/releases
+  rev: 5.12.0   # pick the isort version you'd like to use from https://github.com/timothycrosley/isort/releases
   hooks:
   - id: isort
 
