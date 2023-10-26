@@ -5,6 +5,15 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2023-09-12
+
+### Added
+- Stac credentials handling for credentials creation (DAI-22278)
+
+### Changed
+
+### Deleted
+
 ## [2.8.0] - 2023-06-08
 
 ### Added

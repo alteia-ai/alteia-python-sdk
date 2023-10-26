@@ -9,23 +9,30 @@ from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import ResourcesWithTotal
 from alteia.core.utils.typing import Resource, ResourceId
 
-DOCKER = 'docker'
-OBJECT_STORAGE = 'object-storage'
+DOCKER = "docker"
+OBJECT_STORAGE = "object-storage"
+STAC_CATALOG = "stac-catalog"
 
 OBJECT_STORAGE_TYPES = ("s3", "azure-blob")
 DOCKER_TYPES = ("aws", "docker")
+STAC_CATALOG_TYPES = "oauth"
 
 
 class CredentialsImpl:
-    def __init__(self,
-                 credentials_service_api: CredentialsServiceAPI,
-                 **kwargs):
+    def __init__(self, credentials_service_api: CredentialsServiceAPI, **kwargs):
         self._provider = credentials_service_api
 
-    def search(self, *, name: Union[str, List[str]] = None, filter: Dict = None,
-               limit: int = None, page: int = None, sort: dict = None,
-               return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        name: Union[str, List[str]] = None,
+        filter: Dict = None,
+        limit: int = None,
+        page: int = None,
+        sort: dict = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search for a list of credentials.
 
         Args:
@@ -59,36 +66,45 @@ class CredentialsImpl:
         """
         data = kwargs
 
-        for prop_name, value in [('filter', filter or {}),
-                                 ('limit', limit),
-                                 ('page', page),
-                                 ('sort', sort)]:
+        for prop_name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({prop_name: value})
 
         if name is not None:
             name_value: Dict[str, Any]
             if isinstance(name, list):
-                name_value = {'$in': name}
+                name_value = {"$in": name}
             else:
-                name_value = {'$eq': name}
-            data['filter']['name'] = name_value
+                name_value = {"$eq": name}
+            data["filter"]["name"] = name_value
 
         search_desc = self._provider.post(
-            path='search-credentials', data=data, as_json=True)
+            path="search-credentials", data=data, as_json=True
+        )
 
-        credentials = search_desc.get('results')
+        credentials = search_desc.get("results")
 
         results = [Resource(**credential) for credential in credentials]
 
         if return_total:
-            total = search_desc.get('total')
+            total = search_desc.get("total")
             return ResourcesWithTotal(total=total, results=results)
 
         return results
 
-    def create(self, *, name: str, credentials: Dict[str, str], credentials_type: Optional[str] = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str,
+        credentials: Dict[str, str],
+        credentials_type: Optional[str] = None,
+        **kwargs,
+    ) -> Resource:
         """Create a credential entry.
 
         Args:
@@ -145,9 +161,21 @@ class CredentialsImpl:
             ...     credentials={
             ...         "type": "azure-blob",
             ...         "azure_client_id": "key_id",
-            ...         "azure_tenant_id": "password_test",
-            ...         "azure_client_secret": "us-east-1",
+            ...         "azure_tenant_id": "tenant-id",
+            ...         "azure_client_secret": "client_secret",
             ...         "account_url": "https://mystorage.blob.core.windows.net"
+            ...     }
+            ... )
+            Resource(_id='5e6155ae8dcb064fcbf4ae35')
+
+            >>> sdk.credentials.create(name="My stac catalog",
+            ...     credentials_type="stac-catalog"
+            ...     credentials={
+            ...         "type": "oauth",
+            ...         "client_id": "key_id",
+            ...         "client_secret": "client_secret",
+            ...         "token_url": "https://token_url",
+            ...         "catalog": "https://catalog_url",
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
@@ -159,19 +187,22 @@ class CredentialsImpl:
                 credentials_type = DOCKER
             elif credentials["type"] in OBJECT_STORAGE_TYPES:
                 credentials_type = OBJECT_STORAGE
+            elif credentials["type"] in STAC_CATALOG_TYPES:
+                credentials_type = STAC_CATALOG
             else:
-                raise ParameterError(f'Impossible to retrieve credentials type from {credentials["type"]}')
-        elif credentials_type not in (DOCKER, OBJECT_STORAGE):
-            raise ParameterError('Type of credentials is wrong')
+                raise ParameterError(
+                    f'Impossible to retrieve credentials type from {credentials["type"]}'
+                )
+        elif credentials_type not in (DOCKER, OBJECT_STORAGE, STAC_CATALOG):
+            raise ParameterError("Type of credentials is wrong")
 
-        data.update({
-            'name': name,
-            'type': credentials_type,
-            'credentials': credentials
-        })
+        data.update(
+            {"name": name, "type": credentials_type, "credentials": credentials}
+        )
 
         desc = self._provider.post(
-            path='create-credentials', data=dict(data), as_json=True)
+            path="create-credentials", data=dict(data), as_json=True
+        )
 
         return Resource(**desc)
 
@@ -186,10 +217,6 @@ class CredentialsImpl:
 
         """
         data = kwargs
-        data.update({'credentials':  credential})
+        data.update({"credentials": credential})
 
-        self._provider.post(
-            path='delete-credentials',
-            data=data,
-            as_json=False
-        )
+        self._provider.post(path="delete-credentials", data=data, as_json=False)
