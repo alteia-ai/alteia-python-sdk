@@ -21,7 +21,7 @@ class TestCredentials(ResourcesTestBase):
                         "name": "Docker registry production",
                         "credentials": {
                             "type": "docker",
-                            "registry": "https://harbor.dev-tool.delair-stack.com",
+                            "registry": "https://harbor.mydomain.com",
                             "login": "login_test",
                         },
                         "company": "507f191e810c19729de860ea",
@@ -40,7 +40,7 @@ class TestCredentials(ResourcesTestBase):
                 "name": "Docker registry",
                 "credentials": {
                     "type": "docker",
-                    "registry": "https://harbor.dev-tool.delair-stack.com",
+                    "registry": "https://harbor.mydomain.com",
                     "login": "login_test",
                 },
                 "company": "507f191e810c19729de860ea",
@@ -74,7 +74,7 @@ class TestCredentials(ResourcesTestBase):
                 "credentials": {
                     "type": "oauth",
                     "token_url": "https://api.up42.com/oauth/token",
-                    "client_id": "711071f4-6480-40ba-92d9-5c21f10bff9a",
+                    "client_id": "client_id",
                     "catalog": "https://api.up42.com/v2/assets/stac",
                 },
                 "company": "507f191e810c19729de860ea",
@@ -126,7 +126,7 @@ class TestCredentials(ResourcesTestBase):
                 "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
-                "registry": "https://harbor.dev-tool.delair-stack.com",
+                "registry": "https://harbor.mydomain.com",
             },
             company="507f191e810c19729de860eb",
         )
@@ -139,7 +139,7 @@ class TestCredentials(ResourcesTestBase):
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "name": "Docker registry",'
             ' "type": "docker", "credentials": {"type": "docker", "login": "login_test",'
-            ' "password": "password_test", "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+            ' "password": "password_test", "registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
@@ -193,8 +193,8 @@ class TestCredentials(ResourcesTestBase):
             credentials={
                 "type": "oauth",
                 "token_url": "https://api.up42.com/oauth/token",
-                "client_id": "711071f4-6480-40ba-92d9-5c21f10bff9a",
-                "client_secret": "pNHY91qi.NAEIsRdYwFWt0aZxDXyd0Wp3fzrOO0EnEem",
+                "client_id": "client_id",
+                "client_secret": "credbegin.credend",
                 "catalog": "https://api.up42.com/v2/assets/stac",
             },
             company="507f191e810c19729de860eb",
@@ -209,8 +209,8 @@ class TestCredentials(ResourcesTestBase):
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "name": "up-42", "type": "stac-catalog",'
             ' "credentials": {"type": "oauth", "token_url": "https://api.up42.com/oauth/token",'
-            ' "client_id": "711071f4-6480-40ba-92d9-5c21f10bff9a",'
-            ' "client_secret": "pNHY91qi.NAEIsRdYwFWt0aZxDXyd0Wp3fzrOO0EnEem",'
+            ' "client_id": "client_id",'
+            ' "client_secret": "credbegin.credend",'
             ' "catalog": "https://api.up42.com/v2/assets/stac"}}',
         )
 
@@ -231,7 +231,7 @@ class TestCredentials(ResourcesTestBase):
                 "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
-                "registry": "https://harbor.dev-tool.delair-stack.com",
+                "registry": "https://harbor.mydomain.com",
             },
             company="507f191e810c19729de860eb",
         )
@@ -244,7 +244,7 @@ class TestCredentials(ResourcesTestBase):
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
             ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
-            ' "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+            ' "registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
@@ -257,7 +257,7 @@ class TestCredentials(ResourcesTestBase):
                     "type": "docker",
                     "login": "login_test",
                     "password": "password_test",
-                    "registry": "https://harbor.dev-tool.delair-stack.com",
+                    "registry": "https://harbor.mydomain.com",
                 },
                 company="507f191e810c19729de860eb",
             )
@@ -274,7 +274,7 @@ class TestCredentials(ResourcesTestBase):
                     "type": "unknwon_type",
                     "login": "login_test",
                     "password": "password_test",
-                    "registry": "https://harbor.dev-tool.delair-stack.com",
+                    "registry": "https://harbor.mydomain.com",
                 },
                 company="507f191e810c19729de860eb",
             )
@@ -300,7 +300,7 @@ class TestCredentials(ResourcesTestBase):
                 "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
-                "registry": "https://harbor.dev-tool.delair-stack.com",
+                "registry": "https://harbor.mydomain.com",
             },
             company="507f191e810c19729de860eb",
         )
@@ -313,7 +313,7 @@ class TestCredentials(ResourcesTestBase):
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
             ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
-            ' "registry": "https://harbor.dev-tool.delair-stack.com"}}',
+            ' "registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
@@ -365,8 +365,8 @@ class TestCredentials(ResourcesTestBase):
             credentials={
                 "type": "oauth",
                 "token_url": "https://api.up42.com/oauth/token",
-                "client_id": "711071f4-6480-40ba-92d9-5c21f10bff9a",
-                "client_secret": "pNHY91qi.NAEIsRdYwFWt0aZxDXyd0Wp3fzrOO0EnEem",
+                "client_id": "client_id",
+                "client_secret": "credbegin.credend",
                 "catalog": "https://api.up42.com/v2/assets/stac",
             },
             company="507f191e810c19729de860eb",
@@ -381,8 +381,8 @@ class TestCredentials(ResourcesTestBase):
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "name": "up-42", "type": "stac-catalog",'
             ' "credentials": {"type": "oauth", "token_url": "https://api.up42.com/oauth/token",'
-            ' "client_id": "711071f4-6480-40ba-92d9-5c21f10bff9a",'
-            ' "client_secret": "pNHY91qi.NAEIsRdYwFWt0aZxDXyd0Wp3fzrOO0EnEem",'
+            ' "client_id": "client_id",'
+            ' "client_secret": "credbegin.credend",'
             ' "catalog": "https://api.up42.com/v2/assets/stac"}}',
         )
 

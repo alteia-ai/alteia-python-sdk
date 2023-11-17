@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alteia"
-version = "2.9.0"  # must match the version in alteia/__init__.py
+version = "2.9.1"  # must match the version in alteia/__init__.py
 description = "High-level Python interface to Alteia API"
 authors = ["Alteia Backend team <backend-team@alteia.com>"]
 repository = "https://github.com/alteia-ai/alteia-python-sdk"
