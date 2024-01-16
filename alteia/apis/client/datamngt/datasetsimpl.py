@@ -1201,7 +1201,7 @@ class DatasetsImpl:
 
         """
         return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, **kwargs)
+                                page=page, count=False, **kwargs)
 
     def create_datasets(self, datasets: List[dict]) -> Union[List[Resource]]:
         """Create several datasets *(bulk dataset creation)*.

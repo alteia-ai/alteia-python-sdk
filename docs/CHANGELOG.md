@@ -5,6 +5,16 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2024-01-16
+
+### Added
+
+### Changed
+- improve `sdk.datasets.search_generator()` by not asking for count on each search call (DAI-24705)
+- Now `Provider.post` support header overload (DAI-25000)
+
+### Deleted
+
 ## [2.9.1] - 2023-11-14
 
 ### Changed

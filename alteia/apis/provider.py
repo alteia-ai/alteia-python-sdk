@@ -1,4 +1,5 @@
 import json
+from typing import Any, Dict, Optional
 
 from alteia.core.connection.connection import Connection
 from alteia.core.utils.utils import sanitize_dict
@@ -17,11 +18,15 @@ class Provider:
     def __init__(self, connection: Connection):
         self._connection = connection
 
-    def get(self, path, *, preload_content=True, as_json=True, timeout=None):
-        headers = {'Cache-Control': 'no-cache'}
+    def get(self, path, *, preload_content=True, as_json=True,
+            timeout=None, headers: Optional[Dict[str, Any]] = None):
+        request_headers = {'Cache-Control': 'no-cache'}
+        if headers:
+            request_headers.update(headers)
+
         full_path = f'{self._root_path}/{path}'
         content = self._connection.get(path=full_path,
-                                       headers=headers,
+                                       headers=request_headers,
                                        timeout=timeout or self.api_timeout,
                                        as_json=as_json,
                                        preload_content=preload_content)
@@ -29,7 +34,8 @@ class Provider:
         return content
 
     def post(self, path, data, *, sanitize=False, serialize=True,
-             preload_content=True, as_json=True, timeout=None):
+             preload_content=True, as_json=True, timeout=None,
+             headers: Optional[Dict[str, Any]] = None):
         """Post the given data.
 
         Args:
@@ -48,6 +54,8 @@ class Provider:
 
             timeout: Timeout in seconds for API call
 
+            headers: Headers in dict format
+
         Returns:
             Response body eventually deserialized.
 
@@ -61,11 +69,13 @@ class Provider:
         else:
             content_type = 'application/octet-stream'
 
-        headers = {'Cache-Control': 'no-cache'}
-        headers['Content-Type'] = content_type
+        request_headers = {'Cache-Control': 'no-cache', 'Content-Type': content_type}
+        if headers:
+            request_headers.update(headers)
+
         full_path = f'{self._root_path}/{path}'
         content = self._connection.post(path=full_path,
-                                        headers=headers,
+                                        headers=request_headers,
                                         data=data,
                                         timeout=timeout or self.api_timeout,
                                         as_json=as_json,
@@ -73,7 +83,8 @@ class Provider:
         return content
 
     def put(self, path, data, *, sanitize=True, serialize=True,
-            preload_content=True, as_json=True, timeout=None):
+            preload_content=True, as_json=True, timeout=None,
+            headers: Optional[Dict[str, Any]] = None):
         """Put the given data.
 
         Args:
@@ -92,6 +103,8 @@ class Provider:
 
             timeout: Timeout in seconds for API call
 
+            headers: Headers in dict format
+
         Returns:
             Response body eventually deserialized.
 
@@ -105,18 +118,22 @@ class Provider:
         else:
             content_type = 'application/octet-stream'
 
-        headers = {'Cache-Control': 'no-cache'}
-        headers['Content-Type'] = content_type
+        request_headers = {'Cache-Control': 'no-cache', 'Content-Type': content_type}
+        if headers:
+            request_headers.update(headers)
+
         path = f'{self._root_path}/{path}'
         content = self._connection.put(path=path,
-                                       headers=headers,
+                                       headers=request_headers,
                                        data=data,
                                        timeout=timeout or self.api_timeout,
                                        as_json=as_json,
                                        preload_content=preload_content)
         return content
 
-    def delete(self, path, *, preload_content=True, as_json=True, timeout=None):
+    def delete(self, path, *, preload_content=True,
+               as_json=True, timeout=None,
+               headers: Optional[Dict[str, Any]] = None):
         """Delete.
 
         Args:
@@ -128,18 +145,22 @@ class Provider:
 
             timeout: Timeout in seconds for API call
 
+            headers: Headers in dict format
+
         Returns:
             Response body eventually deserialized.
 
         """
-        headers = {'Cache-Control': 'no-cache',
-                   'Content-Type': 'application/json'}
+        request_headers = {'Cache-Control': 'no-cache', 'Content-Type': 'application/json'}
+        if headers:
+            request_headers.update(headers)
+
         path = f'{self._root_path}/{path}'
         content = self._connection.delete(path=path,
-                                          headers=headers,
+                                          headers=request_headers,
                                           timeout=timeout or self.api_timeout,
                                           preload_content=preload_content,
-                                          as_json=True)
+                                          as_json=as_json)
         return content
 
 
