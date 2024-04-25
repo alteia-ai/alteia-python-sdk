@@ -5,6 +5,17 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2024-04-23
+
+### Added
+- Add argument `parse_metadata` for `sdk.datasets.create_image_dataset()`, to populate dataset attributes with parsed Exif & XMP metadata (DAI-27217)
+
+### Changed
+- `sdk.datasets.upload_file()` now uploads directly through the storage provider by default (DAI-25775)
+  - use env variable `USE_LEGACY_UPLOADER=1` to use the legacy upload method (deprecated)
+
+### Deleted
+
 ## [2.10.0] - 2024-01-16
 
 ### Added

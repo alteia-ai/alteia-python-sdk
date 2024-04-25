@@ -51,6 +51,16 @@ def md5(file_path):
     return object_hash.hexdigest()
 
 
+def md5_from_blob(blob):
+    """
+    md5sum of the object
+    used for uploads
+    """
+    object_hash = hashlib.md5()
+    object_hash.update(blob)
+    return object_hash.hexdigest()
+
+
 def new_instance(module_path, class_name, **kwargs):
     """
     dynamically load a class from a string and return an new instance of this class

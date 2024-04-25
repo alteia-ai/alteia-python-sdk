@@ -32,6 +32,10 @@ And upload the image file:
 
 See the :py:class:`datasets.upload_file() <alteia.apis.client.datamngt.datasetsimpl.DatasetsImpl.upload_file>` documentation.documentation.
 
+Options
+~~~~~~~
+
+* `parse_metadata`: Boolean that automatically parses the Exif & XMP data from the image and updates the corresponding dataset attributes. In case of `None` or `True` the platform will automatically parse the ingested dataset.
 
 Create a point cloud dataset
 -----------------------------

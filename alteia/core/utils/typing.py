@@ -2,7 +2,7 @@
 
 """
 import pathlib
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from alteia.core.resources.resource import Resource
 
@@ -15,3 +15,7 @@ SomeResourceIds = Union[ResourceId, List[ResourceId]]
 SomeResources = Union[Resource, List[Resource]]
 
 Offset = Tuple[float, float, float]
+
+DictAny = Dict[str, Any]
+
+DictStr = Dict[str, str]

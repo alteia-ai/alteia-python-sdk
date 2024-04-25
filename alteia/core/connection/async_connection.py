@@ -1,5 +1,6 @@
 import concurrent.futures as cf
 import logging
+import os
 from threading import Lock
 from typing import Callable
 from urllib.parse import urljoin
@@ -9,6 +10,7 @@ import urllib3
 from alteia.core.connection.abstract_connection import AbstractConnection
 
 LOGGER = logging.getLogger(__name__)
+MAX_REQUESTS_WORKERS = int(os.getenv('MAX_REQUESTS_WORKERS', 6))
 
 
 def _load_url(http: urllib3.request.RequestMethods, cb: Callable = None, **params):
@@ -20,12 +22,14 @@ def _load_url(http: urllib3.request.RequestMethods, cb: Callable = None, **param
 
 class AsyncConnection(AbstractConnection):
     def __init__(self, *, base_url, disable_ssl_certificate,
-                 token_manager, retries, max_requests_workers=6,
+                 token_manager, retries, max_requests_workers=None,
                  proxy_url=None):
         super().__init__(base_url=base_url,
                          disable_ssl_certificate=disable_ssl_certificate,
                          token_manager=token_manager, retries=retries)
         self._access_token_lock = Lock()
+        if max_requests_workers is None:
+            max_requests_workers = MAX_REQUESTS_WORKERS
         self._executor = cf.ThreadPoolExecutor(max_workers=max_requests_workers)
         self._max_requests_workers = max_requests_workers
         manager_kw = {'cert_reqs': ('CERT_NONE' if disable_ssl_certificate
@@ -99,5 +103,14 @@ class AsyncConnection(AbstractConnection):
             if on_finish_callback:
                 on_finish_callback(response)
 
-        LOGGER.debug(f"Making request {params['method']} to {params['url']}")
+        LOGGER.debug(f"Making async {params['method']} request to {params['url']}")
         return self._executor.submit(_load_url, self._http, extended_callback, **params)
+
+    def external_request(self, method, url, callback=None, **params):
+        params['url'] = url
+        params['method'] = method
+        params['retries'] = params.get('retries') or self._retries
+        params['timeout'] = params.get('timeout') or self.request_timeout
+
+        LOGGER.debug(f'Making external async {params["method"]} request to {params["url"]}')
+        return self._executor.submit(_load_url, self._http, callback, **params)

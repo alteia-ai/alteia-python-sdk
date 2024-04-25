@@ -159,3 +159,18 @@ class Connection(AbstractConnection):
             raise ResponseError(msg=f'{response.status}: {response.data[:256]}', status=response.status)
 
         return response
+
+    def external_request(self, method, url, **params):
+        params['url'] = url
+        params['method'] = method
+        params['retries'] = params.get('retries') or self._retries
+        params['timeout'] = params.get('timeout') or self.request_timeout
+
+        LOGGER.debug(f'Making external {params["method"]} request to {params["url"]}')
+
+        response = self._http.request(**params)
+
+        if response.status not in range(200, 300):
+            raise ResponseError(msg=f'{response.status}: {response.data[:256]}', status=response.status)
+
+        return response

@@ -10,8 +10,7 @@ import urllib3.exceptions
 from alteia.apis.provider import DataManagementAPI
 from alteia.core.errors import (DownloadError, ParameterError,
                                 UnsupportedResourceError)
-from alteia.core.resources.datamngt.upload import (MultipartUpload,
-                                                   cfg_multipart_upload)
+from alteia.core.resources.datamngt.uploader import DatasetUploader
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.requests import (extract_filename_from_headers,
@@ -20,7 +19,7 @@ from alteia.core.utils.requests import (extract_filename_from_headers,
 from alteia.core.utils.srs import expand_vertcrs_to_wkt
 from alteia.core.utils.typing import (AnyPath, Offset, ResourceId,
                                       SomeResourceIds, SomeResources)
-from alteia.core.utils.utils import get_chunks, md5
+from alteia.core.utils.utils import dict_merge, get_chunks
 
 # TODO complete description of bands for rasters
 # TODO complete description of bands for images
@@ -322,6 +321,7 @@ class DatasetsImpl:
                              lens: dict = None,
                              camera_parameters: dict = None,
                              reflectance_calibration_panel: dict = None,
+                             parse_metadata: bool = None,
                              **kwargs) -> Resource:
         """Create a dataset of type ``image``.
 
@@ -375,6 +375,9 @@ class DatasetsImpl:
             reflectance_calibration_panel: Optional reflectance calibration
                 panel description.
 
+            parse_metadata: Optional ingestion parameter that will populate dataset
+                attributes with parsed Exif & XMP metadata
+
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
 
@@ -413,6 +416,9 @@ class DatasetsImpl:
             'geometry': geometry,
             'properties': properties,
         })
+
+        if parse_metadata is not None:
+            dict_merge(params, {'ingestion': {'parameters': {'parse_metadata': parse_metadata}}})
 
         components = ['image']
         return self._create('image', components, **params)
@@ -879,6 +885,11 @@ class DatasetsImpl:
                     multipart: bool = True, chunk_size: int = None):
         """Upload a file to a dataset component.
 
+        By default, it uploads directly into the storage provider, by using signed URIs.
+        If you want to use the legacy upload method (not recommended), then change
+        ``alteia.core.resources.datamngt.uploader.USE_LEGACY_UPLOADER`` to ``True``, or
+        set env variable USE_LEGACY_UPLOADER=1 before running your script.
+
         Args:
             dataset: Identifier of the dataset to upload to.
 
@@ -897,32 +908,10 @@ class DatasetsImpl:
                 If file size is less than this number, multipart will not be used.
                 The value is limited by storage provider and Data-Manager capabilities.
                 5MiB is the min value.
-
         """
-        file_size = os.path.getsize(file_path)
-        multipart, chunk_size = cfg_multipart_upload(file_size, multipart, chunk_size)
 
-        md5hash = md5hash or md5(file_path)
-
-        if multipart:
-            conn = self._provider._connection
-            url = self._provider._root_path
-            MultipartUpload(conn, url, chunk_size=chunk_size).send(
-                file_path,
-                dataset=dataset,
-                component_name=component,
-                md5hash=md5hash
-            )
-        else:
-            query = {'dataset': dataset,
-                     'component': component,
-                     'filename': os.path.basename(file_path),
-                     'checksum': md5hash}
-            query_str = urllib.parse.urlencode(query)
-            path = f'upload-component?{query_str}'
-            with open(file_path, mode='rb') as fh:
-                self._provider.post(path, data=fh, as_json=False,
-                                    sanitize=False, serialize=False)
+        du = DatasetUploader(self._provider, multipart, chunk_size)
+        du.send(file_path, dataset=dataset, component=component, md5hash=md5hash)
 
     def _download(self, path: str, params: dict,
                   target_path: Union[None, str],
@@ -1175,7 +1164,7 @@ class DatasetsImpl:
             return results
 
     def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
+                         page: int = None, count=False,
                          **kwargs) -> Generator[Resource, None, None]:
         """Return a generator to search through datasets.
 
@@ -1201,7 +1190,7 @@ class DatasetsImpl:
 
         """
         return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, count=False, **kwargs)
+                                page=page, count=count, **kwargs)
 
     def create_datasets(self, datasets: List[dict]) -> Union[List[Resource]]:
         """Create several datasets *(bulk dataset creation)*.

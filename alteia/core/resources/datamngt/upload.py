@@ -1,5 +1,6 @@
-"""Files uploader.
-
+"""
+Legacy Files uploader.
+New uploader available here: alteia.core.resources.datamngt.uploader.DatasetUploader
 """
 
 import concurrent.futures as cf
@@ -113,6 +114,7 @@ class MultipartUpload:
 
     It raises a ``ValueError`` when ``chunk_size`` is < _S3_CHUNK_MIN_SIZE.
 
+    Deprecated: you should use alteia.core.resources.datamngt.uploader.DatasetUploader
     """
     def __init__(self, connection, base_url, *, chunk_size=S3_CHUNK_MIN_SIZE):
         if chunk_size < S3_CHUNK_MIN_SIZE:
