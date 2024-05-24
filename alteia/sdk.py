@@ -20,6 +20,19 @@ from alteia.apis.client.datacapture.collectiontasksimpl import \
     CollectionTaskImpl
 from alteia.apis.client.datacapture.pilotsimpl import PilotsImpl
 from alteia.apis.client.datacapture.teamsimpl import TeamsImpl
+from alteia.apis.client.datacapture.sensorsimpl import SensorsImpl
+from alteia.apis.client.datacapture.sensorsmodelsimpl import SensorsModelsImpl
+from alteia.apis.client.seasonplanner.assessmentparameterestimationsimpl import \
+    AssessmentParameterEstimationsImpl
+from alteia.apis.client.seasonplanner.assessmentparametervariablesimpl import \
+    AssessmentParameterVariablesImpl
+from alteia.apis.client.seasonplanner.cropsimpl import CropsImpl
+from alteia.apis.client.seasonplanner.estimationmethodsimpl import \
+    EstimationMethodsImpl
+from alteia.apis.client.seasonplanner.fieldsimpl import FieldsImpl
+from alteia.apis.client.seasonplanner.growthstagesimpl import GrowthStagesImpl
+from alteia.apis.client.seasonplanner.seasonplannermissionsimpl import SeasonPlannerMissionsImpl
+from alteia.apis.client.seasonplanner.trialsimpl import TrialsImpl
 from alteia.apis.client.datamngt.datasetsimpl import DatasetsImpl
 from alteia.apis.client.datastream.datastreamassetmonitoredimpl import \
     DatastreamsAssetMonitoredImpl
@@ -40,7 +53,9 @@ from alteia.apis.provider import (AnalyticsServiceAPI, AnnotationsAPI,
                                   CollectionTaskManagementAPI,
                                   CredentialsServiceAPI, DataflowServiceAPI,
                                   DataManagementAPI, FeaturesServiceAPI,
-                                  ProjectManagerAPI)
+                                  ProjectManagerAPI, SeasonPlannerAPI,
+                                  SeasonPlannerAssetManagementAPI,
+                                  SeasonPlannerTrialManagementAPI)
 from alteia.core.config import ConnectionConfig
 from alteia.core.connection.connection import Connection
 from alteia.core.connection.credentials import (ClientCredentials, Credentials,
@@ -122,7 +137,7 @@ class SDK():
         >>> sdk = SDK(config_path='~/.local/share/alteia/conf.json')
 
     """
-    def __init__(self,  *, config_path: str = None,
+    def __init__(self, *, config_path: str = None,
                  user: str = None, password: str = None,
                  client_id: str = None, client_secret: str = None,
                  url: str = None, proxy_url: str = None,
@@ -234,7 +249,11 @@ class SDK():
             'credentials_service_api': CredentialsServiceAPI(**provider_args),
             'project_manager_api': ProjectManagerAPI(**provider_args),
             'features_service_api': FeaturesServiceAPI(**provider_args),
-            'dataflow_service_api': DataflowServiceAPI(**provider_args)
+            'dataflow_service_api': DataflowServiceAPI(**provider_args),
+            'season_planner_asset_management_api': SeasonPlannerAssetManagementAPI(
+                **provider_args),
+            'season_planner_api': SeasonPlannerAPI(**provider_args),
+            'season_planner_trial_management_api': SeasonPlannerTrialManagementAPI(**provider_args)
         }
 
     def __set_resources_as_attributes(self):
@@ -267,3 +286,16 @@ class SDK():
         self.datastreams: DatastreamsImpl = DatastreamsImpl(**kwargs)
         self.datastreamsfiles: DatastreamsFilesImpl = DatastreamsFilesImpl(**kwargs)
         self.datastreamsassetsmonitored: DatastreamsAssetMonitoredImpl = DatastreamsAssetMonitoredImpl(**kwargs)
+        self.assessment_parameters_estimations: AssessmentParameterEstimationsImpl = AssessmentParameterEstimationsImpl(
+            **kwargs)
+        self.assessment_parameters_variables: AssessmentParameterVariablesImpl = AssessmentParameterVariablesImpl(
+            **kwargs)
+        self.crops: CropsImpl = CropsImpl(**kwargs)
+        self.estimation_methods: EstimationMethodsImpl = EstimationMethodsImpl(**kwargs)
+        self.fields: FieldsImpl = FieldsImpl(**kwargs)
+        self.growth_stages: GrowthStagesImpl = GrowthStagesImpl(**kwargs)
+        self.season_planner_missions: SeasonPlannerMissionsImpl = SeasonPlannerMissionsImpl(
+            **kwargs)
+        self.trials: TrialsImpl = TrialsImpl(**kwargs)
+        self.sensors_models: SensorsModelsImpl = SensorsModelsImpl(**kwargs)
+        self.sensors: SensorsImpl = SensorsImpl(**kwargs)

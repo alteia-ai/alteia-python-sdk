@@ -5,6 +5,27 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2024-05-24
+
+### Added
+- Add new function of data-capture API (DAI-26970)
+  - Support creation/description/deletion/search/update for pilots `sdk.pilots`
+  - Support creation/description/deletion/search for sensors `sdk.sensors`
+  - Support creation/description/deletion/search for sensors models `sdk.sensor_models`
+- Support season-planner API (DAI-26970)
+  - Support export_report_entries/search/start_analysis_on_ape/start_reporting_on_ape for assessment parameters estimations `sdk.assessment_parameters_estimations`
+  - Support creation/description/deletion/search/update for assessment parameters variables `sdk.assessment_parameters_variables`
+  - Support creation/description/deletion/search/update for crops `sdk.crops`
+  - Support creation/description/deletion/search/update/list_deliverables_definitions for estimation methods `sdk.estimation_methods`
+  - Support creation/description/deletion/search/update for fields `sdk.fields`
+  - Support creation/description/deletion/search/update for growth stages `sdk.growth_stages`
+  - Support add_mission_to_trial/description/deletion/search/update for season planner missions `sdk.season_planner_missions`
+  - Support creation/description/deletion/search/update/set_plots_on_trial/set_dtm_dataset_on_trial/delete_generated_tasks_on_trial for trials `sdk.trials`
+### Changed
+
+### Deleted
+
+
 ## [2.11.0] - 2024-04-23
 
 ### Added

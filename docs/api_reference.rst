@@ -54,6 +54,18 @@ Annotations
 .. autoclass:: alteia.apis.client.annotations.annotationsimpl.AnnotationsImpl
    :members:
 
+Assessment Parameter Estimations
+===========
+
+.. autoclass:: alteia.apis.client.seasonplanner.assessmentparameterestimationsimpl.AssessmentParameterEstimationsImpl
+   :members:
+
+Assessment Parameter Variables
+===========
+
+.. autoclass:: alteia.apis.client.seasonplanner.assessmentparametervariablesimpl.AssessmentParameterVariablesImpl
+   :members:
+
 Carriers
 ========
 
@@ -96,16 +108,52 @@ Credentials
 .. autoclass:: alteia.apis.client.credentials.credentialsimpl.CredentialsImpl
    :members:
 
+Crops
+===========
+
+.. autoclass:: alteia.apis.client.seasonplanner.cropsimpl.CropsImpl
+   :members:
+
 Datasets
 ========
 
 .. autoclass:: alteia.apis.client.datamngt.datasetsimpl.DatasetsImpl
    :members:
 
+Estimations Methods
+========
+
+.. autoclass:: alteia.apis.client.seasonplanner.estimationmethodsimpl.EstimationMethodsImpl
+   :members:
+
 Features
 ========
 
 .. autoclass:: alteia.apis.client.featuresservice.featuresimpl.FeaturesImpl
+   :members:
+
+Fields
+========
+
+.. autoclass:: alteia.apis.client.seasonplanner.fieldsimpl.FieldsImpl
+   :members:
+
+Flights
+========
+
+.. autoclass:: alteia.apis.client.projectmngt.flightsimpl.FlightsImpl
+   :members:
+
+Flight resource
+----------------
+
+.. autoclass:: alteia.core.resources.projectmngt.flights.Flight
+   :members: __init__
+
+Growth Stages
+========
+
+.. autoclass:: alteia.apis.client.seasonplanner.growthstagesimpl.GrowthStagesImpl
    :members:
 
 Missions
@@ -120,17 +168,11 @@ Mission resource
 .. autoclass:: alteia.core.resources.projectmngt.missions.Mission
    :members: __init__
 
-Flights
-========
+Pilots
+==============
 
-.. autoclass:: alteia.apis.client.projectmngt.flightsimpl.FlightsImpl
+.. autoclass:: alteia.apis.client.datacapture.pilotsimpl.PilotsImpl
    :members:
-
-Flight resource
-----------------
-
-.. autoclass:: alteia.core.resources.projectmngt.flights.Flight
-   :members: __init__
 
 Products
 ========
@@ -149,6 +191,24 @@ Project resource
 .. autoclass:: alteia.core.resources.projectmngt.projects.Project
    :members: __init__
 
+Season Planner Missions
+========
+
+.. autoclass:: alteia.apis.client.seasonplanner.seasonplannermissionsimpl.SeasonPlannerMissionsImpl
+   :members:
+
+Sensors
+==============
+
+.. autoclass:: alteia.apis.client.datacapture.sensorsimpl.SensorsImpl
+   :members:
+
+Sensors Models
+==============
+
+.. autoclass:: alteia.apis.client.datacapture.sensorsmodelsimpl.SensorsModelsImpl
+   :members:
+
 Share tokens
 ============
 
@@ -165,6 +225,12 @@ Teams
 =====
 
 .. autoclass:: alteia.apis.client.datacapture.teamsimpl.TeamsImpl
+   :members:
+
+Trials
+========
+
+.. autoclass:: alteia.apis.client.seasonplanner.trialsimpl.TrialsImpl
    :members:
 
 Users

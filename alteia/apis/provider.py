@@ -173,11 +173,11 @@ class WithSearchRoute():
 
         """
         content = self._connection.post(
-                path=f'{self._root_path}/{path}/{self._search_path}',
-                headers={'Cache-Control': 'no-cache', 'Content-Type': 'application/json'},
-                data=json.dumps(query),
-                timeout=self.timeout,
-                as_json=True)
+            path=f'{self._root_path}/{path}/{self._search_path}',
+            headers={'Cache-Control': 'no-cache', 'Content-Type': 'application/json'},
+            data=json.dumps(query),
+            timeout=self.timeout,
+            as_json=True)
 
         return content
 
@@ -233,4 +233,19 @@ class CollectionTaskManagementAPI(Provider):
 
 class DataflowServiceAPI(Provider):
     _root_path = 'dataflow'
+    api_timeout = DEFAULT_API_TIMEOUT
+
+
+class SeasonPlannerAssetManagementAPI(Provider):
+    _root_path = 'season-planner/asset-management'
+    api_timeout = DEFAULT_API_TIMEOUT
+
+
+class SeasonPlannerTrialManagementAPI(Provider):
+    _root_path = 'season-planner/trial-management'
+    api_timeout = DEFAULT_API_TIMEOUT
+
+
+class SeasonPlannerAPI(Provider):
+    _root_path = 'season-planner'
     api_timeout = DEFAULT_API_TIMEOUT

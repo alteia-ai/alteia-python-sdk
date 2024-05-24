@@ -31,7 +31,8 @@ class CollectionTaskImpl:
             survey: Optional survey identifier.
 
             location: Optional location
-                ``{ adress: {street, zipcode, city},  contact: {name, phone, email}, task_area: {} }``
+                ``{ adress: {street, zipcode, city},
+                contact: {name, phone, email}, task_area: {} }``
 
             forecast_date_range: Optional forecast date range ``{ start_date, end_date}``.
 
@@ -251,7 +252,8 @@ class CollectionTaskImpl:
             survey: Optional survey identifier.
 
             location: Optional location
-                ``{ adress: {street, zipcode, city},  contact: {name, phone, email}, task_area: {} }``
+                ``{ adress: {street, zipcode, city},
+                contact: {name, phone, email}, task_area: {} }``
 
             forecast_date_range: Optional forecast date range ``{ start_date, end_date}``.
 
@@ -312,4 +314,47 @@ class CollectionTaskImpl:
         data["task"] = task
         data["status"] = status
         content = self._provider.post(path='set-task-status', data=data)
+        return Resource(**content)
+
+    def set_fieldreport_in_task(self, *, task: ResourceId, field_report: dict,
+                                **kwargs) -> Resource:
+        """
+        Set fieldreport in a collection task
+
+        Args:
+            task: Collection task identifier
+
+            field_report: Field report.
+                        ``{
+                            "task": "string",
+                            "field_report": {
+                                "capture_date": "2019-08-24T14:15:22Z",
+                                "team": "string",
+                                "pic": "string",
+                                "weather": {
+                                    "wind_speed": {"value": 6, "unit": "m/s"},
+                                    "type": "sun",
+                                    "dew": true,
+                                    "wind": true
+                                },
+                                "carrier": "string",
+                                "sensor": "string",
+                                "speed": {"value": 4, "unit": "m/s"},
+                                "altitude": {"value": 70, "unit": "m"},
+                                "duration": {"value": 20, "unit": "min"},
+                                "overlap": {
+                                    "forward": 80,
+                                    "lateral": 80
+                                },
+                                "comment": "string",
+                                "custom_props": {}
+                            }
+                        }``
+        """
+        data = kwargs
+        data["task"] = task
+        data["field_report"] = field_report
+
+        content = self._provider.post(path='set-fieldreport-in-task', data=data)
+
         return Resource(**content)
