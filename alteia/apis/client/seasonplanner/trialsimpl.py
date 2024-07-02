@@ -433,16 +433,3 @@ class TrialsImpl:
         content = self._provider.post(path='set-dtm-dataset-on-trial', data=data)
 
         return Resource(**content)
-
-    def delete_generated_tasks_on_trial(self, trial: ResourceId, **kwargs):
-        """Delete generated tasks on trial.
-
-        Args:
-            trial: trial identifier.
-
-        """
-
-        data = kwargs
-        data['trial'] = trial
-
-        self._provider.post('delete-trial', data=data)

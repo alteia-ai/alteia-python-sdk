@@ -5,6 +5,16 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2024-07-01
+
+### Changed
+- Fix `sdk.assessment_parameters_variables.describe()` (DAI-28782)
+- Fix `sdk.estimation_methods.update()` about crops update (DAI-28782)
+
+### Deleted
+- Remove useless `sdk.trials.delete_generated_tasks_on_trial()` for trials (DAI-28782)
+
+
 ## [2.12.0] - 2024-05-24
 
 ### Added

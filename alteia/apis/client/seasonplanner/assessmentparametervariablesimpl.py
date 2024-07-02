@@ -140,7 +140,7 @@ class AssessmentParameterVariablesImpl:
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['assessment_parameter_variables'] = assessment_parameter_variable
+            data['assessment_parameter_variable'] = assessment_parameter_variable
             desc = self._provider.post(
                 'describe-assessment-parameter-variable',
                 data=data

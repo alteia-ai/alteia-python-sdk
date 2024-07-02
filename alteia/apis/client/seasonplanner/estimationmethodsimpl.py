@@ -294,7 +294,7 @@ class EstimationMethodsImpl:
         data = kwargs
         data.update({
             'estimation_method': estimation_method,
-            'name': name
+            'crops': crops
         })
 
         for param_name, param_value in (('name', name),
