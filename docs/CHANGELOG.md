@@ -5,6 +5,16 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.0] - 2023-09-17
+
+### Added
+
+### Changed
+- Change `sdk.credentials.create()` Allow GCP credentials creation in SDK (DAI-29535)
+
+### Deleted
+
+
 ## [2.12.1] - 2024-07-01
 
 ### Changed
@@ -31,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Support creation/description/deletion/search/update for growth stages `sdk.growth_stages`
   - Support add_mission_to_trial/description/deletion/search/update for season planner missions `sdk.season_planner_missions`
   - Support creation/description/deletion/search/update/set_plots_on_trial/set_dtm_dataset_on_trial/delete_generated_tasks_on_trial for trials `sdk.trials`
+
 ### Changed
 
 ### Deleted

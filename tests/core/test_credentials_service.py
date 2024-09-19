@@ -248,43 +248,6 @@ class TestCredentials(ResourcesTestBase):
         )
 
     @responses.activate
-    def test_credentials_no_create_bad_type(self):
-        with pytest.raises(Exception) as excinfo:
-            self.sdk.credentials.create(
-                name="Docker registry",
-                credentials_type="bad_type",
-                credentials={
-                    "type": "docker",
-                    "login": "login_test",
-                    "password": "password_test",
-                    "registry": "https://harbor.mydomain.com",
-                },
-                company="507f191e810c19729de860eb",
-            )
-
-        self.assertEqual(str(excinfo.value), "Type of credentials is wrong")
-
-    @responses.activate
-    def test_credentials_no_create_unknwon_type(self):
-        with pytest.raises(Exception) as excinfo:
-            self.sdk.credentials.create(
-                name="test",
-                credentials_type=None,
-                credentials={
-                    "type": "unknwon_type",
-                    "login": "login_test",
-                    "password": "password_test",
-                    "registry": "https://harbor.mydomain.com",
-                },
-                company="507f191e810c19729de860eb",
-            )
-
-        self.assertEqual(
-            str(excinfo.value),
-            "Impossible to retrieve credentials type from unknwon_type",
-        )
-
-    @responses.activate
     def test_credentials_create_docker_without_credentials_type(self):
         responses.add(
             "POST",

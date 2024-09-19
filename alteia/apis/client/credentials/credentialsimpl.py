@@ -2,18 +2,20 @@
     Credential implementation
 """
 
+import logging
 from typing import Any, Dict, List, Optional, Union
 
 from alteia.apis.provider import CredentialsServiceAPI
-from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import ResourcesWithTotal
 from alteia.core.utils.typing import Resource, ResourceId
+
+LOGGER = logging.getLogger(__name__)
 
 DOCKER = "docker"
 OBJECT_STORAGE = "object-storage"
 STAC_CATALOG = "stac-catalog"
 
-OBJECT_STORAGE_TYPES = ("s3", "azure-blob")
+OBJECT_STORAGE_TYPES = ("s3", "azure-blob", "google-cloud-storage")
 DOCKER_TYPES = ("aws", "docker")
 STAC_CATALOG_TYPES = "oauth"
 
@@ -190,11 +192,7 @@ class CredentialsImpl:
             elif credentials["type"] in STAC_CATALOG_TYPES:
                 credentials_type = STAC_CATALOG
             else:
-                raise ParameterError(
-                    f'Impossible to retrieve credentials type from {credentials["type"]}'
-                )
-        elif credentials_type not in (DOCKER, OBJECT_STORAGE, STAC_CATALOG):
-            raise ParameterError("Type of credentials is wrong")
+                LOGGER.debug('Credentials type unknown')
 
         data.update(
             {"name": name, "type": credentials_type, "credentials": credentials}
