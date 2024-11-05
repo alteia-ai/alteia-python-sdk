@@ -1,6 +1,5 @@
 import json
 
-import pytest
 from urllib3_mock import Responses
 
 from tests.core.resource_test_base import ResourcesTestBase
@@ -36,14 +35,15 @@ class TestCredentials(ResourcesTestBase):
         return json.dumps(
             {
                 "_id": "632da638c1414e6fced3aef2",
-                "type": "docker",
                 "name": "Docker registry",
+                "company": "507f191e810c19729de860ea",
                 "credentials": {
-                    "type": "docker",
-                    "registry": "https://harbor.mydomain.com",
                     "login": "login_test",
                 },
-                "company": "507f191e810c19729de860ea",
+                "labels": {
+                    "type": "docker",
+                    "registry": "https://harbor.mydomain.com",
+                },
                 "creation_date": "2022-09-23T12:27:36.719Z",
             }
         )
@@ -53,13 +53,15 @@ class TestCredentials(ResourcesTestBase):
         return json.dumps(
             {
                 "_id": "632da638c1414e6fced3aef2",
-                "type": "object-storage",
                 "name": "aws s3",
+                "company": "507f191e810c19729de860ea",
                 "credentials": {
                     "type": "s3",
+                },
+                "labels": {
+                    "type": "object-storage",
                     "bucket": "bucket.s3.us-east-1.amazonaws.com",
                 },
-                "company": "507f191e810c19729de860ea",
                 "creation_date": "2022-09-23T12:27:36.719Z",
             }
         )
@@ -69,15 +71,17 @@ class TestCredentials(ResourcesTestBase):
         return json.dumps(
             {
                 "_id": "632da638c1414e6fced3aef2",
-                "type": "stac_catalog",
                 "name": "up-42",
+                "company": "507f191e810c19729de860ea",
                 "credentials": {
                     "type": "oauth",
                     "token_url": "https://api.up42.com/oauth/token",
                     "client_id": "client_id",
+                },
+                "type": {
+                    "type": "stac_catalog",
                     "catalog": "https://api.up42.com/v2/assets/stac",
                 },
-                "company": "507f191e810c19729de860ea",
                 "creation_date": "2022-09-23T12:27:36.719Z",
             }
         )
@@ -121,14 +125,16 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="Docker registry",
-            credentials_type="docker",
+            company="507f191e810c19729de860eb",
             credentials={
                 "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
+            },
+            labels={
+                "type": "docker",
                 "registry": "https://harbor.mydomain.com",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
@@ -137,9 +143,9 @@ class TestCredentials(ResourcesTestBase):
         )
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "Docker registry",'
-            ' "type": "docker", "credentials": {"type": "docker", "login": "login_test",'
-            ' "password": "password_test", "registry": "https://harbor.mydomain.com"}}',
+            '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test"},'
+            ' "labels": {"type": "docker", "registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
@@ -154,15 +160,17 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="aws s3",
-            credentials_type="object-storage",
+            company="507f191e810c19729de860eb",
             credentials={
                 "type": "s3",
                 "aws_access_key_id": "key_id",
                 "aws_secret_access_key": "password_test",
                 "aws_region": "us-east-1",
+            },
+            labels={
+                "type": "object-storage",
                 "bucket": "bucket.s3.us-east-1.amazonaws.com",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
@@ -172,9 +180,10 @@ class TestCredentials(ResourcesTestBase):
 
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "aws s3", "type": "object-storage",'
+            '{"name": "aws s3", "company": "507f191e810c19729de860eb",'
             ' "credentials": {"type": "s3", "aws_access_key_id": "key_id", "aws_secret_access_key": "password_test",'
-            ' "aws_region": "us-east-1", "bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
+            ' "aws_region": "us-east-1"}, "labels": {"type": "object-storage",'
+            ' "bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
         )
 
     @responses.activate
@@ -189,15 +198,17 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="up-42",
-            credentials_type="stac-catalog",
+            company="507f191e810c19729de860eb",
             credentials={
                 "type": "oauth",
                 "token_url": "https://api.up42.com/oauth/token",
                 "client_id": "client_id",
                 "client_secret": "credbegin.credend",
+            },
+            labels={
+                "type": "stac-catalog",
                 "catalog": "https://api.up42.com/v2/assets/stac",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
@@ -207,15 +218,15 @@ class TestCredentials(ResourcesTestBase):
 
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "up-42", "type": "stac-catalog",'
+            '{"name": "up-42", "company": "507f191e810c19729de860eb",'
             ' "credentials": {"type": "oauth", "token_url": "https://api.up42.com/oauth/token",'
             ' "client_id": "client_id",'
-            ' "client_secret": "credbegin.credend",'
-            ' "catalog": "https://api.up42.com/v2/assets/stac"}}',
+            ' "client_secret": "credbegin.credend"},'
+            ' "labels": {"type": "stac-catalog", "catalog": "https://api.up42.com/v2/assets/stac"}}',
         )
 
     @responses.activate
-    def test_credentials_create_type_None(self):
+    def test_credentials_create_without_type(self):
         responses.add(
             "POST",
             "/credentials-service/create-credentials",
@@ -226,14 +237,14 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="Docker registry",
-            credentials_type=None,
+            company="507f191e810c19729de860eb",
             credentials={
-                "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
+            },
+            labels={
                 "registry": "https://harbor.mydomain.com",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
@@ -242,13 +253,13 @@ class TestCredentials(ResourcesTestBase):
         )
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
-            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
-            ' "registry": "https://harbor.mydomain.com"}}',
+            '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"login": "login_test", "password": "password_test"},'
+            ' "labels": {"registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
-    def test_credentials_create_docker_without_credentials_type(self):
+    def test_credentials_create_docker_without_type(self):
         responses.add(
             "POST",
             "/credentials-service/create-credentials",
@@ -259,13 +270,14 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="Docker registry",
+            company="507f191e810c19729de860eb",
             credentials={
-                "type": "docker",
                 "login": "login_test",
                 "password": "password_test",
-                "registry": "https://harbor.mydomain.com",
             },
-            company="507f191e810c19729de860eb",
+            labels={
+                "registry": "https://harbor.mydomain.com"
+            },
         )
 
         self.assertEqual(len(calls), 1)
@@ -274,13 +286,13 @@ class TestCredentials(ResourcesTestBase):
         )
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "Docker registry", "type": "docker",'
-            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
-            ' "registry": "https://harbor.mydomain.com"}}',
+            '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"login": "login_test", "password": "password_test"},'
+            ' "labels": {"registry": "https://harbor.mydomain.com"}}',
         )
 
     @responses.activate
-    def test_credentials_create_s3_without_credentials_type(self):
+    def test_credentials_create_s3_without_type(self):
         responses.add(
             "POST",
             "/credentials-service/create-credentials",
@@ -291,30 +303,30 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="aws s3",
+            company="507f191e810c19729de860eb",
             credentials={
-                "type": "s3",
                 "aws_access_key_id": "key_id",
                 "aws_secret_access_key": "password_test",
                 "aws_region": "us-east-1",
+            },
+            labels={
                 "bucket": "bucket.s3.us-east-1.amazonaws.com",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
         self.assertEqual(
             calls[0].request.url, "/credentials-service/create-credentials"
         )
-
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "aws s3", "type": "object-storage",'
-            ' "credentials": {"type": "s3", "aws_access_key_id": "key_id", "aws_secret_access_key": "password_test",'
-            ' "aws_region": "us-east-1", "bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
+            '{"name": "aws s3", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"aws_access_key_id": "key_id", "aws_secret_access_key": "password_test",'
+            ' "aws_region": "us-east-1"}, "labels": {"bucket": "bucket.s3.us-east-1.amazonaws.com"}}',
         )
 
     @responses.activate
-    def test_credentials_create_stac_catalog_without_credentials_type(self):
+    def test_credentials_create_stac_catalog_without_type(self):
         responses.add(
             "POST",
             "/credentials-service/create-credentials",
@@ -325,28 +337,28 @@ class TestCredentials(ResourcesTestBase):
         calls = responses.calls
         self.sdk.credentials.create(
             name="up-42",
+            company="507f191e810c19729de860eb",
             credentials={
-                "type": "oauth",
                 "token_url": "https://api.up42.com/oauth/token",
                 "client_id": "client_id",
                 "client_secret": "credbegin.credend",
+            },
+            labels={
                 "catalog": "https://api.up42.com/v2/assets/stac",
             },
-            company="507f191e810c19729de860eb",
         )
 
         self.assertEqual(len(calls), 1)
         self.assertEqual(
             calls[0].request.url, "/credentials-service/create-credentials"
         )
-
         self.assertEqual(
             calls[0].request.body,
-            '{"company": "507f191e810c19729de860eb", "name": "up-42", "type": "stac-catalog",'
-            ' "credentials": {"type": "oauth", "token_url": "https://api.up42.com/oauth/token",'
+            '{"name": "up-42", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"token_url": "https://api.up42.com/oauth/token",'
             ' "client_id": "client_id",'
-            ' "client_secret": "credbegin.credend",'
-            ' "catalog": "https://api.up42.com/v2/assets/stac"}}',
+            ' "client_secret": "credbegin.credend"},'
+            ' "labels": {"catalog": "https://api.up42.com/v2/assets/stac"}}',
         )
 
     @responses.activate
@@ -369,4 +381,66 @@ class TestCredentials(ResourcesTestBase):
         self.assertEqual(
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "credentials": "63317316dfaf18df1b77f42f"}',
+        )
+
+    @responses.activate
+    def test_set_credentials(self):
+        responses.add(
+            "POST",
+            "/credentials-service/set-credentials",
+            status=200,
+            content_type="application/json",
+            body=self.__legacy_create_docker()
+        )
+        calls = responses.calls
+        self.sdk.credentials.set_credentials(
+            company="507f191e810c19729de860ea",
+            name="Docker registry",
+            credentials={
+                "type": "docker",
+                "login": "login_test",
+                "password": "password_test",
+                "registry": "https://harbor.mydomain.com",
+            },
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/set-credentials"
+        )
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860ea", "name": "Docker registry",'
+            ' "credentials": {"type": "docker", "login": "login_test", "password": "password_test",'
+            ' "registry": "https://harbor.mydomain.com"}}',
+        )
+
+    @responses.activate
+    def test_set_labels(self):
+        responses.add(
+            "POST",
+            "/credentials-service/set-labels",
+            status=200,
+            content_type="application/json",
+            body=self.__legacy_create_docker()
+        )
+        calls = responses.calls
+        self.sdk.credentials.set_labels(
+            company="507f191e810c19729de860ea",
+            name="Docker registry",
+            labels={
+                "label1": "value1",
+                "label2": "value2",
+                "label3": "value3",
+            },
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/set-labels"
+        )
+        self.assertEqual(
+            calls[0].request.body,
+            '{"company": "507f191e810c19729de860ea", "name": "Docker registry",'
+            ' "labels": {"label1": "value1", "label2": "value2", "label3": "value3"}}',
         )

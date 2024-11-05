@@ -5,6 +5,20 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.0] - 2023-10-04 
+
+### Added
+
+- Add new routes (DAI-28937):
+  - set-credentials: set credentials based on existing credentials
+  - set-labels: set labels based on existing credentials
+
+### Changed
+
+- Support new credentials architecture (DAI-28937)
+
+### Deleted
+
 ## [2.13.0] - 2023-09-17
 
 ### Added
@@ -18,16 +32,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.12.1] - 2024-07-01
 
 ### Changed
+
 - Fix `sdk.assessment_parameters_variables.describe()` (DAI-28782)
 - Fix `sdk.estimation_methods.update()` about crops update (DAI-28782)
 
 ### Deleted
-- Remove useless `sdk.trials.delete_generated_tasks_on_trial()` for trials (DAI-28782)
 
+- Remove useless `sdk.trials.delete_generated_tasks_on_trial()` for trials (DAI-28782)
 
 ## [2.12.0] - 2024-05-24
 
 ### Added
+
 - Add new function of data-capture API (DAI-26970)
   - Support creation/description/deletion/search/update for pilots `sdk.pilots`
   - Support creation/description/deletion/search for sensors `sdk.sensors`
@@ -46,13 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deleted
 
-
 ## [2.11.0] - 2024-04-23
 
 ### Added
+
 - Add argument `parse_metadata` for `sdk.datasets.create_image_dataset()`, to populate dataset attributes with parsed Exif & XMP metadata (DAI-27217)
 
 ### Changed
+
 - `sdk.datasets.upload_file()` now uploads directly through the storage provider by default (DAI-25775)
   - use env variable `USE_LEGACY_UPLOADER=1` to use the legacy upload method (deprecated)
 
@@ -63,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
 - improve `sdk.datasets.search_generator()` by not asking for count on each search call (DAI-24705)
 - Now `Provider.post` support header overload (DAI-25000)
 
@@ -71,11 +89,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.9.1] - 2023-11-14
 
 ### Changed
+
 - Fix bug on Windows about using `vertical_srs_wkt` on dataset creation (DAI-24752)
 
 ## [2.9.0] - 2023-09-12
 
 ### Added
+
 - Stac credentials handling for credentials creation (DAI-22278)
 
 ### Changed
@@ -85,9 +105,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.8.0] - 2023-06-08
 
 ### Added
+
 - Add status code to ResponseError, default to 0 when not used
 
 ### Changed
+
 - Fix bug in `sdk.credentials.create` use the correct type of credentials (DAI-19718)
 - Contextualization and transformation are now optionnal for datastream template creation (DAI-21227)
 
@@ -96,10 +118,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.7.0] - 2023-03-14
 
 ### Added
+
 - Add `sdk.analytics.expose()` and `sdk.analytics.unexpose()` (DAI-16466)
 - Add `sdk.analytics.enable()` and `sdk.analytics.disable()` instead (DAI-17814)
 
 ### Changed
+
 - Deprecate `sdk.analytics.share_with_company()`, use `expose()` and `enable()` instead (DAI-16466, DAI-17814)
 - Deprecate `sdk.analytics.unshare_with_company()`, use `unexpose()` or `disable()` instead (DAI-16466, DAI-17814)
 
@@ -108,6 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.6.0] - 2023-02-03
 
 ### Added
+
 - Add `sdk.datastreams` with create/describe/search/search-generator/delete (DAI-17176)
 - Add `sdk.datastreamsfiles` with search/search-generator (DAI-17176)
 - Add `sdk.datastreamsassetsmonitored` with search/search-generator (DAI-17176)
@@ -150,16 +175,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2022-06-06
 
 ### Added
+
 - Add `core.resources.datamngt.upload.cfg_multipart_upload()` (DAI-15147 DAI-15167)
 
 ## [2.1.0] - 2022-04-13
 
 ### Added
+
 - Add `features.add_attachments()` (DAI-14397)
 
 ## [2.0.0] - 2022-02-02
 
 ### Changed
+
 - Improve documentation readability (DAI-13485)
 - Change the default UserAgent value by adding Python and OS versions. Now is like this: `alteia-sdk/x.x.x Python/x.x.x (Linux-x.x.x-x-amd64-x86_64)` (DAI-12882)
 - Change signature `flights.describe()`: handle one or many IDs, and returns `Resource` or list of `Resource` (DAI-11598)
@@ -173,6 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initialization of `Resource` do not remove fields equals to `None` by default.
 
 ### Added
+
 - Add argument `kind` for `datasets.download_preview()`, allowing to download small previews, not only tiny (DAI-13014)
 - Add `AbstractConnection.set_user_agent()`: allow to add multiples information to UserAgent request's headers (DAI-12882)
 - New argument `service` for SDK init, to add a service name in UserAgent (DAI-12882)
@@ -205,6 +234,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add "How to upgrade" section in the documentation (DAI-13510)
 
 ### Deleted
+
 - Remove legacy `secret` argument in SDK init. Use `client_secret` instead.
 - Remove legacy `company` argument in `share_tokens.search()`. Use `filter` instead.
 - Replaced `UIServicesAPI` by a new `ProjectManagerAPI` (DAI-11598)

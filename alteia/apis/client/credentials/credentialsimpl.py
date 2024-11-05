@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Mapping, Union
 
 from alteia.apis.provider import CredentialsServiceAPI
 from alteia.core.resources.resource import ResourcesWithTotal
@@ -103,8 +103,9 @@ class CredentialsImpl:
         self,
         *,
         name: str,
-        credentials: Dict[str, str],
-        credentials_type: Optional[str] = None,
+        company: str,
+        credentials: Dict[str, Any],
+        labels: Mapping[str, str] = None,
         **kwargs,
     ) -> Resource:
         """Create a credential entry.
@@ -112,9 +113,11 @@ class CredentialsImpl:
         Args:
             name: Credential name (must be unique).
 
-            credentials_type : Credentials type (docker or object-storage)
+            company: Company ID.
 
             credentials: Credential dict.
+
+            labels: Labels mapping.
 
             **kwargs: Optional keyword arguments. Those arguments are
                 passed as is to the API provider.
@@ -123,60 +126,82 @@ class CredentialsImpl:
             The created credential description.
 
         Examples:
-            >>> sdk.credentials.create(name="My Docker registry",
-            ...     credentials_type="docker"
+            >>> sdk.credentials.create(
+            ...     name="My Docker registry",
+            ...     company="507f191e810c19729de860eb",
             ...     credentials={
             ...         "type": "docker",
             ...         "login": "my_login",
             ...         "password": "my_password",
             ...         "registry": "mydockerregistry.com"
+            ...     },
+            ...     labels={
+            ...         "type": "docker",
+            ...         "registry": "mydockerregistry.com"
             ...     }
             ... )
             Resource(_id='5e5155ae8dcb064fcbf4ae35')
 
-            >>> sdk.credentials.create(name="My aws registry",
-            ...     credentials_type="docker"
+            >>> sdk.credentials.create(
+            ...     name="My aws registry",
+            ...     company="507f191e810c19729de860eb",
             ...     credentials={
             ...         "type": "aws",
             ...         "aws_access_key_id": "key_id",
             ...         "aws_secret_access_key": "password_test",
             ...         "aws_region": "us-east-1",
+            ...     },
+            ...     labels={
+            ...         "type": "docker",
             ...         "registry": "XXX.dkr.ecr.us-east-1.amazonaws.com"
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
 
-            >>> sdk.credentials.create(name="My bucket S3",
-            ...     credentials_type="object-storage"
+            >>> sdk.credentials.create(
+            ...     name="My bucket S3",
+            ...     company="507f191e810c19729de860eb",
             ...     credentials={
             ...         "type": "s3",
             ...         "aws_access_key_id": "key_id",
             ...         "aws_secret_access_key": "password_test",
             ...         "aws_region": "us-east-1",
+            ...     },
+            ...     labels={
+            ...         "type": "object-storage",
             ...         "bucket": "XXX.s3.us-east-1.amazonaws.com/key"
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
 
-            >>> sdk.credentials.create(name="My azure blob",
-            ...     credentials_type="object-storage"
+            >>> sdk.credentials.create(
+            ...     name="My azure blob",
+            ...     company="507f191e810c19729de860eb",
             ...     credentials={
             ...         "type": "azure-blob",
             ...         "azure_client_id": "key_id",
             ...         "azure_tenant_id": "tenant-id",
             ...         "azure_client_secret": "client_secret",
+            ...     },
+            ...     labels={
+            ...         "type": "object-storage",
+            ...         "bucket": "XXX.s3.us-east-1.amazonaws.com/key",
             ...         "account_url": "https://mystorage.blob.core.windows.net"
             ...     }
             ... )
             Resource(_id='5e6155ae8dcb064fcbf4ae35')
 
-            >>> sdk.credentials.create(name="My stac catalog",
-            ...     credentials_type="stac-catalog"
+            >>> sdk.credentials.create(
+            ...     name="My stac catalog",
+            ...     company="507f191e810c19729de860eb",
             ...     credentials={
             ...         "type": "oauth",
             ...         "client_id": "key_id",
             ...         "client_secret": "client_secret",
             ...         "token_url": "https://token_url",
+            ...     },
+            ...     labels={
+            ...         "type": "stac-catalog",
             ...         "catalog": "https://catalog_url",
             ...     }
             ... )
@@ -184,18 +209,9 @@ class CredentialsImpl:
 
         """
         data = kwargs
-        if not credentials_type:
-            if credentials["type"] in DOCKER_TYPES:
-                credentials_type = DOCKER
-            elif credentials["type"] in OBJECT_STORAGE_TYPES:
-                credentials_type = OBJECT_STORAGE
-            elif credentials["type"] in STAC_CATALOG_TYPES:
-                credentials_type = STAC_CATALOG
-            else:
-                LOGGER.debug('Credentials type unknown')
 
         data.update(
-            {"name": name, "type": credentials_type, "credentials": credentials}
+            {"name": name, "company": company, "credentials": credentials, "labels": labels}
         )
 
         desc = self._provider.post(
@@ -218,3 +234,79 @@ class CredentialsImpl:
         data.update({"credentials": credential})
 
         self._provider.post(path="delete-credentials", data=data, as_json=False)
+
+    def set_credentials(
+        self,
+        company: str,
+        name: str,
+        credentials: Dict[str, Any],
+        **kwargs
+    ) -> Resource:
+        """Set a credential entry.
+
+        Args:
+            company: Company ID.
+
+            name: Credentials name.
+
+            credentials: Credential dict.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            An empty json object.
+
+        Examples:
+            >>> sdk.credentials.set_credentials(
+            ...     name="My Docker registry",
+            ...     company="507f191e810c19729de860eb",
+            ...     credentials={
+            ...         "type": "docker",
+            ...         "login": "my_login",
+            ...         "password": "my_password",
+            ...         "registry": "mydockerregistry.com"
+            ...     }
+            ... )
+        """
+        data = kwargs
+        data.update(
+            {"company": company, "name": name, "credentials": credentials}
+        )
+        desc = self._provider.post(path="set-credentials", data=dict(data), as_json=True)
+
+        return Resource(**desc)
+
+    def set_labels(self, company: str, name: str, labels: Mapping[str, str], **kwargs) -> Resource:
+        """Set labels.
+
+        Args:
+            company: Company ID.
+
+            name: Credentials name.
+
+            labels: Labels mapping of string/string.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            An empty json object.
+
+        Examples:
+            >>> sdk.credentials.set_labels(
+            ...     name="up-42",
+            ...     company="507f191e810c19729de860eb",
+            ...     labels={
+            ...         "type": "stac-catalog",
+            ...         "catalog": "https://api.up42.com/v2/assets/stac",
+            ...     }
+            ... )
+        """
+        data = kwargs
+        data.update(
+            {"company": company, "name": name, "labels": labels}
+        )
+        desc = self._provider.post(path="set-labels", data=dict(data), as_json=True)
+
+        return Resource(**desc)
