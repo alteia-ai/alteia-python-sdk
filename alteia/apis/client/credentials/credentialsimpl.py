@@ -211,8 +211,12 @@ class CredentialsImpl:
         data = kwargs
 
         data.update(
-            {"name": name, "company": company, "credentials": credentials, "labels": labels}
+            {"name": name, "company": company, "credentials": credentials}
         )
+        if labels:
+            data.update(
+                {"labels": labels}
+            )
 
         desc = self._provider.post(
             path="create-credentials", data=dict(data), as_json=True

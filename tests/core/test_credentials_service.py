@@ -226,6 +226,35 @@ class TestCredentials(ResourcesTestBase):
         )
 
     @responses.activate
+    def test_credentials_create_without_label(self):
+        responses.add(
+            "POST",
+            "/credentials-service/create-credentials",
+            body=self.__legacy_create_docker(),
+            status=200,
+            content_type="application/json",
+        )
+        calls = responses.calls
+        self.sdk.credentials.create(
+            name="Docker registry",
+            company="507f191e810c19729de860eb",
+            credentials={
+                "login": "login_test",
+                "password": "password_test",
+            }
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(
+            calls[0].request.url, "/credentials-service/create-credentials"
+        )
+        self.assertEqual(
+            calls[0].request.body,
+            '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
+            ' "credentials": {"login": "login_test", "password": "password_test"}}',
+        )
+
+    @responses.activate
     def test_credentials_create_without_type(self):
         responses.add(
             "POST",

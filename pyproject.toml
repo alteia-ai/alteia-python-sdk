@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alteia"
-version = "2.14.0"  # must match the version in alteia/__init__.py
+version = "2.14.1"  # must match the version in alteia/__init__.py
 description = "High-level Python interface to Alteia API"
 authors = ["Alteia Backend team <backend-team@alteia.com>"]
 repository = "https://github.com/alteia-ai/alteia-python-sdk"
@@ -42,7 +42,7 @@ flake8 = "^3.7.9"
 pylint = "2.12.0"
 pre-commit = "^2.6.0"
 urllib3-mock = "^0.3.3"
-mypy = "^0.910"
+mypy = "^0.971"
 types-setuptools = "^57.4.0"
 virtualenv = "^20.17.0"
 tox = "3.23.0"
@@ -59,7 +59,7 @@ documentation = [
 legacy_tox_ini = """
 [tox]
 isolated_build = True
-envlist = py36, py37, py38
+envlist = py38
 indexserver =
     default = https://pypi.org/simple
 
@@ -72,28 +72,6 @@ deps =
     coverage==4.5.4
     coverage[toml]==4.5.4
 
-
-[testenv:py36]
-commands = pytest
-deps =
-    pytest-cov
-    urllib3-mock>=0.3.3
-    pytest==7.0.0
-    coverage==4.5.4
-    coverage[toml]==4.5.4
-
-
-[testenv:py37]
-commands =
-    coverage erase
-    pytest --cov alteia --cov-report term --cov-report html
-deps =
-    pytest-cov>=2.10.0
-    pytest
-    coverage<5
-    urllib3-mock>=0.3.3
-    coverage==4.5.4
-    coverage[toml]==4.5.4
 """
 
 [tool.mypy]
