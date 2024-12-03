@@ -1,8 +1,8 @@
-from typing import List, Union
+from typing import Generator, List, Union
 
 from alteia.apis.provider import SeasonPlannerAssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
-from alteia.core.resources.utils import search
+from alteia.core.resources.utils import search, search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 from alteia.core.utils.utils import get_chunks
 
@@ -111,6 +111,35 @@ class FieldsImpl:
             return_total=return_total,
             **kwargs
         )
+
+    def search_generator(self, *, filter: dict = None, limit: int = 50,
+                         page: int = None,
+                         **kwargs) -> Generator[Resource, None, None]:
+        """Return a generator to search through fields.
+
+        The generator allows the user not to care about the pagination of
+        results, while being memory-effective.
+
+        Found trials are sorted chronologically in order to allow
+        new resources to be found during the search.
+
+        Args:
+            page: Optional page number to start the search at (default is 0).
+
+            filter: Search filter dictionary.
+
+            limit: Optional maximum number of results by search
+                request (default to 50).
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Returns:
+            A generator yielding found fields.
+
+        """
+        return search_generator(self, first_page=0, filter=filter, limit=limit,
+                                page=page, **kwargs)
 
     def describe(self, field: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a field or a list of fields.
