@@ -245,7 +245,9 @@ class AnalyticsImpl:
 
         return None
 
-    def create(self, *, name: str, version: str, docker_image: str,
+    def create(self, *, name: str, version: str,
+               docker_image: str,
+               docker_credentials_name: str,
                company: ResourceId,
                display_name: str = None, description: str = None,
                instance_type: str = None, volume_size: int = None,
@@ -263,6 +265,10 @@ class AnalyticsImpl:
             docker_image: Docker image used for the analytic computation,
                 including the Docker registry address.
                 (example: ``"gcr.io/myproject/myanalytic:v1.0"``).
+
+            docker_credentials_name: Name of the credentials to use to pull the docker
+                image from the registry. The credentials must have been created
+                beforehand using the credentials API.
 
             company: Id of the company owning the analytic.
 
@@ -303,6 +309,7 @@ class AnalyticsImpl:
             ...     display_name="Vehicle detection",
             ...     description="Detects vehicles in orthomosaic images",
             ...     docker_image="gcr.io/myproject/vehicule-detection:v1.0",
+            ...     docker_credentials_name="my-gcr-credentials",
             ...     company="5d3714e14c50356e2abd1f97",
             ...     instance_type='large',
             ...     volume_size=50,
@@ -361,6 +368,7 @@ class AnalyticsImpl:
         data['version'] = version
         data['company'] = company
         data['algorithm']['docker_image'] = docker_image
+        data['algorithm']['docker_credentials_name'] = docker_credentials_name
 
         if instance_type:
             data['instance']['type'] = instance_type
@@ -681,3 +689,40 @@ class AnalyticsImpl:
             data['disable'] = relations
 
         return self._provider.post(path='disable-analytics', data=data)
+
+    def set_docker_credentials(self, name: str, version: str,
+                               company: ResourceId, docker_credentials_name: str,
+                               **kwargs) -> Dict:
+        """Set the docker credentials name on an analytic.
+
+        Args:
+            name: Name of the analytic to update.
+
+            version: Version of the analytic to update.
+
+            company: Identifier of the company owning the analytic.
+
+            docker_credentials_name: Name of the credentials to use to pull the docker
+                image from the registry. The credentials must have been created
+                beforehand using the credentials API.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> sdk.analytics.set_docker_credentials(
+            ...     analytic_name='my_vehicle_detection',
+            ...     version='0.0.1',
+            ...     company='5d3714e14c50356e2abd1f97',
+            ...     docker_credentials_name='my-gcr-credentials')
+        """
+        data = {
+            'name': name,
+            'version': version,
+            'company': company,
+            'docker_credentials_name': docker_credentials_name
+        }
+        data.update(kwargs)
+
+        return self._provider.post(
+            path='set-analytic-docker-credentials', data=data)

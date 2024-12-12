@@ -5,7 +5,19 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.14.1] - 2023-10-12 
+## [2.15.0] - 2024-11-29 
+
+### Added
+
+- Add new field `docker_credential_name` in analytic (DAI-31873):
+  - Change signature of `sdk.analytics.create()` to add mandatory `docker_credential_name` parameter
+  - Add `sdk.analytics.set_docker_credentials()` to set docker credentials for an analytic
+
+### Changed
+
+### Deleted
+
+## [2.14.1] - 2024-10-12 
 
 ### Added
 
@@ -14,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deleted
 - Fix credentials creation without labels (DAI-31437)
 
-## [2.14.0] - 2023-10-04 
+## [2.14.0] - 2024-10-04 
 
 ### Added
 
@@ -28,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deleted
 
-## [2.13.0] - 2023-09-17
+## [2.13.0] - 2024-09-17
 
 ### Added
 
