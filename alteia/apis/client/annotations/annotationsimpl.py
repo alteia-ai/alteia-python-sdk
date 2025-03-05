@@ -1,175 +1,173 @@
-"""Implementation of annotations.
-
-"""
+"""Implementation of annotations."""
 
 import mimetypes
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Generator, List, Tuple, Union
+from typing import Generator, List, Tuple, Union, overload
 
 from alteia.apis.provider import AnnotationsAPI
 from alteia.core.errors import ParameterError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
-# TODO support for CSS3 colors
 from alteia.core.utils.utils import get_chunks
 
 
+# TODO support for CSS3 colors
 class AnnotationsImpl:
     class Icons(Enum):
-        ANNOTATE = 'delair::icon::annotate'
-        ARROW1 = 'delair::icon::arrow1'
-        ARROW2 = 'delair::icon::arrow2'
-        ARROW3 = 'delair::icon::arrow3'
-        ARROW4 = 'delair::icon::arrow4'
-        ARROW5 = 'delair::icon::arrow5'
-        ARTICULATEDTRUCK = 'delair::icon::articulatedtruck'
-        BULLDOZER = 'delair::icon::bulldozer'
-        CANCEL = 'delair::icon::cancel'
-        CHECK = 'delair::icon::check'
-        COG = 'delair::icon::cog'
-        COLLISION = 'delair::icon::collision'
-        CONVEYOR = 'delair::icon::conveyor'
-        CROSSROADS = 'delair::icon::crossroads'
-        CROSSROADSUS = 'delair::icon::crossroadsUS'
-        CRUSHER = 'delair::icon::crusher'
-        DANGER = 'delair::icon::danger'
-        DEF = 'delair::icon::def'
-        DIESELFUEL = 'delair::icon::dieselfuel'
-        DRAGLINE = 'delair::icon::dragline'
-        DRILLS = 'delair::icon::drills'
-        DROWNINGRISK = 'delair::icon::drowningrisk'
-        DUMPER = 'delair::icon::dumper'
-        DUMPTOPROCESS = 'delair::icon::dumptoprocess'
-        DUSTHAZARD = 'delair::icon::dusthazard'
-        DYNAMITE = 'delair::icon::dynamite'
-        EARPROTECTION = 'delair::icon::earprotection'
-        ELECTRICALRISK = 'delair::icon::electricalrisk'
-        ELECTRICGENERATOR = 'delair::icon::electricgenerator'
-        ENROCHMENTS = 'delair::icon::enrochments'
-        EXCAVATOR = 'delair::icon::excavator'
-        FALLFROMHEIGHTS = 'delair::icon::fallfromheights'
-        FIREFIGHTERS = 'delair::icon::firefighters'
-        FLAGGREEN = 'delair::icon::flaggreen'
-        FLAGORANGE = 'delair::icon::flagorange'
-        FLAGRED = 'delair::icon::flagred'
-        FLOODRISK = 'delair::icon::floodrisk'
-        FOG = 'delair::icon::fog'
-        GLOVES = 'delair::icon::gloves'
-        GRAVILLONS = 'delair::icon::gravillons'
-        HOLE = 'delair::icon::hole'
-        IMPACTCRUSHER = 'delair::icon::impactcrusher'
-        INFORMATION = 'delair::icon::information'
-        ISSUE = 'delair::icon::issue'
-        LABSAMPLE = 'delair::icon::labsample'
-        LIFEJACKET = 'delair::icon::lifejacket'
-        MEETINGPOINT = 'delair::icon::meetingpoint'
-        MOTORGRADER = 'delair::icon::motorgrader'
-        NATURALSURROUNDINGS = 'delair::icon::naturalsurroundings'
-        NOENTRY = 'delair::icon::noentry'
-        NOISEMESURMENT = 'delair::icon::noisemesurment'
-        ONEWAY = 'delair::icon::oneway'
-        PARKING = 'delair::icon::parking'
-        PERSONALPROTECTIVE = 'delair::icon::personalprotective'
-        PRIORITY1 = 'delair::icon::priority1'
-        PRIORITY10 = 'delair::icon::priority10'
-        PRIORITY2 = 'delair::icon::priority2'
-        PRIORITY3 = 'delair::icon::priority3'
-        PRIORITY4 = 'delair::icon::priority4'
-        PRIORITY5 = 'delair::icon::priority5'
-        PRIORITY6 = 'delair::icon::priority6'
-        PRIORITY7 = 'delair::icon::priority7'
-        PRIORITY8 = 'delair::icon::priority8'
-        PRIORITY9 = 'delair::icon::priority9'
-        PRIORITYLEFT = 'delair::icon::priorityleft'
-        PRIORITYRIGHT = 'delair::icon::priorityright'
-        PROTECTIONMASK = 'delair::icon::protectionmask'
-        RAILROADCROSSING = 'delair::icon::railroadcrossing'
-        RAILS = 'delair::icon::rails'
-        ROCKFALLS = 'delair::icon::rockfalls'
-        ROUNDABOUT = 'delair::icon::roundabout'
-        SABLE = 'delair::icon::sable'
-        SAFETYGLASSES = 'delair::icon::safetyglasses'
-        SCRAPER = 'delair::icon::scraper'
-        SETTLINGPONT = 'delair::icon::settlingpont'
-        SILO = 'delair::icon::silo'
-        SISMOGRAPH = 'delair::icon::sismograph'
-        SLIPPERY = 'delair::icon::slippery'
-        SLOPE = 'delair::icon::slope'
-        SLOPE2 = 'delair::icon::slope2'
-        SPEEDLIMIT10 = 'delair::icon::speedlimit10'
-        SPEEDLIMIT20 = 'delair::icon::speedlimit20'
-        SPEEDLIMIT30 = 'delair::icon::speedlimit30'
-        SPEEDLIMITUS10 = 'delair::icon::speedlimitUS10'
-        SPEEDLIMITUS15 = 'delair::icon::speedlimitUS15'
-        SPEEDLIMITUS20 = 'delair::icon::speedlimitUS20'
-        STATIONERYCONE = 'delair::icon::stationerycone'
-        STOCKPILE = 'delair::icon::stockpile'
-        STOCKPILES = 'delair::icon::stockpiles'
-        STOP = 'delair::icon::stop'
-        TRAFFICACCIDENT = 'delair::icon::trafficaccident'
-        TRAIN = 'delair::icon::train'
-        TREES = 'delair::icon::trees'
-        TURNLEFT = 'delair::icon::turnleft'
-        TURNRIGHT = 'delair::icon::turnright'
-        TWOWAYS = 'delair::icon::twoways'
-        TWOWAYSPRIORITY = 'delair::icon::twowayspriority'
-        VALVE = 'delair::icon::valve'
-        WATER = 'delair::icon::water'
-        WATERDISCHARGE = 'delair::icon::waterdischarge'
-        WATERPUMP = 'delair::icon::waterpump'
-        WATERTRUCK = 'delair::icon::watertruck'
-        WHEELEDEXCAVATOR = 'delair::icon::wheeledexcavator'
-        WIRES = 'delair::icon::wires'
-        WRENCH = 'delair::icon::wrench'
+        ANNOTATE = "delair::icon::annotate"
+        ARROW1 = "delair::icon::arrow1"
+        ARROW2 = "delair::icon::arrow2"
+        ARROW3 = "delair::icon::arrow3"
+        ARROW4 = "delair::icon::arrow4"
+        ARROW5 = "delair::icon::arrow5"
+        ARTICULATEDTRUCK = "delair::icon::articulatedtruck"
+        BULLDOZER = "delair::icon::bulldozer"
+        CANCEL = "delair::icon::cancel"
+        CHECK = "delair::icon::check"
+        COG = "delair::icon::cog"
+        COLLISION = "delair::icon::collision"
+        CONVEYOR = "delair::icon::conveyor"
+        CROSSROADS = "delair::icon::crossroads"
+        CROSSROADSUS = "delair::icon::crossroadsUS"
+        CRUSHER = "delair::icon::crusher"
+        DANGER = "delair::icon::danger"
+        DEF = "delair::icon::def"
+        DIESELFUEL = "delair::icon::dieselfuel"
+        DRAGLINE = "delair::icon::dragline"
+        DRILLS = "delair::icon::drills"
+        DROWNINGRISK = "delair::icon::drowningrisk"
+        DUMPER = "delair::icon::dumper"
+        DUMPTOPROCESS = "delair::icon::dumptoprocess"
+        DUSTHAZARD = "delair::icon::dusthazard"
+        DYNAMITE = "delair::icon::dynamite"
+        EARPROTECTION = "delair::icon::earprotection"
+        ELECTRICALRISK = "delair::icon::electricalrisk"
+        ELECTRICGENERATOR = "delair::icon::electricgenerator"
+        ENROCHMENTS = "delair::icon::enrochments"
+        EXCAVATOR = "delair::icon::excavator"
+        FALLFROMHEIGHTS = "delair::icon::fallfromheights"
+        FIREFIGHTERS = "delair::icon::firefighters"
+        FLAGGREEN = "delair::icon::flaggreen"
+        FLAGORANGE = "delair::icon::flagorange"
+        FLAGRED = "delair::icon::flagred"
+        FLOODRISK = "delair::icon::floodrisk"
+        FOG = "delair::icon::fog"
+        GLOVES = "delair::icon::gloves"
+        GRAVILLONS = "delair::icon::gravillons"
+        HOLE = "delair::icon::hole"
+        IMPACTCRUSHER = "delair::icon::impactcrusher"
+        INFORMATION = "delair::icon::information"
+        ISSUE = "delair::icon::issue"
+        LABSAMPLE = "delair::icon::labsample"
+        LIFEJACKET = "delair::icon::lifejacket"
+        MEETINGPOINT = "delair::icon::meetingpoint"
+        MOTORGRADER = "delair::icon::motorgrader"
+        NATURALSURROUNDINGS = "delair::icon::naturalsurroundings"
+        NOENTRY = "delair::icon::noentry"
+        NOISEMESURMENT = "delair::icon::noisemesurment"
+        ONEWAY = "delair::icon::oneway"
+        PARKING = "delair::icon::parking"
+        PERSONALPROTECTIVE = "delair::icon::personalprotective"
+        PRIORITY1 = "delair::icon::priority1"
+        PRIORITY10 = "delair::icon::priority10"
+        PRIORITY2 = "delair::icon::priority2"
+        PRIORITY3 = "delair::icon::priority3"
+        PRIORITY4 = "delair::icon::priority4"
+        PRIORITY5 = "delair::icon::priority5"
+        PRIORITY6 = "delair::icon::priority6"
+        PRIORITY7 = "delair::icon::priority7"
+        PRIORITY8 = "delair::icon::priority8"
+        PRIORITY9 = "delair::icon::priority9"
+        PRIORITYLEFT = "delair::icon::priorityleft"
+        PRIORITYRIGHT = "delair::icon::priorityright"
+        PROTECTIONMASK = "delair::icon::protectionmask"
+        RAILROADCROSSING = "delair::icon::railroadcrossing"
+        RAILS = "delair::icon::rails"
+        ROCKFALLS = "delair::icon::rockfalls"
+        ROUNDABOUT = "delair::icon::roundabout"
+        SABLE = "delair::icon::sable"
+        SAFETYGLASSES = "delair::icon::safetyglasses"
+        SCRAPER = "delair::icon::scraper"
+        SETTLINGPONT = "delair::icon::settlingpont"
+        SILO = "delair::icon::silo"
+        SISMOGRAPH = "delair::icon::sismograph"
+        SLIPPERY = "delair::icon::slippery"
+        SLOPE = "delair::icon::slope"
+        SLOPE2 = "delair::icon::slope2"
+        SPEEDLIMIT10 = "delair::icon::speedlimit10"
+        SPEEDLIMIT20 = "delair::icon::speedlimit20"
+        SPEEDLIMIT30 = "delair::icon::speedlimit30"
+        SPEEDLIMITUS10 = "delair::icon::speedlimitUS10"
+        SPEEDLIMITUS15 = "delair::icon::speedlimitUS15"
+        SPEEDLIMITUS20 = "delair::icon::speedlimitUS20"
+        STATIONERYCONE = "delair::icon::stationerycone"
+        STOCKPILE = "delair::icon::stockpile"
+        STOCKPILES = "delair::icon::stockpiles"
+        STOP = "delair::icon::stop"
+        TRAFFICACCIDENT = "delair::icon::trafficaccident"
+        TRAIN = "delair::icon::train"
+        TREES = "delair::icon::trees"
+        TURNLEFT = "delair::icon::turnleft"
+        TURNRIGHT = "delair::icon::turnright"
+        TWOWAYS = "delair::icon::twoways"
+        TWOWAYSPRIORITY = "delair::icon::twowayspriority"
+        VALVE = "delair::icon::valve"
+        WATER = "delair::icon::water"
+        WATERDISCHARGE = "delair::icon::waterdischarge"
+        WATERPUMP = "delair::icon::waterpump"
+        WATERTRUCK = "delair::icon::watertruck"
+        WHEELEDEXCAVATOR = "delair::icon::wheeledexcavator"
+        WIRES = "delair::icon::wires"
+        WRENCH = "delair::icon::wrench"
 
-    def __init__(self, annotations_api: AnnotationsAPI,
-                 sdk, **kwargs):
+    def __init__(self, annotations_api: AnnotationsAPI, sdk, **kwargs):
         self._provider = annotations_api
         self._sdk = sdk
 
-    def __upload_files(self, *, project: ResourceId,
-                       file_paths: Union[List[str], List[Path]]):
+    def __upload_files(self, *, project: ResourceId, file_paths: Union[List[str], List[Path]]):
         datasets = []
         for p in file_paths:
             name = os.path.basename(p)
             file_type, _ = mimetypes.guess_type(str(p))
-            file_subtype = file_type.split('/')[1] if file_type else None
-            if file_subtype == 'image':
+            file_subtype = file_type.split("/")[1] if file_type else None
+            if file_subtype == "image":
                 creation_func = self._sdk.datasets.create_image_dataset
-                component = 'image'
+                component = "image"
             else:
                 creation_func = self._sdk.datasets.create_file_dataset
-                component = 'file'
+                component = "file"
 
             dataset = creation_func(name=name, project=project)
-            self._sdk.datasets.upload_file(dataset.id,
-                                           component=component,
-                                           file_path=p)
+            self._sdk.datasets.upload_file(dataset.id, component=component, file_path=p)
             datasets.append(dataset)
         return datasets
 
-    def create(self, *, project: ResourceId,
-               mission: ResourceId = None,
-               geometry: dict = None,
-               stroke: List[int] = None,
-               stroke_dasharray: List[int] = None,
-               icon: Union[Icons, str] = None,
-               stroke_width: float = None,
-               stroke_opacity: float = None,
-               fill: List[int] = None,
-               fill_opacity: float = None,
-               type: str = '2d',
-               target: ResourceId = None,
-               name: str = None,
-               description: str = None,
-               followers: List[ResourceId] = None,
-               attachments: List[ResourceId] = None,
-               file_paths: List[str] = None,
-               normals: List = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        project: ResourceId,
+        mission: ResourceId | None = None,
+        geometry: dict | None = None,
+        stroke: List[int] | None = None,
+        stroke_dasharray: List[int] | None = None,
+        icon: Union[Icons, str] | None = None,
+        stroke_width: float | None = None,
+        stroke_opacity: float | None = None,
+        fill: List[int] | None = None,
+        fill_opacity: float | None = None,
+        type: str = "2d",
+        target: ResourceId | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        followers: List[ResourceId] | None = None,
+        attachments: List[ResourceId] | None = None,
+        file_paths: List[str] | None = None,
+        normals: List | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create an annotation.
 
         Items of the ``file_paths`` argument are interpreted as file
@@ -249,72 +247,67 @@ class AnnotationsImpl:
             Resource(_id='5a5155ae8dcb064fcbf4ae35')
 
         """
-        if type not in ('2d', '3d', 'image'):
-            raise ValueError(f'Unsupported type {type}')
+        if type not in ("2d", "3d", "image"):
+            raise ValueError(f"Unsupported type {type}")
 
         data = kwargs
-        data.update({'project': project,
-                     'type': type,
-                     'geometry': geometry})
+        data.update({"project": project, "type": type, "geometry": geometry})
 
         if stroke is not None:
-            data['stroke'] = stroke
+            data["stroke"] = stroke
 
         if stroke_dasharray is not None:
-            data['stroke_dasharray'] = stroke_dasharray
+            data["stroke_dasharray"] = stroke_dasharray
 
         if icon is not None:
             if isinstance(icon, Enum):
-                data['icon'] = icon.value
+                data["icon"] = icon.value
             else:
-                data['icon'] = icon
+                data["icon"] = icon
 
         if stroke_width is not None:
-            data['stroke_width'] = stroke_width
+            data["stroke_width"] = stroke_width
 
         if stroke_opacity is not None:
-            data['stroke_opacity'] = stroke_opacity
+            data["stroke_opacity"] = stroke_opacity
 
         if fill is not None:
-            data['fill'] = fill
+            data["fill"] = fill
 
         if fill_opacity is not None:
-            data['fill_opacity'] = fill_opacity
+            data["fill_opacity"] = fill_opacity
 
         if mission is not None:
-            data['mission'] = mission
+            data["mission"] = mission
 
         if target is not None:
-            data['target'] = {'type': 'dataset', 'id': target}
+            data["target"] = {"type": "dataset", "id": target}
 
         if name is not None:
-            data['name'] = name
+            data["name"] = name
 
         if description is not None:
-            data['description'] = description
+            data["description"] = description
 
         if followers is not None:
-            data['followers'] = followers
+            data["followers"] = followers
 
         if attachments is not None:
-            data['attachments'] = attachments
+            data["attachments"] = attachments
 
         if file_paths is not None:
             if attachments is None:
                 attachments = []
-            datasets = self.__upload_files(project=project,
-                                           file_paths=file_paths)
-            data['attachments'] += datasets
+            datasets = self.__upload_files(project=project, file_paths=file_paths)
+            data["attachments"] += datasets
 
         if normals is not None:
-            data['normals'] = normals
+            data["normals"] = normals
 
-        desc = self._provider.post('create-annotation', data=data)
+        desc = self._provider.post("create-annotation", data=data)
         return Resource(**desc)
 
-    def create_annotations(self,
-                           annotations: List[dict],
-                           **kwargs) -> List[Resource]:
+    def create_annotations(self, annotations: List[dict], **kwargs) -> List[Resource]:
         """Create several annotations.
 
         Args:
@@ -329,11 +322,16 @@ class AnnotationsImpl:
             Descriptions of the created annotations.
 
         """
-        data = {'annotations': annotations}
-        resp = self._provider.post('create-annotations', data=data)
+        data = {"annotations": annotations}
+        resp = self._provider.post("create-annotations", data=data)
 
-        return [Resource(**desc)
-                for desc in resp]
+        return [Resource(**desc) for desc in resp]
+
+    @overload
+    def describe(self, annotation: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, annotation: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, annotation: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a dataset or a list of datasets.
@@ -354,13 +352,13 @@ class AnnotationsImpl:
             results = []
             ids_chunks = get_chunks(annotation, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['annotations'] = ids_chunk
-                descs = self._provider.post('describe-annotations', data=data)
+                data["annotations"] = ids_chunk
+                descs = self._provider.post("describe-annotations", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['annotation'] = annotation
-            desc = self._provider.post('describe-annotation', data=data)
+            data["annotation"] = annotation
+            desc = self._provider.post("describe-annotation", data=data)
             return Resource(**desc)
 
     def delete(self, annotation: SomeResourceIds, **kwargs):
@@ -375,7 +373,7 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        if 'resource' in kwargs:
+        if "resource" in kwargs:
             raise RuntimeError('Support for "resource" parameter is not supported')
 
         if isinstance(annotation, Resource):
@@ -386,8 +384,8 @@ class AnnotationsImpl:
 
         ids_chunks = get_chunks(annotation, self._provider.max_per_delete)
         for ids_chunk in ids_chunks:
-            data['annotations'] = ids_chunk
-            self._provider.post('delete-annotations', data=data, as_json=False)
+            data["annotations"] = ids_chunk
+            self._provider.post("delete-annotations", data=data, as_json=False)
 
     def restore(self, annotation: SomeResourceIds, **kwargs):
         """Restore an annotation or multiple annotations.
@@ -404,8 +402,8 @@ class AnnotationsImpl:
         if not isinstance(annotation, list):
             annotation = [annotation]
 
-        data['annotations'] = annotation
-        self._provider.post('restore-annotations', data=data, as_json=False)
+        data["annotations"] = annotation
+        self._provider.post("restore-annotations", data=data, as_json=False)
 
     def rename(self, annotation: ResourceId, *, name: str, **kwargs):
         """Rename the annotation.
@@ -420,12 +418,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'name': name})
-        self._provider.post('rename-annotation', data=data)
+        data.update({"annotation": annotation, "name": name})
+        self._provider.post("rename-annotation", data=data)
 
-    def set_description(self, annotation: ResourceId, *,
-                        description: str, **kwargs):
+    def set_description(self, annotation: ResourceId, *, description: str, **kwargs):
         """Set the annotation description.
 
         Args:
@@ -438,13 +434,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'description': description})
-        self._provider.post('set-annotation-description', data=data)
+        data.update({"annotation": annotation, "description": description})
+        self._provider.post("set-annotation-description", data=data)
 
-    def set_normals(self, annotation: ResourceId, *,
-                    normals: List,
-                    **kwargs):
+    def set_normals(self, annotation: ResourceId, *, normals: List, **kwargs):
         """Set the annotation normal vectors.
 
         Setting the normals of an annotation makes sense for
@@ -468,12 +461,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'normals': normals})
-        self._provider.post('set-annotation-normals', data=data)
+        data.update({"annotation": annotation, "normals": normals})
+        self._provider.post("set-annotation-normals", data=data)
 
-    def set_icon(self, annotation: ResourceId, *,
-                 icon: Union[Icons, str] = None, **kwargs):
+    def set_icon(self, annotation: ResourceId, *, icon: Icons | str | None = None, **kwargs):
         """Set the annotation icon.
 
         Args:
@@ -492,14 +483,17 @@ class AnnotationsImpl:
         if isinstance(icon, Enum):
             icon = icon.value
 
-        data.update({'annotation': annotation,
-                     'icon': icon})
-        self._provider.post('set-annotation-icon', data=data)
+        data.update({"annotation": annotation, "icon": icon})
+        self._provider.post("set-annotation-icon", data=data)
 
-    def set_stroke_color(self, annotation: ResourceId, *,
-                         color: Tuple[int, int, int],
-                         opacity: float = None,
-                         **kwargs):
+    def set_stroke_color(
+        self,
+        annotation: ResourceId,
+        *,
+        color: Tuple[int, int, int],
+        opacity: float | None = None,
+        **kwargs,
+    ):
         """Set the stroke color of the annotation.
 
         Args:
@@ -519,12 +513,10 @@ class AnnotationsImpl:
         if opacity is not None:
             stroke.append(opacity)
 
-        data.update({'annotation': annotation,
-                     'stroke': stroke})
-        self._provider.post('set-annotation-stroke', data=data)
+        data.update({"annotation": annotation, "stroke": stroke})
+        self._provider.post("set-annotation-stroke", data=data)
 
-    def set_stroke_width(self, annotation: ResourceId, *,
-                         width: float, **kwargs):
+    def set_stroke_width(self, annotation: ResourceId, *, width: float, **kwargs):
         """Set the stroke width of the annotation.
 
         Args:
@@ -537,12 +529,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'stroke_width': width})
-        self._provider.post('set-annotation-stroke-width', data=data)
+        data.update({"annotation": annotation, "stroke_width": width})
+        self._provider.post("set-annotation-stroke-width", data=data)
 
-    def set_stroke_opacity(self, annotation: ResourceId, *,
-                           opacity: float, **kwargs):
+    def set_stroke_opacity(self, annotation: ResourceId, *, opacity: float, **kwargs):
         """Set the opacity of the annotation stroke.
 
         Args:
@@ -556,12 +546,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'stroke_opacity': opacity})
-        self._provider.post('set-annotation-stroke-opacity', data=data)
+        data.update({"annotation": annotation, "stroke_opacity": opacity})
+        self._provider.post("set-annotation-stroke-opacity", data=data)
 
-    def set_stroke_dasharray(self, annotation: ResourceId, *,
-                             dasharray: List[float], **kwargs):
+    def set_stroke_dasharray(self, annotation: ResourceId, *, dasharray: List[float], **kwargs):
         """Set the dasharray of the annotation stroke.
 
         The dasharray defines the pattern of dashes and gaps used to
@@ -578,13 +566,17 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'stroke_dasharray': dasharray})
-        self._provider.post('set-annotation-stroke-dasharray', data=data)
+        data.update({"annotation": annotation, "stroke_dasharray": dasharray})
+        self._provider.post("set-annotation-stroke-dasharray", data=data)
 
-    def set_fill_color(self, annotation: ResourceId, *,
-                       color: List[float], opacity: float = None,
-                       **kwargs):
+    def set_fill_color(
+        self,
+        annotation: ResourceId,
+        *,
+        color: List[float],
+        opacity: float | None = None,
+        **kwargs,
+    ):
         """Set the color used to fill the annotation.
 
         Args:
@@ -605,12 +597,10 @@ class AnnotationsImpl:
         if opacity is not None:
             fill.append(opacity)
 
-        data.update({'annotation': annotation,
-                     'fill': fill})
-        self._provider.post('set-annotation-fill', data=data)
+        data.update({"annotation": annotation, "fill": fill})
+        self._provider.post("set-annotation-fill", data=data)
 
-    def set_fill_opacity(self, annotation: ResourceId, *,
-                         opacity: float, **kwargs):
+    def set_fill_opacity(self, annotation: ResourceId, *, opacity: float, **kwargs):
         """Set the opacity of the annotation fill.
 
         Args:
@@ -624,12 +614,10 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'fill_opacity': opacity})
-        self._provider.post('set-annotation-fill-opacity', data=data)
+        data.update({"annotation": annotation, "fill_opacity": opacity})
+        self._provider.post("set-annotation-fill-opacity", data=data)
 
-    def set_geometry(self, annotation: ResourceId, *,
-                     geometry: dict, **kwargs):
+    def set_geometry(self, annotation: ResourceId, *, geometry: dict, **kwargs):
         """Set the geometry of the annotation.
 
         Args:
@@ -643,14 +631,17 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        data.update({'annotation': annotation,
-                     'geometry': geometry})
-        self._provider.post('set-annotation-geometry', data=data)
+        data.update({"annotation": annotation, "geometry": geometry})
+        self._provider.post("set-annotation-geometry", data=data)
 
-    def add_attachments(self, annotation: ResourceId, *,
-                        attachments: List[ResourceId] = None,
-                        file_paths: List[str] = None,
-                        **kwargs):
+    def add_attachments(
+        self,
+        annotation: ResourceId,
+        *,
+        attachments: List[ResourceId] | None = None,
+        file_paths: List[str] | None = None,
+        **kwargs,
+    ):
         """Attach datasets to the annotation.
 
         An attachment is a reference to a dataset handled by the Data
@@ -691,9 +682,7 @@ class AnnotationsImpl:
         data = kwargs
 
         if attachments is None and file_paths is None:
-            raise ParameterError(
-                'One of "attachments" or "file_paths" must be specified'
-            )
+            raise ParameterError('One of "attachments" or "file_paths" must be specified')
 
         if file_paths is not None:
             if attachments is None:
@@ -701,19 +690,15 @@ class AnnotationsImpl:
 
             a = self.describe(annotation)
             if not isinstance(a, Resource):
-                raise TypeError('Expecting a single Resource')
+                raise TypeError("Expecting a single Resource")
 
-            datasets = self.__upload_files(project=a.project,
-                                           file_paths=file_paths)
+            datasets = self.__upload_files(project=a.project, file_paths=file_paths)
             attachments += datasets
 
-        data.update({'annotation': annotation,
-                     'attachments': attachments})
-        self._provider.post('add-attachments', data=data)
+        data.update({"annotation": annotation, "attachments": attachments})
+        self._provider.post("add-attachments", data=data)
 
-    def remove_attachments(self, annotation: ResourceId, *,
-                           attachments: SomeResourceIds,
-                           **kwargs):
+    def remove_attachments(self, annotation: ResourceId, *, attachments: SomeResourceIds, **kwargs):
         """Remove attachment to the annotation.
 
         Args:
@@ -728,13 +713,12 @@ class AnnotationsImpl:
         """
         data = kwargs
 
-        data.update({'annotation': annotation,
-                     'attachments': attachments})
-        self._provider.post('remove-attachments', data=data)
+        data.update({"annotation": annotation, "attachments": attachments})
+        self._provider.post("remove-attachments", data=data)
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through annotations.
 
         The generator allows the user not to care about the pagination of
@@ -758,13 +742,19 @@ class AnnotationsImpl:
             A generator yielding found annotations.
 
         """
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)
 
-    def search(self, *, project: ResourceId = None, filter: dict = None,
-               limit: int = None, page: int = None, sort: dict = None,
-               return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        project: ResourceId | None = None,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search annotations.
 
         Args:
@@ -798,23 +788,25 @@ class AnnotationsImpl:
 
         """
         data = kwargs
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
         if project is not None:
-            data['filter'].update({'project': {'$eq': project}})
+            data["filter"].update({"project": {"$eq": project}})
 
-        r = self._provider.post('search-annotations', data=data)
+        r = self._provider.post("search-annotations", data=data)
 
-        annotations = r.get('results')
+        annotations = r.get("results")
         results = [Resource(**a) for a in annotations]
 
         if return_total is True:
-            total = r.get('total')
+            total = r.get("total")
             return ResourcesWithTotal(total=total, results=results)
         else:
             return results

@@ -10,10 +10,10 @@ import urllib3
 from alteia.core.connection.abstract_connection import AbstractConnection
 
 LOGGER = logging.getLogger(__name__)
-MAX_REQUESTS_WORKERS = int(os.getenv('MAX_REQUESTS_WORKERS', 6))
+MAX_REQUESTS_WORKERS = int(os.getenv("MAX_REQUESTS_WORKERS", 6))
 
 
-def _load_url(http: urllib3.request.RequestMethods, cb: Callable = None, **params):
+def _load_url(http, cb: Callable | None = None, **params):
     response = http.request(**params)
     if cb is not None:
         cb(response)
@@ -21,26 +21,34 @@ def _load_url(http: urllib3.request.RequestMethods, cb: Callable = None, **param
 
 
 class AsyncConnection(AbstractConnection):
-    def __init__(self, *, base_url, disable_ssl_certificate,
-                 token_manager, retries, max_requests_workers=None,
-                 proxy_url=None):
-        super().__init__(base_url=base_url,
-                         disable_ssl_certificate=disable_ssl_certificate,
-                         token_manager=token_manager, retries=retries)
+    def __init__(
+        self,
+        *,
+        base_url,
+        disable_ssl_certificate,
+        token_manager,
+        retries,
+        max_requests_workers=None,
+        proxy_url=None,
+    ):
+        super().__init__(
+            base_url=base_url,
+            disable_ssl_certificate=disable_ssl_certificate,
+            token_manager=token_manager,
+            retries=retries,
+        )
         self._access_token_lock = Lock()
         if max_requests_workers is None:
             max_requests_workers = MAX_REQUESTS_WORKERS
         self._executor = cf.ThreadPoolExecutor(max_workers=max_requests_workers)
         self._max_requests_workers = max_requests_workers
-        manager_kw = {'cert_reqs': ('CERT_NONE' if disable_ssl_certificate
-                                    else 'CERT_REQUIRED'),
-                      'num_pools': max_requests_workers}
-        pool_kw = {'maxsize': max_requests_workers,
-                   'retries': retries,
-                   'block': True}
+        manager_kw = {
+            "cert_reqs": ("CERT_NONE" if disable_ssl_certificate else "CERT_REQUIRED"),
+            "num_pools": max_requests_workers,
+        }
+        pool_kw = {"maxsize": max_requests_workers, "retries": retries, "block": True}
         if proxy_url is not None:
-            self._http = urllib3.ProxyManager(
-                proxy_url=proxy_url, **manager_kw, **pool_kw)
+            self._http = urllib3.ProxyManager(proxy_url=proxy_url, **manager_kw, **pool_kw)
         else:
             self._http = urllib3.PoolManager(**manager_kw, **pool_kw)
 
@@ -56,47 +64,49 @@ class AsyncConnection(AbstractConnection):
         with self._access_token_lock:
             super()._add_authorization_maybe(headers, url)
 
-    def post(self, path, headers=None, callback=None, data=None, timeout=None,
-             retries=None):
+    def post(self, path, headers=None, callback=None, data=None, timeout=None, retries=None):
         url = urljoin(self._base_url, path)
-        params = {'method': 'POST',
-                  'url': url,
-                  'headers': headers,
-                  'body': data or {},
-                  'retries': retries or self._retries,
-                  'timeout': timeout}
+        params = {
+            "method": "POST",
+            "url": url,
+            "headers": headers,
+            "body": data or {},
+            "retries": retries or self._retries,
+            "timeout": timeout,
+        }
         return self._send_request(params, on_finish_callback=callback)
 
-    def put(self, path, headers=None, callback=None, data=None, timeout=None,
-            retries=None):
+    def put(self, path, headers=None, callback=None, data=None, timeout=None, retries=None):
         url = urljoin(self._base_url, self._encode_spaces(path))
-        params = {'method': 'PUT',
-                  'url': url,
-                  'headers': headers,
-                  'body': data or {},
-                  'retries': retries or self._retries,
-                  'timeout': timeout}
+        params = {
+            "method": "PUT",
+            "url": url,
+            "headers": headers,
+            "body": data or {},
+            "retries": retries or self._retries,
+            "timeout": timeout,
+        }
         return self._send_request(params=params, on_finish_callback=callback)
 
     def _send_request(self, params, on_finish_callback):
-        params['headers'] = params['headers'] or {}
-        params['timeout'] = params['timeout'] or self.request_timeout
-        self._add_authorization_maybe(params['headers'], params['url'])
-        self._add_user_agent(params['headers'])
+        params["headers"] = params["headers"] or {}
+        params["timeout"] = params["timeout"] or self.request_timeout
+        self._add_authorization_maybe(params["headers"], params["url"])
+        self._add_user_agent(params["headers"])
         try:
-            token = params['headers']['Authorization'].split('Bearer')[1].strip()
+            token = params["headers"]["Authorization"].split("Bearer")[1].strip()
         except KeyError:
             token = None
 
         def extended_callback(response, *args, **kwargs):
             if response.status == 401:
-                LOGGER.debug('Got a 401 status')
-                skip = self._skip_token_renewal(params['url'])
+                LOGGER.debug("Got a 401 status")
+                skip = self._skip_token_renewal(params["url"])
                 if not skip:
                     with self._access_token_lock:  # block concurrent send requests
-                        renewed = (token != self._token_manager.token.access_token)
+                        renewed = token != self._token_manager.token.access_token
                         if renewed:
-                            LOGGER.debug('Token already renewed')
+                            LOGGER.debug("Token already renewed")
                         else:
                             self._renew_token()
 
@@ -107,10 +117,10 @@ class AsyncConnection(AbstractConnection):
         return self._executor.submit(_load_url, self._http, extended_callback, **params)
 
     def external_request(self, method, url, callback=None, **params):
-        params['url'] = url
-        params['method'] = method
-        params['retries'] = params.get('retries') or self._retries
-        params['timeout'] = params.get('timeout') or self.request_timeout
+        params["url"] = url
+        params["method"] = method
+        params["retries"] = params.get("retries") or self._retries
+        params["timeout"] = params.get("timeout") or self.request_timeout
 
         LOGGER.debug(f'Making external async {params["method"]} request to {params["url"]}')
         return self._executor.submit(_load_url, self._http, callback, **params)

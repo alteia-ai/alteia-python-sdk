@@ -27,13 +27,13 @@ def __name2wkt(name: str) -> str:
 
     """
     name = name.lower()
-    res_name = f'{name}.wkt'
+    res_name = f"{name}.wkt"
     try:
         wkt = read_text_from_resource(vertcrs.__name__, res_name)
-        flatten_wkt = ''.join([line.strip() for line in wkt.splitlines()])
+        flatten_wkt = "".join([line.strip() for line in wkt.splitlines()])
         return flatten_wkt
     except Exception:
-        raise ValueError(f'Unknown SRS name: {name}')
+        raise ValueError(f"Unknown SRS name: {name}")
 
 
 def expand_vertcrs_to_wkt(desc: str) -> str:

@@ -1,17 +1,25 @@
-"""Comment related resources.
-
-"""
+"""Comment related resources."""
 
 from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId
 
 
 class Comment(Resource):
-    def __init__(self, *, id: ResourceId, text: str, project: ResourceId,
-                 type: str, creation_date: str, target: ResourceId = None,
-                 flight: ResourceId = None, creation_user: ResourceId,
-                 deletion_date: str = None, deletion_user: ResourceId = None,
-                 **kwargs):
+    def __init__(
+        self,
+        *,
+        id: ResourceId,
+        text: str,
+        project: ResourceId,
+        type: str,
+        creation_date: str,
+        target: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        creation_user: ResourceId,
+        deletion_date: str | None = None,
+        deletion_user: ResourceId | None = None,
+        **kwargs,
+    ):
         """Comment resource.
 
         Args:
@@ -52,5 +60,5 @@ class Comment(Resource):
             creation_user=creation_user,
             deletion_date=deletion_date,
             deletion_user=deletion_user,
-            **kwargs
+            **kwargs,
         )

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generator, Iterable, List, Union
+from typing import Any, Dict, Generator, Iterable, List, Union, overload
 
 from alteia.apis.provider import FeaturesServiceAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -11,8 +11,14 @@ class FeaturesImpl:
     def __init__(self, features_service_api: FeaturesServiceAPI, **kwargs):
         self._provider = features_service_api
 
-    def create(self, *, geometry: dict = None, properties: dict = None,
-               collection: ResourceId = None, **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        collection: ResourceId | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a feature.
 
         Args:
@@ -33,19 +39,18 @@ class FeaturesImpl:
         data = kwargs
 
         if geometry is not None:
-            data['geometry'] = geometry
+            data["geometry"] = geometry
 
         if collection is not None:
-            data['collection'] = collection
+            data["collection"] = collection
 
         if properties is not None:
-            data['properties'] = properties
+            data["properties"] = properties
 
-        desc = self._provider.post('create-feature', data=data)
+        desc = self._provider.post("create-feature", data=data)
         return Resource(**desc)
 
-    def create_features(self, descriptions: Iterable[dict],
-                        **kwargs) -> List[Resource]:
+    def create_features(self, descriptions: Iterable[dict], **kwargs) -> List[Resource]:
         """Create features.
 
         Args:
@@ -61,16 +66,11 @@ class FeaturesImpl:
 
         """
         data = kwargs
-        data['features'] = descriptions
-        descs = self._provider.post('create-features', data=data)
-        return [Resource(**desc)
-                for desc in descs]
+        data["features"] = descriptions
+        descs = self._provider.post("create-features", data=data)
+        return [Resource(**desc) for desc in descs]
 
-    def update_feature_properties(
-            self,
-            feature: ResourceId,
-            properties: Dict[str, Any]
-    ) -> Resource:
+    def update_feature_properties(self, feature: ResourceId, properties: Dict[str, Any]) -> Resource:
         """Update feature properties
 
         Args:
@@ -81,15 +81,12 @@ class FeaturesImpl:
             The updated feature resource.
         """
         desc = self._provider.post(
-            'update-feature-properties',
-            data={'feature': feature, 'properties': properties}
+            "update-feature-properties",
+            data={"feature": feature, "properties": properties},
         )
         return Resource(**desc)
 
-    def update_features_properties(
-            self,
-            features_properties: Dict[ResourceId, Dict]
-    ) -> List[Resource]:
+    def update_features_properties(self, features_properties: Dict[ResourceId, Dict]) -> List[Resource]:
         """Update features properties
 
         Args:
@@ -98,18 +95,10 @@ class FeaturesImpl:
         Returns:
             List of updated features resources.
         """
-        descs = self._provider.post(
-            'update-features-properties',
-            data=features_properties
-        )
-        return [Resource(**desc)
-                for desc in descs]
+        descs = self._provider.post("update-features-properties", data=features_properties)
+        return [Resource(**desc) for desc in descs]
 
-    def delete_feature_properties(
-            self,
-            feature: ResourceId,
-            properties: List[str]
-    ) -> Resource:
+    def delete_feature_properties(self, feature: ResourceId, properties: List[str]) -> Resource:
         """Delete feature properties
 
         Args:
@@ -120,15 +109,12 @@ class FeaturesImpl:
             The updated feature resource.
         """
         desc = self._provider.post(
-            'delete-feature-properties',
-            data={'feature': feature, 'properties': properties}
+            "delete-feature-properties",
+            data={"feature": feature, "properties": properties},
         )
         return Resource(**desc)
 
-    def delete_features_properties(
-            self,
-            features_properties: Dict[ResourceId, List[str]]
-    ) -> List[Resource]:
+    def delete_features_properties(self, features_properties: Dict[ResourceId, List[str]]) -> List[Resource]:
         """Delete features properties
 
         Args:
@@ -138,12 +124,14 @@ class FeaturesImpl:
         Returns:
             List of updated features resources.
         """
-        descs = self._provider.post(
-            'delete-features-properties',
-            data=features_properties
-        )
-        return [Resource(**desc)
-                for desc in descs]
+        descs = self._provider.post("delete-features-properties", data=features_properties)
+        return [Resource(**desc) for desc in descs]
+
+    @overload
+    def describe(self, feature: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, feature: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, feature: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a feature or a list of features.
@@ -164,17 +152,16 @@ class FeaturesImpl:
             results = []
             ids_chunks = get_chunks(feature, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['features'] = ids_chunk
-                descs = self._provider.post('describe-features', data=data)
+                data["features"] = ids_chunk
+                descs = self._provider.post("describe-features", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['feature'] = feature
-            desc = self._provider.post('describe-feature', data=data)
+            data["feature"] = feature
+            desc = self._provider.post("describe-feature", data=data)
             return Resource(**desc)
 
-    def delete(self, feature: SomeResourceIds, *, permanent: bool = False,
-               **kwargs):
+    def delete(self, feature: SomeResourceIds, *, permanent: bool = False, **kwargs):
         """Delete a feature or multiple features.
 
         Args:
@@ -190,16 +177,14 @@ class FeaturesImpl:
         """
         data = kwargs
         if isinstance(feature, list):
-            path = 'delete-features' if not permanent \
-                else 'delete-features-permanently'
+            path = "delete-features" if not permanent else "delete-features-permanently"
             ids_chunks = get_chunks(feature, self._provider.max_per_delete)
             for ids_chunk in ids_chunks:
-                data['features'] = ids_chunk
+                data["features"] = ids_chunk
                 self._provider.post(path, data=data, as_json=False)
         else:
-            path = 'delete-feature' if not permanent \
-                else 'delete-feature-permanently'
-            data['feature'] = feature
+            path = "delete-feature" if not permanent else "delete-feature-permanently"
+            data["feature"] = feature
             self._provider.post(path, data=data, as_json=False)
 
     def restore(self, feature: SomeResourceIds, **kwargs):
@@ -215,16 +200,15 @@ class FeaturesImpl:
         """
         data = kwargs
         if isinstance(feature, list):
-            path = 'restore-features'
-            data['features'] = feature
+            path = "restore-features"
+            data["features"] = feature
         else:
-            path = 'restore-feature'
-            data['feature'] = feature
+            path = "restore-feature"
+            data["feature"] = feature
 
         self._provider.post(path=path, data=data, as_json=True)
 
-    def set_geometry(self, feature: ResourceId, *, geometry: dict,
-                     **kwargs):
+    def set_geometry(self, feature: ResourceId, *, geometry: dict, **kwargs):
         """Set the geometry of the feature.
 
         Args:
@@ -237,14 +221,19 @@ class FeaturesImpl:
 
         """
         data = kwargs
-        data.update({'feature': feature,
-                     'geometry': geometry})
-        self._provider.post(path='set-feature-geometry', data=data)
+        data.update({"feature": feature, "geometry": geometry})
+        self._provider.post(path="set-feature-geometry", data=data)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs
-               ) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search features.
 
         Args:
@@ -287,28 +276,30 @@ class FeaturesImpl:
         """
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('search-features', data=data)
+        r = self._provider.post("search-features", data=data)
 
-        features = r.get('results')
+        features = r.get("results")
 
         results = [Resource(**feature) for feature in features]
 
         if return_total is True:
-            total = r.get('total')
+            total = r.get("total")
             return ResourcesWithTotal(total=total, results=results)
         else:
             return results
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through features.
 
         The generator allows the user not to care about the pagination of
@@ -332,11 +323,9 @@ class FeaturesImpl:
             A generator yielding found features.
 
         """
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)
 
-    def add_attachments(self, *, feature: ResourceId, attachments: List[ResourceId],
-                        **kwargs):
+    def add_attachments(self, *, feature: ResourceId, attachments: List[ResourceId], **kwargs):
         """Add attachments to a feature
 
         Args:
@@ -349,12 +338,10 @@ class FeaturesImpl:
 
         """
         data = kwargs
-        data.update({'feature': feature,
-                     'attachments': attachments})
-        self._provider.post(path='add-attachments', data=data)
+        data.update({"feature": feature, "attachments": attachments})
+        self._provider.post(path="add-attachments", data=data)
 
-    def remove_attachments(self, *, feature: ResourceId, attachments: List[ResourceId],
-                           **kwargs):
+    def remove_attachments(self, *, feature: ResourceId, attachments: List[ResourceId], **kwargs):
         """Remove attachments to a feature
 
         Args:
@@ -367,6 +354,5 @@ class FeaturesImpl:
 
         """
         data = kwargs
-        data.update({'feature': feature,
-                     'attachments': attachments})
-        self._provider.post(path='remove-attachments', data=data)
+        data.update({"feature": feature, "attachments": attachments})
+        self._provider.post(path="remove-attachments", data=data)

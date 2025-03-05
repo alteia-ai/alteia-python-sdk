@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -11,9 +11,15 @@ class PilotsImpl:
     def __init__(self, asset_management_api: AssetManagementAPI, **kwargs):
         self._provider = asset_management_api
 
-    def create(self, *, user: ResourceId, teams: List[ResourceId],
-               carrier_models: List[ResourceId] = None, sensor_models: List[ResourceId] = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        user: ResourceId,
+        teams: List[ResourceId],
+        carrier_models: List[ResourceId] | None = None,
+        sensor_models: List[ResourceId] | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a pilot.
 
         Args:
@@ -32,51 +38,64 @@ class PilotsImpl:
             Resource: A pilot resource.
         """
         data = kwargs
-        data.update({
-            'user': user,
-            'teams': teams
-        })
+        data.update({"user": user, "teams": teams})
 
-        for param_name, param_value in (('carrier_models', carrier_models),
-                                        ('sensor_models', sensor_models)):
+        for param_name, param_value in (
+            ("carrier_models", carrier_models),
+            ("sensor_models", sensor_models),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-pilot', data=data)
+        content = self._provider.post(path="create-pilot", data=data)
 
         return Resource(**content)
+
+    @overload
+    def describe(self, pilot: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, pilot: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, pilot: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a pilot or list of pilots.
 
-                Args:
-                    pilot: Identifier of the pilot to describe, or list of
-                        such identifiers.
+        Args:
+            pilot: Identifier of the pilot to describe, or list of
+                such identifiers.
 
-                    **kwargs: Optional keyword arguments. Those arguments are
-                        passed as is to the API provider.
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
 
-                Returns:
-                    Resource: A pilot resource or a list of pilot resources.
+        Returns:
+            Resource: A pilot resource or a list of pilot resources.
 
-                """
+        """
         data = kwargs
         if isinstance(pilot, list):
             results = []
             ids_chunks = get_chunks(pilot, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['pilots'] = ids_chunk
-                descs = self._provider.post('describe-pilots', data=data)
+                data["pilots"] = ids_chunk
+                descs = self._provider.post("describe-pilots", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['pilot'] = pilot
-            desc = self._provider.post('describe-pilot', data=data)
+            data["pilot"] = pilot
+            desc = self._provider.post("describe-pilot", data=data)
             return Resource(**desc)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search pilots.
 
         Args:
@@ -113,19 +132,25 @@ class PilotsImpl:
         """
         return search(
             self,
-            url='search-pilots',
+            url="search-pilots",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def update(self, *, pilot: ResourceId, teams: List[ResourceId] = None,
-               carrier_models: List[ResourceId] = None, sensor_models: List[ResourceId] = None,
-               **kwargs) -> Resource:
+    def update(
+        self,
+        *,
+        pilot: ResourceId,
+        teams: List[ResourceId] | None = None,
+        carrier_models: List[ResourceId] | None = None,
+        sensor_models: List[ResourceId] | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update a pilot.
 
         Args:
@@ -144,15 +169,17 @@ class PilotsImpl:
             Resource: A pilot updated.
         """
         data = kwargs
-        data['pilot'] = pilot
+        data["pilot"] = pilot
 
-        for param_name, param_value in (('teams', teams),
-                                        ('carrier_models', carrier_models),
-                                        ('sensor_models', sensor_models)):
+        for param_name, param_value in (
+            ("teams", teams),
+            ("carrier_models", carrier_models),
+            ("sensor_models", sensor_models),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='update-pilot', data=data)
+        content = self._provider.post(path="update-pilot", data=data)
 
         return Resource(**content)
 
@@ -165,6 +192,6 @@ class PilotsImpl:
         """
 
         data = kwargs
-        data['pilot'] = pilot
+        data["pilot"] = pilot
 
-        self._provider.post('delete-pilot', data=data)
+        self._provider.post("delete-pilot", data=data)

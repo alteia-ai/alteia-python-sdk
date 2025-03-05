@@ -42,3 +42,13 @@
 
 # Test
 .tox/
+
+#IDE
+.dccache
+tests/.dccache
+
+#ENV files
+env-source.sh
+
+#Tests output
+report.json

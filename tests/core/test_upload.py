@@ -1,26 +1,25 @@
-"""Test utilities related to upload.
-
-"""
+"""Test utilities related to upload."""
 
 from unittest import TestCase
 
-from alteia.core.resources.datamngt.upload import (DM_CHUNK_MAX_SIZE,
-                                                   S3_CHUNK_MAX_PARTS,
-                                                   S3_CHUNK_MAX_SIZE,
-                                                   S3_CHUNK_MIN_SIZE,
-                                                   cfg_multipart_upload)
+from alteia.core.resources.datamngt.upload import (
+    DM_CHUNK_MAX_SIZE,
+    S3_CHUNK_MAX_PARTS,
+    S3_CHUNK_MAX_SIZE,
+    S3_CHUNK_MIN_SIZE,
+    cfg_multipart_upload,
+)
 
 
 class UploadTest(TestCase):
-    """Test Upload related utilities.
+    """Test Upload related utilities."""
 
-    """
     def test_cfg_multipart_upload(self):
         """Test configure multipart upload."""
         multipart, chunk_size = cfg_multipart_upload(1024)
         self.assertFalse(multipart)
 
-        multipart, chunk_size = cfg_multipart_upload(S3_CHUNK_MIN_SIZE/1024**2*1000**2)
+        multipart, chunk_size = cfg_multipart_upload(S3_CHUNK_MIN_SIZE / 1024**2 * 1000**2)
         self.assertFalse(multipart)
 
         multipart, chunk_size = cfg_multipart_upload(S3_CHUNK_MIN_SIZE)

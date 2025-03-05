@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerAssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,8 +8,11 @@ from alteia.core.utils.utils import get_chunks
 
 
 class CropsImpl:
-    def __init__(self, season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_asset_management_api
 
     def create(self, *, company: ResourceId, name: str, **kwargs) -> Resource:
@@ -27,18 +30,23 @@ class CropsImpl:
             Resource: A crop resource.
         """
         data = kwargs
-        data.update({
-            'company': company,
-            'name': name
-        })
+        data.update({"company": company, "name": name})
 
-        content = self._provider.post(path='create-crop', data=data)
+        content = self._provider.post(path="create-crop", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search crops.
 
         Args:
@@ -93,15 +101,21 @@ class CropsImpl:
         """
         return search(
             self,
-            url='search-crops',
+            url="search-crops",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
+
+    @overload
+    def describe(self, crop: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, crop: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, crop: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a crop or a list of crops.
@@ -122,17 +136,16 @@ class CropsImpl:
             results = []
             ids_chunks = get_chunks(crop, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['crops'] = ids_chunk
-                descs = self._provider.post('describe-crops', data=data)
+                data["crops"] = ids_chunk
+                descs = self._provider.post("describe-crops", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['crop'] = crop
-            desc = self._provider.post('describe-crop', data=data)
+            data["crop"] = crop
+            desc = self._provider.post("describe-crop", data=data)
             return Resource(**desc)
 
-    def update(self, *, crop: ResourceId, name: str,
-               company: str = None, **kwargs) -> Resource:
+    def update(self, *, crop: ResourceId, name: str, company: str | None = None, **kwargs) -> Resource:
         """Update a crop.
 
         Args:
@@ -149,15 +162,12 @@ class CropsImpl:
             Resource: A crop resource updated.
         """
         data = kwargs
-        data.update({
-            'crop': crop,
-            'name': name
-        })
+        data.update({"crop": crop, "name": name})
 
         if company is not None:
-            data['company'] = company
+            data["company"] = company
 
-        content = self._provider.post(path='update-crop', data=data)
+        content = self._provider.post(path="update-crop", data=data)
 
         return Resource(**content)
 
@@ -170,6 +180,6 @@ class CropsImpl:
         """
 
         data = kwargs
-        data['crop'] = crop
+        data["crop"] = crop
 
-        self._provider.post('delete-crop', data=data)
+        self._provider.post("delete-crop", data=data)

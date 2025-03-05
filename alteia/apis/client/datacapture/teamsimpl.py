@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, overload
 
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource
@@ -10,8 +10,7 @@ class TeamsImpl:
     def __init__(self, asset_management_api: AssetManagementAPI, **kwargs):
         self._provider = asset_management_api
 
-    def create(self, *, company: ResourceId, name: str, leader: ResourceId = None,
-               **kwargs) -> Resource:
+    def create(self, *, company: ResourceId, name: str, leader: ResourceId | None = None, **kwargs) -> Resource:
         """Create a team.
 
         Args:
@@ -28,21 +27,29 @@ class TeamsImpl:
             Resource: A team resource.
         """
         data = kwargs
-        data.update({
-            'name': name,
-            'company': company,
-        })
+        data.update(
+            {
+                "name": name,
+                "company": company,
+            }
+        )
 
         if leader is not None:
-            data['leader'] = leader
+            data["leader"] = leader
 
-        content = self._provider.post(path='create-team', data=data)
+        content = self._provider.post(path="create-team", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, **kwargs
-               ) -> List[Resource]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> List[Resource]:
         """Search teams.
 
         Args:
@@ -66,17 +73,25 @@ class TeamsImpl:
 
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('search-teams', data=data)
-        results = r.get('results')
+        r = self._provider.post("search-teams", data=data)
+        results = r.get("results")
 
         return [Resource(**m) for m in results]
+
+    @overload
+    def describe(self, team: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, team: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, team: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a team or list of teams.
@@ -97,13 +112,13 @@ class TeamsImpl:
             results = []
             ids_chunks = get_chunks(team, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['teams'] = ids_chunk
-                descs = self._provider.post('describe-teams', data=data)
+                data["teams"] = ids_chunk
+                descs = self._provider.post("describe-teams", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['team'] = team
-            desc = self._provider.post('describe-team', data=data)
+            data["team"] = team
+            desc = self._provider.post("describe-team", data=data)
             return Resource(**desc)
 
     def delete(self, team: ResourceId, **kwargs) -> None:
@@ -117,9 +132,9 @@ class TeamsImpl:
         """
 
         data = kwargs
-        data['team'] = team
+        data["team"] = team
 
-        self._provider.post('delete-team', data=data)
+        self._provider.post("delete-team", data=data)
 
     def set_leader(self, team: ResourceId, *, leader: ResourceId, **kwargs) -> Resource:
         """Set the team leader.
@@ -138,10 +153,10 @@ class TeamsImpl:
         """
 
         data = kwargs
-        data['team'] = team
-        data['leader'] = leader
+        data["team"] = team
+        data["leader"] = leader
 
-        desc = self._provider.post('set-team-leader', data=data)
+        desc = self._provider.post("set-team-leader", data=data)
         return Resource(**desc)
 
     def rename(self, team: ResourceId, name: str, **kwargs) -> Resource:
@@ -161,8 +176,8 @@ class TeamsImpl:
         """
 
         data = kwargs
-        data['team'] = team
-        data['name'] = name
+        data["team"] = team
+        data["name"] = name
 
-        desc = self._provider.post('set-team-name', data=data)
+        desc = self._provider.post("set-team-name", data=data)
         return Resource(**desc)

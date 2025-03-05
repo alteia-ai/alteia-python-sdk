@@ -1,6 +1,5 @@
-"""Definitions related to type hints.
+"""Definitions related to type hints."""
 
-"""
 import pathlib
 from typing import Any, Dict, List, Tuple, Union
 

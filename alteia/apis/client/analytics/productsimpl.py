@@ -1,13 +1,11 @@
-"""Products implementation
-"""
+"""Products implementation"""
 
 import time
 from datetime import datetime, timedelta
 from typing import Dict, Generator, List, Union
 
 from alteia.apis.provider import AnalyticsServiceAPI
-from alteia.core.resources.analytics.products import (ProductLog,
-                                                      ProductLogsWithTotal)
+from alteia.core.resources.analytics.products import ProductLog, ProductLogsWithTotal
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
 from alteia.core.utils.typing import ResourceId
@@ -18,10 +16,17 @@ class ProductsImpl:
     def __init__(self, analytics_service_api: AnalyticsServiceAPI, **kwargs):
         self._provider = analytics_service_api
 
-    def search(self, *, project: ResourceId = None, filter: Dict = None,
-               limit: int = None, page: int = None, sort: dict = None,
-               return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        project: ResourceId | None = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search for Analytics products.
 
         Args:
@@ -55,32 +60,33 @@ class ProductsImpl:
         """
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
         if project is not None:
-            data['filter']['project'] = {"$eq": project}
+            data["filter"]["project"] = {"$eq": project}
 
-        search_desc = self._provider.post(
-            path='search-products', data=data, as_json=True)
+        search_desc = self._provider.post(path="search-products", data=data, as_json=True)
 
-        products = search_desc.get('results')
+        products = search_desc.get("results")
 
         results = [Resource(**product) for product in products]
 
         if return_total is True:
-            total = search_desc.get('total')
+            total = search_desc.get("total")
             return ResourcesWithTotal(total=total, results=results)
         else:
             return results
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through products.
 
         The generator allows the user not to care about the pagination of
@@ -104,8 +110,7 @@ class ProductsImpl:
             A generator yielding found products.
 
         """
-        return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=0, filter=filter, limit=limit, page=page, **kwargs)
 
     def describe(self, product: ResourceId, **kwargs) -> Resource:
         """Describe an Analytics product.
@@ -126,8 +131,8 @@ class ProductsImpl:
         """
         data = kwargs
 
-        data['product'] = product
-        desc = self._provider.post('describe-product', data=data)
+        data["product"] = product
+        desc = self._provider.post("describe-product", data=data)
         return Resource(**desc)
 
     def cancel(self, product: ResourceId) -> Resource:
@@ -144,12 +149,11 @@ class ProductsImpl:
                 not been found.
 
         """
-        data = {'product': product}
-        desc = self._provider.post('cancel-product', data=data)
+        data = {"product": product}
+        desc = self._provider.post("cancel-product", data=data)
         return Resource(**desc)
 
-    def retrieve_logs(self, product: ResourceId,
-                      **kwargs) -> ProductLogsWithTotal:
+    def retrieve_logs(self, product: ResourceId, **kwargs) -> ProductLogsWithTotal:
         """Retrieve logs for a product (sorted chronogically).
 
         Args:
@@ -163,21 +167,18 @@ class ProductsImpl:
                 and the list of product logs.
         """
         data = kwargs
-        data['product'] = product
-        desc = self._provider.post('retrieve-product-logs', data=data)
+        data["product"] = product
+        desc = self._provider.post("retrieve-product-logs", data=data)
         logs = []
-        raw_logs = desc.get('logs')
-        for raw_log in sorted(raw_logs, key=lambda log: log.get('timestamp')):
-            timestamp = raw_log.get('timestamp')
+        raw_logs = desc.get("logs")
+        for raw_log in sorted(raw_logs, key=lambda log: log.get("timestamp")):
+            timestamp = raw_log.get("timestamp")
             d = parse_timestamp(timestamp)
             logs.append(ProductLog(timestamp=d, record=raw_log))
 
-        return ProductLogsWithTotal(
-            total=desc.get('total').get('value'), logs=logs
-        )
+        return ProductLogsWithTotal(total=desc.get("total").get("value"), logs=logs)
 
-    def follow_logs(self, product: ResourceId,
-                    **kwargs) -> Generator[ProductLog, None, None]:
+    def follow_logs(self, product: ResourceId, **kwargs) -> Generator[ProductLog, None, None]:
         """Follow logs for a product through a generator.
 
         The function returns when the product status is either ``available``,
@@ -192,7 +193,7 @@ class ProductsImpl:
         Returns:
             A generator yielding each log entry chronologically.
         """
-        FINAL_STATES = ('available', 'failed', 'rejected')
+        FINAL_STATES = ("available", "failed", "rejected")
         WAIT_BETWEEN_CALLS = 2  # seconds
         WAIT_AFTER_FINAL_STATE = 10  # seconds
 
@@ -206,8 +207,7 @@ class ProductsImpl:
             if product_desc.status in FINAL_STATES:
                 if not final_state_date:
                     final_state_date = datetime.now()
-                elif (datetime.now() - final_state_date) \
-                        > timedelta(seconds=WAIT_AFTER_FINAL_STATE):
+                elif (datetime.now() - final_state_date) > timedelta(seconds=WAIT_AFTER_FINAL_STATE):
                     finished = True
 
             product_logs = self.retrieve_logs(product)

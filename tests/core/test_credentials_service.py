@@ -1,8 +1,7 @@
 import json
 
-from urllib3_mock import Responses
-
 from tests.core.resource_test_base import ResourcesTestBase
+from tests.url_mock import Responses
 
 responses = Responses()
 
@@ -104,9 +103,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/search-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/search-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"filter": {"company": {"$eq": "507f191e810c19729de860eb"},'
@@ -138,9 +135,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
@@ -174,9 +169,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
 
         self.assertEqual(
             calls[0].request.body,
@@ -212,9 +205,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
 
         self.assertEqual(
             calls[0].request.body,
@@ -241,13 +232,11 @@ class TestCredentials(ResourcesTestBase):
             credentials={
                 "login": "login_test",
                 "password": "password_test",
-            }
+            },
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
@@ -277,9 +266,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
@@ -304,15 +291,11 @@ class TestCredentials(ResourcesTestBase):
                 "login": "login_test",
                 "password": "password_test",
             },
-            labels={
-                "registry": "https://harbor.mydomain.com"
-            },
+            labels={"registry": "https://harbor.mydomain.com"},
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "Docker registry", "company": "507f191e810c19729de860eb",'
@@ -344,9 +327,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "aws s3", "company": "507f191e810c19729de860eb",'
@@ -378,9 +359,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/create-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/create-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"name": "up-42", "company": "507f191e810c19729de860eb",'
@@ -399,14 +378,10 @@ class TestCredentials(ResourcesTestBase):
             content_type="application/json",
         )
         calls = responses.calls
-        self.sdk.credentials.delete(
-            credential="63317316dfaf18df1b77f42f", company="507f191e810c19729de860eb"
-        )
+        self.sdk.credentials.delete(credential="63317316dfaf18df1b77f42f", company="507f191e810c19729de860eb")
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/delete-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/delete-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"company": "507f191e810c19729de860eb", "credentials": "63317316dfaf18df1b77f42f"}',
@@ -419,7 +394,7 @@ class TestCredentials(ResourcesTestBase):
             "/credentials-service/set-credentials",
             status=200,
             content_type="application/json",
-            body=self.__legacy_create_docker()
+            body=self.__legacy_create_docker(),
         )
         calls = responses.calls
         self.sdk.credentials.set_credentials(
@@ -434,9 +409,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/set-credentials"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/set-credentials")
         self.assertEqual(
             calls[0].request.body,
             '{"company": "507f191e810c19729de860ea", "name": "Docker registry",'
@@ -451,7 +424,7 @@ class TestCredentials(ResourcesTestBase):
             "/credentials-service/set-labels",
             status=200,
             content_type="application/json",
-            body=self.__legacy_create_docker()
+            body=self.__legacy_create_docker(),
         )
         calls = responses.calls
         self.sdk.credentials.set_labels(
@@ -465,9 +438,7 @@ class TestCredentials(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/credentials-service/set-labels"
-        )
+        self.assertEqual(calls[0].request.url, "/credentials-service/set-labels")
         self.assertEqual(
             calls[0].request.body,
             '{"company": "507f191e810c19729de860ea", "name": "Docker registry",'

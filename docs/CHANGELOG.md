@@ -5,7 +5,26 @@ Notable changes to Alteia Python SDK are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.15.0] - 2024-11-29 
+## [2.16.0] - 2025-02-04
+
+### Added
+- Add search generator support for fields (DAI-32120) (#3)
+- Add python support for version 3.12 and 3.13
+- Add new field `credentials` in analytic (DAI-32371):
+  - Change signature of `sdk.analytics.create()` to add optional `credentials` parameter
+  - Add `sdk.analytics.assign_credentials()` to assign credentials to an analytic for a specific company
+  - Add `sdk.analytics.unassign_credentials()` to unassign credentials from an analytic for a specific company
+- Add original response contents in `ResponseError` core class (DAI-33566):
+  - `data`: response data (json loaded if json contents)
+  - shortcuts from `data` for internal services only: `service`, `code`, `message`, `details`
+
+### Changed
+- Change python default version to 3.11 (DAI-31431)
+
+### Deleted
+- Python version lower than 3.11 are not maintained anymore
+
+## [2.15.0] - 2024-11-29
 
 ### Added
 
@@ -15,9 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Support of python < 3.11 dropped
+
 ### Deleted
 
-## [2.14.1] - 2024-10-12 
+## [2.14.1] - 2024-10-12
 
 ### Added
 
@@ -26,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deleted
 - Fix credentials creation without labels (DAI-31437)
 
-## [2.14.0] - 2024-10-04 
+## [2.14.0] - 2024-10-04
 
 ### Added
 

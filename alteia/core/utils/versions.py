@@ -3,8 +3,7 @@ from typing import List, Optional
 from semantic_version import NpmSpec, Version
 
 
-def select_version(versions: List[Version], *,
-                   spec: NpmSpec = None) -> Optional[Version]:
+def select_version(versions: List[Version], *, spec: NpmSpec = None) -> Optional[Version]:
     """Select a version according to given specification.
 
     Args:

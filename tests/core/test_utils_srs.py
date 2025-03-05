@@ -1,6 +1,4 @@
-"""Test utilities related to SRS.
-
-"""
+"""Test utilities related to SRS."""
 
 from unittest import TestCase
 
@@ -34,23 +32,19 @@ VERT_CS["Arbitrary",
 
 
 def _clean_whitespaces(a):
-    return a.replace('\n', '').replace(' ', '').replace('\r', '')
+    return a.replace("\n", "").replace(" ", "").replace("\r", "")
 
 
 class SRSUtilsTest(TestCase):
-    """Test SRS related utilities.
+    """Test SRS related utilities."""
 
-    """
     def test_expand_vertcrs_to_wkt(self):
         """Test conversion of SRS names."""
-        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt('wgs84'), WGS84_WKT)
-        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt('egm96'), EGM96_WKT)
-        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt('arbitrary'),
-                                   ARBITRARY_WKT)
-        self.assertEqual(expand_vertcrs_to_wkt('fake'), 'fake')
+        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt("wgs84"), WGS84_WKT)
+        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt("egm96"), EGM96_WKT)
+        self.assertEqualSkipSpaces(expand_vertcrs_to_wkt("arbitrary"), ARBITRARY_WKT)
+        self.assertEqual(expand_vertcrs_to_wkt("fake"), "fake")
 
     def assertEqualSkipSpaces(self, first, second, msg=None):
         """Test that first and second are equal after whitespaces removal."""
-        return self.assertEqual(_clean_whitespaces(first),
-                                _clean_whitespaces(second),
-                                msg)
+        return self.assertEqual(_clean_whitespaces(first), _clean_whitespaces(second), msg)

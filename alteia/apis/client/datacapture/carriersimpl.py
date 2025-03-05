@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, overload
 
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource
@@ -10,9 +10,17 @@ class CarriersImpl:
     def __init__(self, asset_management_api: AssetManagementAPI, **kwargs):
         self._provider = asset_management_api
 
-    def create(self, *, carrier_model: str, team: ResourceId, serial_number: str,
-               firmware: str = None, status: str = None, comment: str = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        carrier_model: str,
+        team: ResourceId,
+        serial_number: str,
+        firmware: str | None = None,
+        status: str | None = None,
+        comment: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a carrier.
 
         Args:
@@ -36,25 +44,35 @@ class CarriersImpl:
             Resource: A carrier resource.
         """
         data = kwargs
-        data.update({
-            'carrier_model': carrier_model,
-            'team': team,
-            'serial_number': serial_number
-        })
+        data.update(
+            {
+                "carrier_model": carrier_model,
+                "team": team,
+                "serial_number": serial_number,
+            }
+        )
 
-        for param_name, param_value in (('status', status),
-                                        ('comment', comment),
-                                        ('firmware', firmware)):
+        for param_name, param_value in (
+            ("status", status),
+            ("comment", comment),
+            ("firmware", firmware),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-carrier', data=data)
+        content = self._provider.post(path="create-carrier", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, **kwargs
-               ) -> List[Resource]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> List[Resource]:
         """Search carriers.
 
         Args:
@@ -78,17 +96,25 @@ class CarriersImpl:
 
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('search-carriers', data=data)
-        results = r.get('results')
+        r = self._provider.post("search-carriers", data=data)
+        results = r.get("results")
 
         return [Resource(**m) for m in results]
+
+    @overload
+    def describe(self, carrier: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, carrier: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, carrier: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a carrier or a list of carriers.
@@ -109,13 +135,13 @@ class CarriersImpl:
             results = []
             ids_chunks = get_chunks(carrier, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['carriers'] = ids_chunk
-                descs = self._provider.post('describe-carriers', data=data)
+                data["carriers"] = ids_chunk
+                descs = self._provider.post("describe-carriers", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['carrier'] = carrier
-            desc = self._provider.post('describe-carrier', data=data)
+            data["carrier"] = carrier
+            desc = self._provider.post("describe-carrier", data=data)
             return Resource(**desc)
 
     def delete(self, carrier: ResourceId, **kwargs):
@@ -127,6 +153,6 @@ class CarriersImpl:
         """
 
         data = kwargs
-        data['carrier'] = carrier
+        data["carrier"] = carrier
 
-        self._provider.post('delete-carrier', data=data)
+        self._provider.post("delete-carrier", data=data)

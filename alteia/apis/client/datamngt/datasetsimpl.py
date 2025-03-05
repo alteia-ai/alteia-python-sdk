@@ -3,22 +3,28 @@ import logging
 import os.path
 import sys
 import urllib.parse
-from typing import Any, Dict, Generator, List, Optional, Sequence, Union
+from typing import Any, Dict, Generator, List, Optional, Sequence, Union, overload
 
 import urllib3.exceptions
 
 from alteia.apis.provider import DataManagementAPI
-from alteia.core.errors import (DownloadError, ParameterError,
-                                UnsupportedResourceError)
+from alteia.core.errors import DownloadError, ParameterError, UnsupportedResourceError
 from alteia.core.resources.datamngt.uploader import DatasetUploader
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search_generator
-from alteia.core.utils.requests import (extract_filename_from_headers,
-                                        generate_raster_tiles_url,
-                                        generate_vector_tiles_url)
+from alteia.core.utils.requests import (
+    extract_filename_from_headers,
+    generate_raster_tiles_url,
+    generate_vector_tiles_url,
+)
 from alteia.core.utils.srs import expand_vertcrs_to_wkt
-from alteia.core.utils.typing import (AnyPath, Offset, ResourceId,
-                                      SomeResourceIds, SomeResources)
+from alteia.core.utils.typing import (
+    AnyPath,
+    Offset,
+    ResourceId,
+    SomeResourceIds,
+    SomeResources,
+)
 from alteia.core.utils.utils import dict_merge, get_chunks
 
 # TODO complete description of bands for rasters
@@ -28,13 +34,27 @@ LOGGER = logging.getLogger(__name__)
 MAX_URL_LENGTH = 2000  # Can be more for some clients (used to display a warning)
 MAX_RASTER_DATASETS_PER_TILE_URL = 150  # To make sure resulting URL is < 4000 characters
 
-__creation_common_params = ('name', 'source_name', 'categories', 'company',
-                            'project', 'mission', 'flight', 'hidden', 'published',
-                            'horizontal_srs_wkt', 'vertical_srs_wkt',
-                            'dataset_format', 'geometry', 'properties')
+__creation_common_params = (
+    "name",
+    "source_name",
+    "categories",
+    "company",
+    "project",
+    "mission",
+    "flight",
+    "hidden",
+    "published",
+    "horizontal_srs_wkt",
+    "vertical_srs_wkt",
+    "dataset_format",
+    "geometry",
+    "properties",
+)
 
 
-def _build_component_dict_list_from_names(components: Union[List[str], List[Dict[str, Any]]]):
+def _build_component_dict_list_from_names(
+    components: Union[List[str], List[Dict[str, Any]]],
+):
     """Turn component list into a dictionary list.
 
     >> _build_component_dict_list_from_names(['material', 'texture'])
@@ -50,7 +70,7 @@ def _build_component_dict_list_from_names(components: Union[List[str], List[Dict
         if isinstance(component, dict):
             component_dict_list.append(component)
         else:
-            component_dict_list.append({'name': component})
+            component_dict_list.append({"name": component})
     return component_dict_list
 
 
@@ -64,23 +84,20 @@ def _adapt_params(params: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 p.pop(common_param)
 
-    if all([p.get('company') is None, p.get('project') is None]):
+    if all([p.get("company") is None, p.get("project") is None]):
         raise ParameterError('One of "company" or "project" must be specified')
 
-    if 'dataset_format' in p:
-        p['format'] = p.pop('dataset_format')
+    if "dataset_format" in p:
+        p["format"] = p.pop("dataset_format")
 
-    if 'source_name' in p:
-        p['source'] = {
-            'name': p.pop('source_name')
-        }
+    if "source_name" in p:
+        p["source"] = {"name": p.pop("source_name")}
 
     return p
 
 
 class DatasetsImpl:
-    def __init__(self, data_management_api: DataManagementAPI,
-                 sdk, **kwargs):
+    def __init__(self, data_management_api: DataManagementAPI, sdk, **kwargs):
         self._provider = data_management_api
         self._sdk = sdk
 
@@ -101,44 +118,56 @@ class DatasetsImpl:
             return []
         elif count == 1:
             return [base_name]
-        return [f'{base_name}_{i}' for i in range(count)]
+        return [f"{base_name}_{i}" for i in range(count)]
 
-    def _create(self, dataset_type: str,
-                component_names: Union[List[str], List[Dict[str, Any]]],
-                **kwargs) -> Resource:
+    def _create(
+        self,
+        dataset_type: str,
+        component_names: Union[List[str], List[Dict[str, Any]]],
+        **kwargs,
+    ) -> Resource:
         components = _build_component_dict_list_from_names(component_names)
 
-        if dataset_type not in ('file', 'mesh', 'image', 'raster',
-                                'pcl', 'vector', 'file'):
+        if dataset_type not in (
+            "file",
+            "mesh",
+            "image",
+            "raster",
+            "pcl",
+            "vector",
+            "file",
+        ):
             raise ValueError(f'Unsupported type "{dataset_type}"')
 
         adapted_params = _adapt_params(kwargs)
-        if 'vertical_srs_wkt' in adapted_params:
-            adapted_params['vertical_srs_wkt'] = \
-                expand_vertcrs_to_wkt(kwargs['vertical_srs_wkt'])
+        if "vertical_srs_wkt" in adapted_params:
+            adapted_params["vertical_srs_wkt"] = expand_vertcrs_to_wkt(kwargs["vertical_srs_wkt"])
 
-        params = {'type': dataset_type, 'components': components}
+        params = {"type": dataset_type, "components": components}
         params.update(adapted_params)
 
-        desc = self._provider.post('create-dataset', data=params)
+        desc = self._provider.post("create-dataset", data=params)
         return Resource(**desc)
 
-    def create_file_dataset(self, *,
-                            name: str,
-                            categories: Sequence[str] = None,
-                            company: ResourceId = None,
-                            project: ResourceId = None,
-                            mission: ResourceId = None,
-                            hidden: bool = None,
-                            published: bool = None,
-                            horizontal_srs_wkt: str = None,
-                            vertical_srs_wkt: str = None,
-                            dataset_format: str = None,
-                            geometry: dict = None,
-                            properties: dict = None,
-                            file_count: int = 1,
-                            components: List[str] = None,
-                            **kwargs) -> Resource:
+    def create_file_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        file_count: int = 1,
+        components: List[str] | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``file``.
 
         One of ``company`` or ``project`` must be defined.
@@ -188,45 +217,49 @@ class DatasetsImpl:
 
         """
         if not components:
-            components = self._generate_comp_names('file', file_count)
+            components = self._generate_comp_names("file", file_count)
         if not isinstance(components, list):
-            raise TypeError(
-                f'components must be a list; {type(components)!r} received')
+            raise TypeError(f"components must be a list; {type(components)!r} received")
 
         params = kwargs
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
-        return self._create('file', components, **params)
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
+        return self._create("file", components, **params)
 
-    def create_mesh_dataset(self, *,
-                            name: str,
-                            categories: Sequence[str] = None,
-                            company: ResourceId = None,
-                            project: ResourceId = None,
-                            mission: ResourceId = None,
-                            hidden: bool = None,
-                            published: bool = None,
-                            horizontal_srs_wkt: str = None,
-                            vertical_srs_wkt: str = None,
-                            dataset_format: str = None,
-                            geometry: dict = None,
-                            properties: dict = None,
-                            texture_count=1,
-                            material_count=1,
-                            offset: Offset = None,
-                            **kwargs) -> Resource:
+    def create_mesh_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        texture_count=1,
+        material_count=1,
+        offset: Offset | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``mesh``.
 
         One of ``company`` or ``project`` must be defined.
@@ -275,54 +308,59 @@ class DatasetsImpl:
             Resource: Resource for the created dataset.
 
         """
-        textures = self._generate_comp_names('texture', texture_count)
-        materials = self._generate_comp_names('material', material_count)
-        components = ['mesh'] + textures + materials
+        textures = self._generate_comp_names("texture", texture_count)
+        materials = self._generate_comp_names("material", material_count)
+        components = ["mesh"] + textures + materials
 
         params = kwargs
         if offset is not None:
-            params['offset'] = offset
+            params["offset"] = offset
 
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
 
-        return self._create('mesh', components, **params)
+        return self._create("mesh", components, **params)
 
-    def create_image_dataset(self, *,
-                             name: str,
-                             categories: Sequence[str] = None,
-                             company: ResourceId = None,
-                             project: ResourceId = None,
-                             mission: ResourceId = None,
-                             flight: ResourceId = None,
-                             hidden: bool = None,
-                             published: bool = None,
-                             horizontal_srs_wkt: str = None,
-                             vertical_srs_wkt: str = None,
-                             dataset_format: str = None,
-                             geometry: dict = None,
-                             properties: dict = None,
-                             acquisition_date: str = None,
-                             width: int = None,
-                             height: int = None,
-                             sensor: dict = None,
-                             lens: dict = None,
-                             camera_parameters: dict = None,
-                             reflectance_calibration_panel: dict = None,
-                             parse_metadata: bool = None,
-                             **kwargs) -> Resource:
+    def create_image_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        acquisition_date: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        sensor: dict | None = None,
+        lens: dict | None = None,
+        camera_parameters: dict | None = None,
+        reflectance_calibration_panel: dict | None = None,
+        parse_metadata: bool | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``image``.
 
         One of ``company`` or ``project`` must be defined.
@@ -388,59 +426,67 @@ class DatasetsImpl:
         params = kwargs
 
         if camera_parameters:
-            params['camera_parameters'] = [camera_parameters]
+            params["camera_parameters"] = [camera_parameters]
 
         for k, v in [
-            ('acquisition_date', acquisition_date),
-            ('width', width),
-            ('height', height),
-            ('sensor', sensor),
-            ('lens', lens),
-            ('reflectance_calibration_panel', reflectance_calibration_panel)
+            ("acquisition_date", acquisition_date),
+            ("width", width),
+            ("height", height),
+            ("sensor", sensor),
+            ("lens", lens),
+            ("reflectance_calibration_panel", reflectance_calibration_panel),
         ]:
             if v:
                 params.update({k: v})
 
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'flight': flight,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "flight": flight,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
 
         if parse_metadata is not None:
-            dict_merge(params, {'ingestion': {'parameters': {'parse_metadata': parse_metadata}}})
+            dict_merge(
+                params,
+                {"ingestion": {"parameters": {"parse_metadata": parse_metadata}}},
+            )
 
-        components = ['image']
-        return self._create('image', components, **params)
+        components = ["image"]
+        return self._create("image", components, **params)
 
-    def create_raster_dataset(self, *,
-                              name: str,
-                              categories: Sequence[str] = None,
-                              company: ResourceId = None,
-                              project: ResourceId = None,
-                              mission: ResourceId = None,
-                              hidden: bool = None,
-                              published: bool = None,
-                              horizontal_srs_wkt: str = None,
-                              vertical_srs_wkt: str = None,
-                              dataset_format: str = None,
-                              geometry: dict = None,
-                              properties: dict = None,
-                              bands: List[dict] = None,
-                              has_projection_file: bool = False,
-                              has_worldfile: bool = False,
-                              has_headerfile: bool = False,
-                              **kwargs) -> Resource:
+    def create_raster_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        bands: List[dict] | None = None,
+        has_projection_file: bool = False,
+        has_worldfile: bool = False,
+        has_headerfile: bool = False,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``raster``.
 
         One of ``company`` or ``project`` must be defined.
@@ -496,49 +542,54 @@ class DatasetsImpl:
         params = kwargs
 
         if bands:
-            params['bands'] = bands
+            params["bands"] = bands
 
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
 
-        components = ['raster']
+        components = ["raster"]
         if has_projection_file:
-            components.append('projection')
+            components.append("projection")
 
         if has_worldfile:
-            components.append('worldfile')
+            components.append("worldfile")
 
         if has_headerfile:
-            components.append('header')
+            components.append("header")
 
-        return self._create('raster', components, **params)
+        return self._create("raster", components, **params)
 
-    def create_pcl_dataset(self, *,
-                           name: str,
-                           categories: Sequence[str] = None,
-                           company: ResourceId = None,
-                           project: ResourceId = None,
-                           mission: ResourceId = None,
-                           hidden: bool = None,
-                           published: bool = None,
-                           horizontal_srs_wkt: str = None,
-                           vertical_srs_wkt: str = None,
-                           dataset_format: str = None,
-                           geometry: dict = None,
-                           properties: dict = None,
-                           **kwargs) -> Resource:
+    def create_pcl_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``pcl``.
 
         One of ``company`` or ``project`` must be defined.
@@ -581,42 +632,47 @@ class DatasetsImpl:
 
         """
         params = kwargs
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
-        components = ['pcl']
-        return self._create('pcl', components, **params)
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
+        components = ["pcl"]
+        return self._create("pcl", components, **params)
 
-    def create_vector_dataset(self, *,
-                              name: str,
-                              categories: Sequence[str] = None,
-                              company: ResourceId = None,
-                              project: ResourceId = None,
-                              mission: ResourceId = None,
-                              hidden: bool = None,
-                              published: bool = None,
-                              collection: ResourceId = None,
-                              origin: ResourceId = None,
-                              horizontal_srs_wkt: str = None,
-                              vertical_srs_wkt: str = None,
-                              dataset_format: str = None,
-                              geometry: dict = None,
-                              properties: dict = None,
-                              is_shape_file: bool = False,
-                              is_archive: bool = False,
-                              has_projection_file: bool = False,
-                              **kwargs) -> Resource:
+    def create_vector_dataset(
+        self,
+        *,
+        name: str,
+        categories: Sequence[str] | None = None,
+        company: ResourceId | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        hidden: bool | None = None,
+        published: bool | None = None,
+        collection: ResourceId | None = None,
+        origin: ResourceId | None = None,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        dataset_format: str | None = None,
+        geometry: dict | None = None,
+        properties: dict | None = None,
+        is_shape_file: bool = False,
+        is_archive: bool = False,
+        has_projection_file: bool = False,
+        **kwargs,
+    ) -> Resource:
         """Create a dataset of type ``vector``.
 
         When ``is_archive`` is True, ``is_shape_file`` and
@@ -677,51 +733,58 @@ class DatasetsImpl:
 
         """
         params = kwargs
-        params.update({
-            'name': name,
-            'categories': categories,
-            'company': company,
-            'project': project,
-            'mission': mission,
-            'hidden': hidden,
-            'published': published,
-            'horizontal_srs_wkt': horizontal_srs_wkt,
-            'vertical_srs_wkt': vertical_srs_wkt,
-            'dataset_format': dataset_format,
-            'geometry': geometry,
-            'properties': properties,
-        })
+        params.update(
+            {
+                "name": name,
+                "categories": categories,
+                "company": company,
+                "project": project,
+                "mission": mission,
+                "hidden": hidden,
+                "published": published,
+                "horizontal_srs_wkt": horizontal_srs_wkt,
+                "vertical_srs_wkt": vertical_srs_wkt,
+                "dataset_format": dataset_format,
+                "geometry": geometry,
+                "properties": properties,
+            }
+        )
 
         components: Union[List[str], List[Dict[str, Any]]]
 
         if collection:
-            component = {'name': 'collection',
-                         'collection': {'id': collection}}
+            component = {"name": "collection", "collection": {"id": collection}}
             if origin:
-                component['origin'] = {'id': origin}
+                component["origin"] = {"id": origin}
             components = [component]
 
-            params['source'] = {'name': 'map-service'}
+            params["source"] = {"name": "map-service"}
 
             if any([is_shape_file, has_projection_file, is_archive, dataset_format]):
-                raise ParameterError('Incompatible arguments')
+                raise ParameterError("Incompatible arguments")
 
         elif is_archive:
-            components = ['archive']
+            components = ["archive"]
 
             if any([is_shape_file, has_projection_file]):
-                raise ParameterError('Incompatible arguments')
+                raise ParameterError("Incompatible arguments")
 
         else:
-            components = ['vector']
+            components = ["vector"]
 
             if is_shape_file:
-                components += ['database', 'index']
+                components += ["database", "index"]
 
             if has_projection_file:
-                components += ['projection']
+                components += ["projection"]
 
-        return self._create('vector', components, **params)
+        return self._create("vector", components, **params)
+
+    @overload
+    def describe(self, dataset: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, dataset: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, dataset: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a dataset or a list of datasets.
@@ -742,13 +805,13 @@ class DatasetsImpl:
             results = []
             ids_chunks = get_chunks(dataset, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['datasets'] = ids_chunk
-                descs = self._provider.post('describe-datasets', data=data)
+                data["datasets"] = ids_chunk
+                descs = self._provider.post("describe-datasets", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['dataset'] = dataset
-            desc = self._provider.post('describe-dataset', data=data)
+            data["dataset"] = dataset
+            desc = self._provider.post("describe-dataset", data=data)
             return Resource(**desc)
 
     def delete(self, dataset: SomeResourceIds, **kwargs):
@@ -768,8 +831,8 @@ class DatasetsImpl:
 
         ids_chunks = get_chunks(dataset, self._provider.max_per_delete)
         for ids_chunk in ids_chunks:
-            data['datasets'] = ids_chunk
-            self._provider.post('delete-datasets', data=data, as_json=False)
+            data["datasets"] = ids_chunk
+            self._provider.post("delete-datasets", data=data, as_json=False)
 
     def restore(self, dataset: SomeResourceIds, **kwargs):
         """Restore a dataset or multiple datasets.
@@ -786,8 +849,8 @@ class DatasetsImpl:
         if not isinstance(dataset, list):
             dataset = [dataset]
 
-        data['datasets'] = dataset
-        self._provider.post('restore-datasets', data=data, as_json=False)
+        data["datasets"] = dataset
+        self._provider.post("restore-datasets", data=data, as_json=False)
 
     def rename(self, dataset: ResourceId, *, name: str, **kwargs):
         """Rename the dataset.
@@ -802,12 +865,10 @@ class DatasetsImpl:
 
         """
         data = kwargs
-        data.update({'dataset': dataset,
-                     'name': name})
-        self._provider.post('rename-dataset', data=data)
+        data.update({"dataset": dataset, "name": name})
+        self._provider.post("rename-dataset", data=data)
 
-    def update_properties(self, dataset: ResourceId, *, properties: dict,
-                          **kwargs):
+    def update_properties(self, dataset: ResourceId, *, properties: dict, **kwargs):
         """Update the dataset properties.
 
         Args:
@@ -821,12 +882,10 @@ class DatasetsImpl:
 
         """
         data = kwargs
-        data.update({'dataset': dataset,
-                     'properties': properties})
-        self._provider.post('update-dataset-properties', data=data)
+        data.update({"dataset": dataset, "properties": properties})
+        self._provider.post("update-dataset-properties", data=data)
 
-    def delete_properties(self, dataset: ResourceId, *, properties: List[str],
-                          **kwargs):
+    def delete_properties(self, dataset: ResourceId, *, properties: List[str], **kwargs):
         """Delete properties of the dataset.
 
         Args:
@@ -840,12 +899,10 @@ class DatasetsImpl:
 
         """
         data = kwargs
-        data.update({'dataset': dataset,
-                     'properties': properties})
-        self._provider.post('delete-dataset-properties', data=data)
+        data.update({"dataset": dataset, "properties": properties})
+        self._provider.post("delete-dataset-properties", data=data)
 
-    def add_categories(self, dataset: ResourceId, *, categories: List[str],
-                       **kwargs):
+    def add_categories(self, dataset: ResourceId, *, categories: List[str], **kwargs):
         """Add categories to the dataset.
 
         Args:
@@ -858,12 +915,10 @@ class DatasetsImpl:
 
         """
         data = kwargs
-        data.update({'dataset': dataset,
-                     'categories': categories})
-        self._provider.post('add-dataset-categories', data=data)
+        data.update({"dataset": dataset, "categories": categories})
+        self._provider.post("add-dataset-categories", data=data)
 
-    def remove_categories(self, dataset: ResourceId, *, categories: List[str],
-                          **kwargs):
+    def remove_categories(self, dataset: ResourceId, *, categories: List[str], **kwargs):
         """Remove categories from the dataset.
 
         Args:
@@ -876,13 +931,19 @@ class DatasetsImpl:
 
         """
         data = kwargs
-        data.update({'dataset': dataset,
-                     'categories': categories})
-        self._provider.post('delete-dataset-categories', data=data)
+        data.update({"dataset": dataset, "categories": categories})
+        self._provider.post("delete-dataset-categories", data=data)
 
-    def upload_file(self, dataset: ResourceId, *, component: str,
-                    file_path: AnyPath, md5hash: str = None,
-                    multipart: bool = True, chunk_size: int = None):
+    def upload_file(
+        self,
+        dataset: ResourceId,
+        *,
+        component: str,
+        file_path: AnyPath,
+        md5hash: str | None = None,
+        multipart: bool = True,
+        chunk_size: int | None = None,
+    ):
         """Upload a file to a dataset component.
 
         By default, it uploads directly into the storage provider, by using signed URIs.
@@ -913,77 +974,84 @@ class DatasetsImpl:
         du = DatasetUploader(self._provider, multipart, chunk_size)
         du.send(file_path, dataset=dataset, component=component, md5hash=md5hash)
 
-    def _download(self, path: str, params: dict,
-                  target_path: Union[None, str],
-                  target_name: Union[None, str],
-                  overwrite: bool,
-                  md5hash: Optional[str]) -> str:
+    def _download(
+        self,
+        path: str,
+        params: dict,
+        target_path: Union[None, str],
+        target_name: Union[None, str],
+        overwrite: bool,
+        md5hash: Optional[str],
+    ) -> str:
         if target_path is None:
-            target_path = '.'
+            target_path = "."
 
         if not os.path.exists(target_path):
             os.makedirs(target_path)
 
-        url_path = f'{path}?{urllib.parse.urlencode(params)}'
-        resp = self._provider.get(url_path, as_json=False,
-                                  preload_content=False)
-        file_name = (target_name or
-                     extract_filename_from_headers(resp.headers))
+        url_path = f"{path}?{urllib.parse.urlencode(params)}"
+        resp = self._provider.get(url_path, as_json=False, preload_content=False)
+        file_name = target_name or extract_filename_from_headers(resp.headers)
         file_path = os.path.join(target_path, file_name)
         if not overwrite and os.path.exists(file_path):
-            raise FileExistsError(f'File found at {file_path}')
+            raise FileExistsError(f"File found at {file_path}")
 
         file_hash = hashlib.md5() if md5hash is not None else None
-        with open(file_path, 'wb') as fh:
+        with open(file_path, "wb") as fh:
             resp = self._stream_resp(resp, fh, file_hash=file_hash)
 
         if file_hash is not None and md5hash != file_hash.hexdigest():
-            raise DownloadError('Unexpected MD5 hash')
+            raise DownloadError("Unexpected MD5 hash")
 
         return file_path
 
-    def _stream_resp(self, resp, dest, *,
-                     file_hash, offset=0):
+    def _stream_resp(self, resp, dest, *, file_hash, offset=0):
         retries = resp.retries
         url = resp.geturl() or resp._request_url  # account for redirects
-        method = 'GET'
+        method = "GET"
         err = None
         try:
             for chunk in resp.stream(4096):
-                if chunk:       # false for keep-alive msg
+                if chunk:  # false for keep-alive msg
                     dest.write(chunk)
                     offset += len(chunk)
 
                     if file_hash is not None:
                         file_hash.update(chunk)
-        except (urllib3.exceptions.ReadTimeoutError,
-                urllib3.exceptions.ProtocolError) as e:
-            retries = retries.increment(method, url, error=e,
-                                        _pool=resp._pool,
-                                        _stacktrace=sys.exc_info()[2])
+        except (
+            urllib3.exceptions.ReadTimeoutError,
+            urllib3.exceptions.ProtocolError,
+        ) as e:
+            retries = retries.increment(method, url, error=e, _pool=resp._pool, _stacktrace=sys.exc_info()[2])
             retries.sleep()
             err = e
         finally:
-            resp.release_conn()     # since not preload_content
+            resp.release_conn()  # since not preload_content
 
         if err:
-            headers = {'Cache-Control': 'no-cache',
-                       'Range': f'bytes={offset}-'}
+            headers = {"Cache-Control": "no-cache", "Range": f"bytes={offset}-"}
             # https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
             conn = self._provider._connection
-            resp = conn.get(path=url,
-                            headers=headers,
-                            as_json=False,
-                            preload_content=False,
-                            retries=retries)
-            resp = self._stream_resp(resp, dest,
-                                     file_hash=file_hash,
-                                     offset=offset)
+            resp = conn.get(
+                path=url,
+                headers=headers,
+                as_json=False,
+                preload_content=False,
+                retries=retries,
+            )
+            resp = self._stream_resp(resp, dest, file_hash=file_hash, offset=offset)
         return resp
 
-    def download_component(self, dataset: ResourceId, *, component: str,
-                           target_path: str = None, target_name: str = None,
-                           overwrite=False, md5hash: str = None) -> str:
+    def download_component(
+        self,
+        dataset: ResourceId,
+        *,
+        component: str,
+        target_path: str | None = None,
+        target_name: str | None = None,
+        overwrite=False,
+        md5hash: str | None = None,
+    ) -> str:
         """Download the file from a component.
 
         If the path ``target_path`` doesn't exists, it is created.
@@ -1016,18 +1084,25 @@ class DatasetsImpl:
             Path of the downloaded file.
 
         """
-        params = {'dataset': dataset,
-                  'component': component}
-        path = 'download-component'
-        return self._download(path, params=params, target_path=target_path,
-                              target_name=target_name, overwrite=overwrite,
-                              md5hash=md5hash)
+        params = {"dataset": dataset, "component": component}
+        path = "download-component"
+        return self._download(
+            path,
+            params=params,
+            target_path=target_path,
+            target_name=target_name,
+            overwrite=overwrite,
+            md5hash=md5hash,
+        )
 
-    def download_image_as_jpeg(self, dataset: ResourceId,
-                               target_path: str = None,
-                               target_name: str = None,
-                               overwrite=False,
-                               md5hash: str = None) -> str:
+    def download_image_as_jpeg(
+        self,
+        dataset: ResourceId,
+        target_path: str | None = None,
+        target_name: str | None = None,
+        overwrite=False,
+        md5hash: str | None = None,
+    ) -> str:
         """Download an image as JPEG.
 
         If the path ``target_path`` doesn't exists, it is created.
@@ -1058,15 +1133,25 @@ class DatasetsImpl:
             Path of the downloaded file.
 
         """
-        params = {'dataset': dataset}
-        path = 'download-image-as-jpeg'
-        return self._download(path, params=params, target_path=target_path,
-                              target_name=target_name, overwrite=overwrite,
-                              md5hash=md5hash)
+        params = {"dataset": dataset}
+        path = "download-image-as-jpeg"
+        return self._download(
+            path,
+            params=params,
+            target_path=target_path,
+            target_name=target_name,
+            overwrite=overwrite,
+            md5hash=md5hash,
+        )
 
-    def download_preview(self, dataset: ResourceId, kind: str = None,
-                         target_path: str = None, target_name: str = None,
-                         overwrite=False) -> str:
+    def download_preview(
+        self,
+        dataset: ResourceId,
+        kind: str | None = None,
+        target_path: str | None = None,
+        target_name: str | None = None,
+        overwrite=False,
+    ) -> str:
         """Download a dataset preview.
 
         If the path ``target_path`` doesn't exists, it is created.
@@ -1090,18 +1175,29 @@ class DatasetsImpl:
             Path of the downloaded file.
 
         """
-        params = {'dataset': dataset}
+        params = {"dataset": dataset}
         if kind is not None:
-            params['kind'] = kind
-        path = 'download-preview'
-        return self._download(path, params=params, target_path=target_path,
-                              target_name=target_name, overwrite=overwrite,
-                              md5hash=None)
+            params["kind"] = kind
+        path = "download-preview"
+        return self._download(
+            path,
+            params=params,
+            target_path=target_path,
+            target_name=target_name,
+            overwrite=overwrite,
+            md5hash=None,
+        )
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs
-               ) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search datasets.
 
         Args:
@@ -1144,28 +1240,36 @@ class DatasetsImpl:
         """
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('search-datasets', data=data)
+        r = self._provider.post("search-datasets", data=data)
 
-        datasets = r.get('results')
+        datasets = r.get("results")
 
         results = [Resource(**dataset) for dataset in datasets]
 
         if return_total is True:
-            total = r.get('total')
+            total = r.get("total")
             return ResourcesWithTotal(total=total, results=results)
         else:
             return results
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None, count=False,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int = 50,
+        page: int | None = None,
+        count=False,
+        **kwargs,
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through datasets.
 
         The generator allows the user not to care about the pagination of
@@ -1189,10 +1293,17 @@ class DatasetsImpl:
             A generator yielding found datasets.
 
         """
-        return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, count=count, **kwargs)
+        return search_generator(
+            self,
+            first_page=0,
+            filter=filter,
+            limit=limit,
+            page=page,
+            count=count,
+            **kwargs,
+        )
 
-    def create_datasets(self, datasets: List[dict]) -> Union[List[Resource]]:
+    def create_datasets(self, datasets: List[dict]) -> List[Resource]:
         """Create several datasets *(bulk dataset creation)*.
 
         Args:
@@ -1218,17 +1329,15 @@ class DatasetsImpl:
 
         """
         for desc in datasets:
-            if 'vertical_srs_wkt' in desc:
-                desc['vertical_srs_wkt'] = \
-                    expand_vertcrs_to_wkt(desc['vertical_srs_wkt'])
+            if "vertical_srs_wkt" in desc:
+                desc["vertical_srs_wkt"] = expand_vertcrs_to_wkt(desc["vertical_srs_wkt"])
 
-        data = {'datasets': datasets}
-        created_datasets = self._provider.post('create-datasets', data=data)
+        data = {"datasets": datasets}
+        created_datasets = self._provider.post("create-datasets", data=data)
 
         return [Resource(**dataset) for dataset in created_datasets]
 
-    def share_tiles(self, dataset: SomeResourceIds, *,
-                    duration: int = None) -> str:
+    def share_tiles(self, dataset: SomeResourceIds, *, duration: int | None = None) -> str:
         """Return a URL template to share access to the tiles of the passed datasets.
 
         Args:
@@ -1257,78 +1366,69 @@ class DatasetsImpl:
         datasets = self.describe(dataset_ids)
 
         if not isinstance(datasets, list):
-            raise TypeError('Expecting a list of datasets')
+            raise TypeError("Expecting a list of datasets")
 
         dataset_ids = [ds.id for ds in datasets]
 
         for ds_desc in datasets:
-            ingested = (hasattr(ds_desc, 'ingestion') and
-                        ds_desc.ingestion.get('status', None) == 'completed')
+            ingested = hasattr(ds_desc, "ingestion") and ds_desc.ingestion.get("status", None) == "completed"
             if not ingested:
-                raise UnsupportedResourceError(
-                    f'Ingestion not finished for dataset {ds_desc.id}'
-                )
+                raise UnsupportedResourceError(f"Ingestion not finished for dataset {ds_desc.id}")
 
         dataset_types = set(ds.type for ds in datasets)
         if len(dataset_types) > 1:
             raise UnsupportedResourceError(
-                'Cannot mix dataset types when sharing tiles. '
-                f'Provided: {", ".join(dataset_types)}'
+                "Cannot mix dataset types when sharing tiles. " f'Provided: {", ".join(dataset_types)}'
             )
 
-        elif dataset_types == {'vector'}:
+        elif dataset_types == {"vector"}:
             if len(datasets) != 1:
-                raise UnsupportedResourceError('Cannot share more than 1 vector dataset')
+                raise UnsupportedResourceError("Cannot share more than 1 vector dataset")
 
             ds_desc = datasets[0]
-            if ds_desc.source.get('name') != 'map-service':
-                raise UnsupportedResourceError(
-                    'Cannot share a vector dataset. Expecting a source "map-service"'
-                )
+            if ds_desc.source.get("name") != "map-service":
+                raise UnsupportedResourceError('Cannot share a vector dataset. Expecting a source "map-service"')
 
             is_vector_in_mapservice = True
 
-        elif dataset_types == {'raster'}:
+        elif dataset_types == {"raster"}:
             are_rasters = True
 
         else:
-            raise UnsupportedResourceError(
-                f'Unexpected dataset type: {", ".join(dataset_types)}.'
-            )
+            raise UnsupportedResourceError(f'Unexpected dataset type: {", ".join(dataset_types)}.')
 
         if are_rasters and len(datasets) > MAX_RASTER_DATASETS_PER_TILE_URL:
             raise RuntimeError(
-                f'Cannot share tiles for {len(datasets)} raster datasets. '
-                f'Maximum allowed: {MAX_RASTER_DATASETS_PER_TILE_URL} datasets. '
-                'Otherwise, the generated URL would be too long.'
+                f"Cannot share tiles for {len(datasets)} raster datasets. "
+                f"Maximum allowed: {MAX_RASTER_DATASETS_PER_TILE_URL} datasets. "
+                "Otherwise, the generated URL would be too long."
             )
         share_token = self._sdk.share_tokens.create(dataset=dataset_ids, duration=duration)
         base_url = self._provider._connection._base_url
         token = share_token.token
 
         if are_rasters:
-            tile_formats = set([ds_desc.tiles.get('format', 'png') for ds_desc in datasets])
+            tile_formats = set([ds_desc.tiles.get("format", "png") for ds_desc in datasets])
             if len(tile_formats) != 1:
-                raise UnsupportedResourceError('Dataset tile formats cannot be mixed')
+                raise UnsupportedResourceError("Dataset tile formats cannot be mixed")
 
-            url = generate_raster_tiles_url(base_url, token, dataset_ids,
-                                            ds_desc.tiles.get('format', 'png'))
+            url = generate_raster_tiles_url(base_url, token, dataset_ids, ds_desc.tiles.get("format", "png"))
         elif is_vector_in_mapservice:
-            collection_component_match = [c['collection']['id']
-                                          for c in ds_desc.components
-                                          if c.get('name') == 'collection']
+            collection_component_match = [
+                c["collection"]["id"] for c in ds_desc.components if c.get("name") == "collection"
+            ]
             if len(collection_component_match) != 1:
-                raise UnsupportedResourceError('Unexpected number of components')
+                raise UnsupportedResourceError("Unexpected number of components")
 
             collection_id = collection_component_match[0]
-            url = generate_vector_tiles_url(base_url, token, collection_id, 'pbf')
+            url = generate_vector_tiles_url(base_url, token, collection_id, "pbf")
 
         if len(url) > MAX_URL_LENGTH:
             LOGGER.warning(
-                f'The generated URL length is {len(url)} characters. '
-                'You may encounter problems while using it on some clients. '
-                f'Generally, try to keep a URL below {MAX_URL_LENGTH} characters. '
-                'Try to reduce the number of datasets shared if needed.'
+                f"The generated URL length is {len(url)} characters. "
+                "You may encounter problems while using it on some clients. "
+                f"Generally, try to keep a URL below {MAX_URL_LENGTH} characters. "
+                "Try to reduce the number of datasets shared if needed."
             )
 
         return url

@@ -14,10 +14,13 @@ class ShareTokensImpl:
         self._provider = auth_api
         self._sdk = sdk
 
-    def create(self, dataset: Union[ResourceId,
-                                    List[ResourceId]], *,
-               duration: int = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        dataset: Union[ResourceId, List[ResourceId]],
+        *,
+        duration: int | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a share token for a given dataset.
 
         Share token creation is restricted to users with admin profile
@@ -53,21 +56,19 @@ class ShareTokensImpl:
         else:
             dataset_ids = [dataset]
 
-        data.update({'scope': {'datasets': dataset_ids}})
+        data.update({"scope": {"datasets": dataset_ids}})
 
-        datasets = self._sdk.datasets.describe(
-            dataset_ids,
-            fields={'include': ['company']})
+        datasets = self._sdk.datasets.describe(dataset_ids, fields={"include": ["company"]})
         company_ids = set([d.company for d in datasets])
         if len(company_ids) != 1:
-            raise RuntimeError('Expecting datasets in a single company')
+            raise RuntimeError("Expecting datasets in a single company")
 
-        data['company'] = list(company_ids)[0]
+        data["company"] = list(company_ids)[0]
 
         if duration is not None:
-            data['duration'] = duration
+            data["duration"] = duration
 
-        desc = self._provider.post(path='/create-share-token', data=data)
+        desc = self._provider.post(path="/create-share-token", data=data)
         return Resource(**desc)
 
     def revoke(self, token: str, **kwargs):
@@ -84,14 +85,19 @@ class ShareTokensImpl:
 
         """
         data = kwargs
-        data.update({'token': token})
+        data.update({"token": token})
 
-        self._provider.post(path='/revoke-share-token', data=data,
-                            as_json=False)
+        self._provider.post(path="/revoke-share-token", data=data, as_json=False)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search share tokens.
 
         Share token search is restricted to users with admin profile
@@ -119,22 +125,22 @@ class ShareTokensImpl:
         """
 
         # sort is not supported yet
-        if kwargs.get('sort') is not None:
-            kwargs.pop('sort')
+        if kwargs.get("sort") is not None:
+            kwargs.pop("sort")
 
         return search(
             self,
-            url='search-share-tokens',
+            url="search-share-tokens",
             filter=filter,
             limit=limit,
             page=page,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through share tokens.
 
         The generator allows the user not to care about the pagination of
@@ -159,8 +165,7 @@ class ShareTokensImpl:
 
         """
         # sort is not supported yet
-        if kwargs.get('sort') is not None:
-            kwargs.pop('sort')
+        if kwargs.get("sort") is not None:
+            kwargs.pop("sort")
 
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)

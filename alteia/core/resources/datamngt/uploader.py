@@ -1,33 +1,40 @@
 """
 Dataset File uploader.
 """
+
 import concurrent.futures as cf
 import functools
 import logging
 import math
 import os
-
 from enum import Enum
 from types import SimpleNamespace
 from typing import List, Optional, Tuple
 from urllib.parse import urlencode
+
 from urllib3.response import HTTPResponse
 
 from alteia.apis.provider import Provider
 from alteia.core.connection.connection import Connection
 from alteia.core.errors import UploadError
-from alteia.core.utils.typing import AnyPath, DictAny, ResourceId, DictStr
-from alteia.core.utils.utils import human_bytes, md5, md5_from_blob
 from alteia.core.resources.datamngt.upload import (
-    S3_CHUNK_MAX_PARTS,
-    S3_CHUNK_MIN_SIZE,
-    S3_CHUNK_MAX_SIZE,
     DM_CHUNK_MAX_SIZE,
+    S3_CHUNK_MAX_PARTS,
+    S3_CHUNK_MAX_SIZE,
+    S3_CHUNK_MIN_SIZE,
+)
+from alteia.core.resources.datamngt.upload import (
     MultipartUpload as LegacyMultipartUpload,
 )
+from alteia.core.utils.typing import AnyPath, DictAny, DictStr, ResourceId
+from alteia.core.utils.utils import human_bytes, md5, md5_from_blob
 
-DEFAULT_CHUNK_SIZE = 10 * 1024 ** 2  # 10MiB
-USE_LEGACY_UPLOADER = os.getenv('USE_LEGACY_UPLOADER', 'no').lower() in ('yes', 'true', '1')
+DEFAULT_CHUNK_SIZE = 10 * 1024**2  # 10MiB
+USE_LEGACY_UPLOADER = os.getenv("USE_LEGACY_UPLOADER", "no").lower() in (
+    "yes",
+    "true",
+    "1",
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,34 +53,38 @@ def assert_chunk_size(chunk_size: int, use_legacy_uploader: bool = USE_LEGACY_UP
     """
     if chunk_size < S3_CHUNK_MIN_SIZE:
         raise ValueError(
-            f'Chunk size must be >= {human_bytes(S3_CHUNK_MIN_SIZE)}; '
-            f'received : {human_bytes(chunk_size)}'
+            f"Chunk size must be >= {human_bytes(S3_CHUNK_MIN_SIZE)}; " f"received : {human_bytes(chunk_size)}"
         )
     if chunk_size > S3_CHUNK_MAX_SIZE:
         raise ValueError(
-            f'Chunk size must be <= {human_bytes(S3_CHUNK_MAX_SIZE)}; '
-            f'received : {human_bytes(chunk_size)}'
+            f"Chunk size must be <= {human_bytes(S3_CHUNK_MAX_SIZE)}; " f"received : {human_bytes(chunk_size)}"
         )
     if use_legacy_uploader and chunk_size > DM_CHUNK_MAX_SIZE:
         raise ValueError(
-            f'Chunk size must be <= {human_bytes(DM_CHUNK_MAX_SIZE)}; '
-            f'received : {human_bytes(chunk_size)}'
+            f"Chunk size must be <= {human_bytes(DM_CHUNK_MAX_SIZE)}; " f"received : {human_bytes(chunk_size)}"
         )
 
 
 class PartStatus(Enum):
-    PENDING = 'pending'
-    PREUPLOAD = 'preupload'
-    AVAILABLE = 'available'
-    FAILED = 'failed'
+    PENDING = "pending"
+    PREUPLOAD = "preupload"
+    AVAILABLE = "available"
+    FAILED = "failed"
 
 
 class UploadPart:
     """Store the state of the upload of a file part (it's a chunk of the file)
     Mainly taken from legacy Chunk class
     """
-    def __init__(self, index: int, *, part_number: int, size: int,
-                 status: PartStatus = PartStatus.PENDING):
+
+    def __init__(
+        self,
+        index: int,
+        *,
+        part_number: int,
+        size: int,
+        status: PartStatus = PartStatus.PENDING,
+    ):
         self.index: int = index
         self.part_number: int = part_number
         self.size: int = size
@@ -86,33 +97,34 @@ class UploadPart:
         self.md5hash: Optional[str] = None
 
     def __str__(self):
-        req = self.req if self.req is not None else '<unknown>'
-        return f'UploadPart {self.part_number}: {self.size} {self.status} {self.attempt} {req}'
+        req = self.req if self.req is not None else "<unknown>"
+        return f"UploadPart {self.part_number}: {self.size} {self.status} {self.attempt} {req}"
 
 
 class DatasetUploadElement(SimpleNamespace):
     """Abstract class to store the Key of a dataset element to upload,
     and the routes needed to upload this kind of element.
     """
+
     # routes for single-part upload
-    CREATE_ROUTE = ''
-    COMPLETE_ROUTE = ''
-    DM_UPLOAD_ROUTE = ''  # for legacy upload
+    CREATE_ROUTE = ""
+    COMPLETE_ROUTE = ""
+    DM_UPLOAD_ROUTE = ""  # for legacy upload
 
     # routes for multi-part upload
-    CREATE_MULTIPART_ROUTE = 'create-multipart-upload'
-    GET_PART_ROUTE = 'get-upload-part-url'
-    COMPLETE_MULTIPART_ROUTE = 'complete-multipart-upload'
+    CREATE_MULTIPART_ROUTE = "create-multipart-upload"
+    GET_PART_ROUTE = "get-upload-part-url"
+    COMPLETE_MULTIPART_ROUTE = "complete-multipart-upload"
 
     dataset: ResourceId
 
     def __init__(self, *, dataset: ResourceId, **kwargs):
         if not self.CREATE_ROUTE:
-            raise RuntimeError(f'{self.__class__} must have a valid CREATE_ROUTE')
+            raise RuntimeError(f"{self.__class__} must have a valid CREATE_ROUTE")
         if not self.DM_UPLOAD_ROUTE:
-            raise RuntimeError(f'{self.__class__} must have a valid legacy DM_UPLOAD_ROUTE')
+            raise RuntimeError(f"{self.__class__} must have a valid legacy DM_UPLOAD_ROUTE")
         if len(kwargs) == 0:
-            raise RuntimeError(f'{self.__class__} must have another information than dataset')
+            raise RuntimeError(f"{self.__class__} must have another information than dataset")
 
         super().__init__(dataset=dataset, **kwargs)
 
@@ -128,9 +140,10 @@ class DatasetUploadComponent(DatasetUploadElement):
     """Class to store the Key of a dataset component to upload,
     and the routes needed to upload components.
     """
-    CREATE_ROUTE = 'init-upload-component'
-    COMPLETE_ROUTE = 'complete-upload-component'
-    DM_UPLOAD_ROUTE = 'upload-component'
+
+    CREATE_ROUTE = "init-upload-component"
+    COMPLETE_ROUTE = "complete-upload-component"
+    DM_UPLOAD_ROUTE = "upload-component"
 
     component: str
 
@@ -139,7 +152,7 @@ class DatasetUploadComponent(DatasetUploadElement):
 
     def legacy_value(self, for_multipart=False) -> DictStr:
         if for_multipart:
-            return {'dataset': self.dataset, 'component_name': self.component}
+            return {"dataset": self.dataset, "component_name": self.component}
         return self.value()
 
 
@@ -151,6 +164,7 @@ class DatasetUploader:
     For both methods, it can be a single-part upload or a multipart,
     depending on the provided chunk_size.
     """
+
     LegacyMultipartUploadClass = LegacyMultipartUpload
 
     _provider: Provider
@@ -168,10 +182,13 @@ class DatasetUploader:
     file_size: int
     md5hash: str
 
-    def __init__(self, provider: Provider,
-                 use_multipart: bool = True,
-                 chunk_size: int = None,
-                 use_legacy_uploader: bool = None):
+    def __init__(
+        self,
+        provider: Provider,
+        use_multipart: bool = True,
+        chunk_size: int | None = None,
+        use_legacy_uploader: bool | None = None,
+    ):
         """
         Args:
             provider: DataManagement provider
@@ -221,7 +238,7 @@ class DatasetUploader:
 
         file_size = os.path.getsize(file_path)
         if file_size <= 0:
-            raise UploadError('Expecting a positive file size')
+            raise UploadError("Expecting a positive file size")
 
         self.file_path = file_path
         self.file_size = file_size
@@ -241,12 +258,13 @@ class DatasetUploader:
         nb_parts = max(0, math.ceil(file_size / chunk_size))
         if nb_parts > S3_CHUNK_MAX_PARTS:
             # too many parts: adapt the chunk size and recheck it.
-            LOGGER.warning(f'Too many chunks with chunk size = {human_bytes(chunk_size)}, '
-                           f'for file size = {human_bytes(file_size)}')
+            LOGGER.warning(
+                f"Too many chunks with chunk size = {human_bytes(chunk_size)}, "
+                f"for file size = {human_bytes(file_size)}"
+            )
             chunk_size = math.ceil(file_size / S3_CHUNK_MAX_PARTS)
             nb_parts = math.ceil(file_size / chunk_size)
-            LOGGER.info(f'New chunk size = {human_bytes(chunk_size)}, '
-                        f'with {nb_parts} chunks')
+            LOGGER.info(f"New chunk size = {human_bytes(chunk_size)}, " f"with {nb_parts} chunks")
             assert_chunk_size(chunk_size, self.use_legacy_uploader)
 
         self._chunk_size = chunk_size
@@ -265,8 +283,14 @@ class DatasetUploader:
 
         return self.use_multipart
 
-    def send(self, file_path: AnyPath, *,
-             dataset: ResourceId, component: str, md5hash: str = None):
+    def send(
+        self,
+        file_path: AnyPath,
+        *,
+        dataset: ResourceId,
+        component: str,
+        md5hash: str | None = None,
+    ):
         """Entrypoint to upload a component file.
 
         Args:
@@ -284,7 +308,7 @@ class DatasetUploader:
         element = DatasetUploadComponent(dataset=dataset, component=component)
         self._send(file_path, element=element, md5hash=md5hash)
 
-    def _send(self, file_path: AnyPath, *, element: DatasetUploadElement, md5hash: str = None):
+    def _send(self, file_path: AnyPath, *, element: DatasetUploadElement, md5hash: str | None = None):
         self.upload_element = element
         self.check_for_multipart(file_path)
         self.filename = os.path.basename(file_path)
@@ -307,20 +331,23 @@ class DatasetUploader:
     # ########################################################## #
 
     def _do_legacy_singlepart_upload(self):
-        """legacy upload for singlepart.
-        """
-        LOGGER.debug(f'Perform singlepart legacy upload for {self.upload_element}')
+        """legacy upload for singlepart."""
+        LOGGER.debug(f"Perform singlepart legacy upload for {self.upload_element}")
 
-        query_str = urlencode({
-            'filename': self.filename,
-            'checksum': self.md5hash,
-            **self.upload_element.legacy_value(for_multipart=False),
-        })
-        with open(self.file_path, 'rb') as f:
+        query_str = urlencode(
+            {
+                "filename": self.filename,
+                "checksum": self.md5hash,
+                **self.upload_element.legacy_value(for_multipart=False),
+            }
+        )
+        with open(self.file_path, "rb") as f:
             self._provider.post(
-                f'{self.upload_element.DM_UPLOAD_ROUTE}?{query_str}',
+                f"{self.upload_element.DM_UPLOAD_ROUTE}?{query_str}",
                 data=f.read(),
-                as_json=False, sanitize=False, serialize=False,
+                as_json=False,
+                sanitize=False,
+                serialize=False,
             )
 
     def _do_legacy_multipart_upload(self):
@@ -329,7 +356,7 @@ class DatasetUploader:
 
         Some parameters must be renamed to work with legacy methods.
         """
-        LOGGER.debug(f'Perform multipart legacy upload for {self.upload_element}')
+        LOGGER.debug(f"Perform multipart legacy upload for {self.upload_element}")
 
         conn = self._connection
         url = self._provider._root_path
@@ -344,51 +371,59 @@ class DatasetUploader:
     # New single-part upload                                     #
     # ########################################################## #
 
-    def _do_singlepart_upload(self):
-        LOGGER.debug(f'Perform singlepart upload for {self.upload_element}')
+    def _do_singlepart_upload(self) -> None:
+        LOGGER.debug(f"Perform singlepart upload for {self.upload_element}")
         if self.upload_element.CREATE_ROUTE is None:
-            raise UploadError(f'Missing routes on upload element: {self.upload_element}')
+            raise UploadError(f"Missing routes on upload element: {self.upload_element}")
 
         # 1. retrieve the signed upload url
-        result: DictAny = self._provider.post(self.upload_element.CREATE_ROUTE, data={
-            'filename': self.filename,
-            'checksum': self.md5hash,
-            **self.upload_element.value(),  # exploding the key
-        })
-        put_url: str = result.get('put_url')
-        put_headers: DictStr = result.get('headers') or {}
+        result: DictAny = self._provider.post(
+            self.upload_element.CREATE_ROUTE,
+            data={
+                "filename": self.filename,
+                "checksum": self.md5hash,
+                **self.upload_element.value(),  # exploding the key
+            },
+        )
+        put_url: str | None = result.get("put_url")
+        put_headers: DictStr = result.get("headers") or {}
 
         # 2. Perform direct upload through the signed url, with PUT method
-        with open(self.file_path, 'rb') as f:
+        with open(self.file_path, "rb") as f:
             self._connection.external_request(
-                'PUT', put_url, body=f.read(), headers=put_headers,
+                "PUT",
+                put_url,
+                body=f.read(),
+                headers=put_headers,
             )
 
         # 3. mark the element as upload if needed (if a complete_route exists)
         if self.upload_element.COMPLETE_ROUTE:
-            self._provider.post(self.upload_element.COMPLETE_ROUTE, data={
-                **self.upload_element.value(),
-            })
+            self._provider.post(
+                self.upload_element.COMPLETE_ROUTE,
+                data={
+                    **self.upload_element.value(),
+                },
+            )
 
     # ########################################################## #
     # New multipart upload: main steps                           #
     # ########################################################## #
 
-    def _do_multipart_upload(self):
-        LOGGER.debug(f'Perform multipart upload for {self.upload_element}')
+    def _do_multipart_upload(self) -> None:
+        LOGGER.debug(f"Perform multipart upload for {self.upload_element}")
 
         # 1. initialized the multipart upload for the element
         create_body = {
-            'filename': self.filename,
-            'chunk_size': self._chunk_size,
-            'total_size': self.file_size,
-            'direct_upload': True,
+            "filename": self.filename,
+            "chunk_size": self._chunk_size,
+            "total_size": self.file_size,
+            "direct_upload": True,
             **self.upload_element.value(),  # exploding the key
         }
         if self.md5hash:
-            create_body['checksum'] = self.md5hash
-        resp: DictAny = self._provider.post(self.upload_element.CREATE_MULTIPART_ROUTE,
-                                            data=create_body)
+            create_body["checksum"] = self.md5hash
+        resp: DictAny = self._provider.post(self.upload_element.CREATE_MULTIPART_ROUTE, data=create_body)
         LOGGER.debug(f'Multipart upload initialized with total parts of {resp["total_parts"]}')
 
         # 2. upload all parts
@@ -406,30 +441,27 @@ class DatasetUploader:
 
     @property
     def _ongoing_chunks(self) -> List[UploadPart]:
-        return [c for c in self._chunks
-                if c.status == PartStatus.PENDING and c.req is not None and not c.req.done()]
+        return [c for c in self._chunks if c.status == PartStatus.PENDING and c.req is not None and not c.req.done()]
 
     @property
     def _unfinished_chunks(self) -> List[UploadPart]:
-        return [c for c in self._chunks
-                if c.status not in (PartStatus.AVAILABLE, PartStatus.FAILED)]
+        return [c for c in self._chunks if c.status not in (PartStatus.AVAILABLE, PartStatus.FAILED)]
 
     @property
     def _waiting_chunks(self) -> List[UploadPart]:
-        return [c for c in self._chunks
-                if c.status not in (PartStatus.AVAILABLE, PartStatus.FAILED) and c.req is None]
+        return [c for c in self._chunks if c.status not in (PartStatus.AVAILABLE, PartStatus.FAILED) and c.req is None]
 
-    def _get_upload_part_data(self, part_number: int, md5hash: str = None) -> Tuple[str, dict]:
+    def _get_upload_part_data(self, part_number: int, md5hash: str | None = None) -> Tuple[str, dict]:
         """Call the provider to get an upload signed URL (+ headers) for a part"""
         data: DictAny = {
             **self.upload_element.value(),
-            'part_number': part_number,
+            "part_number": part_number,
         }
         if md5hash:
-            data['checksum'] = str(md5hash)
+            data["checksum"] = str(md5hash)
         result = self._provider.post(self.upload_element.GET_PART_ROUTE, data=data)
-        put_url = result['put_url']
-        put_headers = result.get('headers', {})
+        put_url = result["put_url"]
+        put_headers = result.get("headers", {})
         return put_url, put_headers
 
     def _do_upload_parts(self):
@@ -443,12 +475,12 @@ class DatasetUploader:
                 part.status = PartStatus.PREUPLOAD if part.put_url else PartStatus.PENDING
             else:
                 part.status = PartStatus.FAILED
-                part.error = resp.data
+                part.error = resp.data  # type: ignore
             part.req = None
 
         request_delay = self._connection.request_timeout
 
-        with open(self.file_path, 'rb') as st:
+        with open(self.file_path, "rb") as st:
             while len(self._unfinished_chunks) > 0:
                 # limit the number of simultaneous enqueued requests, use the max of:
                 # - Queue.qsize() is the "approximate size" of the queue (not reliable!)"
@@ -483,14 +515,18 @@ class DatasetUploader:
 
                 cb = functools.partial(update_part, chunk)
                 chunk.req = async_conn.external_request(
-                    'PUT', chunk.put_url, body=blob, headers=put_headers, callback=cb,
+                    "PUT",
+                    chunk.put_url,
+                    body=blob,
+                    headers=put_headers,
+                    callback=cb,
                 )
 
             reqs = [c.req for c in self._ongoing_chunks]
             try:
                 all(cf.as_completed(reqs, timeout=len(reqs) * request_delay))
             except cf.TimeoutError:
-                LOGGER.warning('Timeout while waiting for chunk uploads to end')
+                LOGGER.warning("Timeout while waiting for chunk uploads to end")
 
         if any(map(lambda ch: ch.status != PartStatus.AVAILABLE, self._chunks)):
-            raise UploadError('Failed to upload some chunks')
+            raise UploadError("Failed to upload some chunks")

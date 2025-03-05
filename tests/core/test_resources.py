@@ -3,8 +3,7 @@ import json
 from alteia.core.resources.resource import Resource
 from tests.alteiatest import AlteiaTestBase
 
-A_USER_DESC = \
-    """
+A_USER_DESC = """
     {"_id":"5aa7f7fd8e329e5d1858ee7e",
      "company":"59aaf4f9f96a310007fdf1af",
      "profile":"user",
@@ -44,9 +43,7 @@ A_USER_DESC = \
 
 
 class TestResourceBase(AlteiaTestBase):
-    """Tests for resources base class.
-
-    """
+    """Tests for resources base class."""
 
     def setUp(self):
         self.user_desc = json.loads(A_USER_DESC)
@@ -54,7 +51,7 @@ class TestResourceBase(AlteiaTestBase):
     def test_initialization(self):
         """Test resource initialization."""
         r = Resource(**self.user_desc)
-        self.assertEqual(r.id, '5aa7f7fd8e329e5d1858ee7e')
+        self.assertEqual(r.id, "5aa7f7fd8e329e5d1858ee7e")
 
         with self.assertRaises(AttributeError):
             _ = r.fake_attribute
@@ -65,16 +62,16 @@ class TestResourceBase(AlteiaTestBase):
     def test_setattr(self):
         """Test setting resource attribute."""
         r = Resource(**self.user_desc)
-        self.assertEqual(r.lastName, 'Eiffel')
+        self.assertEqual(r.lastName, "Eiffel")
 
-        r.lastName = 'Courbet'
-        self.assertEqual(r.lastName, 'Courbet')
+        r.lastName = "Courbet"
+        self.assertEqual(r.lastName, "Courbet")
 
-        r.lastName = 'Choquet'
-        self.assertEqual(r.lastName, 'Choquet')
+        r.lastName = "Choquet"
+        self.assertEqual(r.lastName, "Choquet")
 
-        r.email = 'gustave.choquet@example.com'
-        self.assertEqual(r.lastName, 'Choquet')
+        r.email = "gustave.choquet@example.com"
+        self.assertEqual(r.lastName, "Choquet")
 
-        r.fake_attribute = 'value'
-        self.assertEqual(r.fake_attribute, 'value')
+        r.fake_attribute = "value"
+        self.assertEqual(r.fake_attribute, "value")

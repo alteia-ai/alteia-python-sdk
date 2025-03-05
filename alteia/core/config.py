@@ -1,6 +1,4 @@
-"""Configuration helpers.
-
-"""
+"""Configuration helpers."""
 
 import json
 import logging
@@ -15,19 +13,27 @@ LOGGER = logging.getLogger(__name__)
 APPNAME = "alteia"
 APPAUTHOR = "Alteia"
 DEFAULT_CONF_DIR = user_data_dir(APPNAME, APPAUTHOR)
-DEFAULT_URL = 'https://app.alteia.com'
-DEFAULT_CONNECTION_CONF = {'disable_ssl_certificate': True}
+DEFAULT_URL = "https://app.alteia.com"
+DEFAULT_CONNECTION_CONF = {"disable_ssl_certificate": True}
 
 
 class ConnectionConfig:
-    """Connection configuration.
+    """Connection configuration."""
 
-    """
-    def __init__(self, file_path: str = None, *,
-                 user: str = None, password: str = None,
-                 client_id: str = None, client_secret: str = None,
-                 url: str = None, domain: str = None, proxy_url: str = None,
-                 access_token: str = None, **kwargs):
+    def __init__(
+        self,
+        file_path: str | None = None,
+        *,
+        user: str | None = None,
+        password: str | None = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        url: str | None = None,
+        domain: str | None = None,
+        proxy_url: str | None = None,
+        access_token: str | None = None,
+        **kwargs,
+    ):
         """Initializes a connection configuration.
 
         Args:
@@ -67,25 +73,25 @@ class ConnectionConfig:
 
         """
         if file_path:
-            LOGGER.info(f'Load custom configuration file from {file_path}')
+            LOGGER.info(f"Load custom configuration file from {file_path}")
             custom_conf = json.loads(read_file(file_path=file_path))
         else:
-            user_conf_path = os.path.join(DEFAULT_CONF_DIR, 'config-connection.json')
+            user_conf_path = os.path.join(DEFAULT_CONF_DIR, "config-connection.json")
             if os.path.exists(user_conf_path):
-                LOGGER.info(f'Load user configuration file from {user_conf_path}')
+                LOGGER.info(f"Load user configuration file from {user_conf_path}")
                 custom_conf = json.loads(read_file(file_path=user_conf_path))
             else:
                 custom_conf = {}
 
-        self.url = url or custom_conf.get('url') or DEFAULT_URL
-        self.connection = custom_conf.get('connection') or DEFAULT_CONNECTION_CONF
-        self.user = user or custom_conf.get('user')
-        self.password = password or custom_conf.get('password')
-        self.client_id = client_id or custom_conf.get('client_id')
-        self.client_secret = client_secret or custom_conf.get('client_secret')
-        self.domain = domain or custom_conf.get('domain')
-        self.proxy_url = proxy_url or custom_conf.get('proxy_url')
-        self.access_token = access_token or custom_conf.get('access_token')
+        self.url = url or custom_conf.get("url") or DEFAULT_URL
+        self.connection = custom_conf.get("connection") or DEFAULT_CONNECTION_CONF
+        self.user = user or custom_conf.get("user")
+        self.password = password or custom_conf.get("password")
+        self.client_id = client_id or custom_conf.get("client_id")
+        self.client_secret = client_secret or custom_conf.get("client_secret")
+        self.domain = domain or custom_conf.get("domain")
+        self.proxy_url = proxy_url or custom_conf.get("proxy_url")
+        self.access_token = access_token or custom_conf.get("access_token")
 
         for name, val in kwargs.items():
             setattr(self, name, val)

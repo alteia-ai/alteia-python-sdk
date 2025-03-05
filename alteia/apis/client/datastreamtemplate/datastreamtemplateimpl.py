@@ -9,14 +9,7 @@ class DatastreamTemplateImpl:
     def __init__(self, dataflow_service_api: DataflowServiceAPI, **kwargs):
         self._provider = dataflow_service_api
 
-    def create(
-        self,
-        *,
-        name: str,
-        source: Dict,
-        import_dataset: Dict,
-        **kwargs
-    ) -> Resource:
+    def create(self, *, name: str, source: Dict, import_dataset: Dict, **kwargs) -> Resource:
         """Create a datastream template.
 
         Args:
@@ -125,13 +118,13 @@ class DatastreamTemplateImpl:
     def search(
         self,
         *,
-        filter: Dict = None,
-        limit: int = None,
-        page: int = None,
-        sort: dict = None,
-        exclude: List[str] = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        exclude: List[str] | None = None,
         return_total: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search for a list of datastream templates.
 

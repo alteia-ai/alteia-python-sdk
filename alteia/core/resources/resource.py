@@ -4,7 +4,7 @@ from typing import List, NamedTuple
 
 
 class Resource(SimpleNamespace):
-    def __init__(self, *, id: str = None, __remove_undefined: bool = False, **kwargs):
+    def __init__(self, *, id: str | None = None, __remove_undefined: bool = False, **kwargs):
         """Resource class.
 
         Args:
@@ -20,13 +20,13 @@ class Resource(SimpleNamespace):
 
         """
         if id is None:
-            if kwargs.get('_id') is None:
+            if kwargs.get("_id") is None:
                 raise KeyError('"_id" or "id" must be defined')
             else:
-                id = kwargs['_id']
+                id = kwargs["_id"]
         else:
             # Duplicate ``id`` into ``_id`` for retrocompatibility
-            kwargs['_id'] = id
+            kwargs["_id"] = id
 
         if __remove_undefined:
             temp_dict = copy.deepcopy(kwargs)
@@ -46,7 +46,4 @@ class Resource(SimpleNamespace):
         return f"{self.__class__.__name__}(_id='{self._id}')"
 
 
-ResourcesWithTotal = NamedTuple(
-    'ResourcesWithTotal',
-    [('total', int), ('results', List[Resource])]
-)
+ResourcesWithTotal = NamedTuple("ResourcesWithTotal", [("total", int), ("results", List[Resource])])

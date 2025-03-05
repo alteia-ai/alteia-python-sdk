@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerAssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,13 +8,26 @@ from alteia.core.utils.utils import get_chunks
 
 
 class EstimationMethodsImpl:
-    def __init__(self, season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_asset_management_api
 
-    def create(self, *, name: str, companies: ResourceId, input_data_requirements: dict,
-               crops: list, description: str = None, status: str = None, analytic: dict = None,
-               growth_stages: list = None, **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str,
+        companies: ResourceId,
+        input_data_requirements: dict,
+        crops: list,
+        description: str | None = None,
+        status: str | None = None,
+        analytic: dict | None = None,
+        growth_stages: list | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create an estimation-method.
 
         Args:
@@ -95,27 +108,39 @@ class EstimationMethodsImpl:
             Resource: A estimation-method resource.
         """
         data = kwargs
-        data.update({
-            'name': name,
-            'companies': companies,
-            'input_data_requirements': input_data_requirements,
-            'crops': crops
-        })
+        data.update(
+            {
+                "name": name,
+                "companies": companies,
+                "input_data_requirements": input_data_requirements,
+                "crops": crops,
+            }
+        )
 
-        for param_name, param_value in (('description', description),
-                                        ('status', status),
-                                        ('analytic', analytic),
-                                        ('growth_stages', growth_stages)):
+        for param_name, param_value in (
+            ("description", description),
+            ("status", status),
+            ("analytic", analytic),
+            ("growth_stages", growth_stages),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-estimation-method', data=data)
+        content = self._provider.post(path="create-estimation-method", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search estimation-methods.
 
         Args:
@@ -170,15 +195,21 @@ class EstimationMethodsImpl:
         """
         return search(
             self,
-            url='search-estimation-methods',
+            url="search-estimation-methods",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
+
+    @overload
+    def describe(self, estimation_method: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, estimation_method: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, estimation_method: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe an estimation-methods or a list of estimation-methodss.
@@ -200,19 +231,29 @@ class EstimationMethodsImpl:
             results = []
             ids_chunks = get_chunks(estimation_method, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['estimation_methods'] = ids_chunk
-                descs = self._provider.post('describe-estimation-methods', data=data)
+                data["estimation_methods"] = ids_chunk
+                descs = self._provider.post("describe-estimation-methods", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['estimation_method'] = estimation_method
-            desc = self._provider.post('describe-estimation-method', data=data)
+            data["estimation_method"] = estimation_method
+            desc = self._provider.post("describe-estimation-method", data=data)
             return Resource(**desc)
 
-    def update(self, *, estimation_method: ResourceId, crops: list,
-               name: str = None, description: str = None, status: str = None,
-               companies: list = None, input_data_requirements: dict = None,
-               analytic: dict = None, growth_stages: dict = None, **kwargs) -> Resource:
+    def update(
+        self,
+        *,
+        estimation_method: ResourceId,
+        crops: list,
+        name: str | None = None,
+        description: str | None = None,
+        status: str | None = None,
+        companies: list | None = None,
+        input_data_requirements: dict | None = None,
+        analytic: dict | None = None,
+        growth_stages: dict | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update an estimation-method.
 
         Args:
@@ -292,22 +333,21 @@ class EstimationMethodsImpl:
             Resource: A estimation-method resource updated.
         """
         data = kwargs
-        data.update({
-            'estimation_method': estimation_method,
-            'crops': crops
-        })
+        data.update({"estimation_method": estimation_method, "crops": crops})
 
-        for param_name, param_value in (('name', name),
-                                        ('description', description),
-                                        ('status', status),
-                                        ('companies', companies),
-                                        ('input_data_requirements', input_data_requirements),
-                                        ('analytic', analytic),
-                                        ('growth_stages', growth_stages)):
+        for param_name, param_value in (
+            ("name", name),
+            ("description", description),
+            ("status", status),
+            ("companies", companies),
+            ("input_data_requirements", input_data_requirements),
+            ("analytic", analytic),
+            ("growth_stages", growth_stages),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='update-estimation-method', data=data)
+        content = self._provider.post(path="update-estimation-method", data=data)
 
         return Resource(**content)
 
@@ -320,12 +360,11 @@ class EstimationMethodsImpl:
         """
 
         data = kwargs
-        data['estimation_method'] = estimation_method
+        data["estimation_method"] = estimation_method
 
-        self._provider.post('delete-estimation-method', data=data)
+        self._provider.post("delete-estimation-method", data=data)
 
-    def list_deliverables_definitions(self, *, sensor_type: str, task_purpose: str = "mapping",
-                                      **kwargs) -> List[dict]:
+    def list_deliverables_definitions(self, *, sensor_type: str, task_purpose: str = "mapping", **kwargs) -> List[dict]:
         """List of the available deliverable definitions for an estimation method.
 
         Args:
@@ -339,12 +378,12 @@ class EstimationMethodsImpl:
         """
 
         data = kwargs
-        data['sensor_type'] = sensor_type
+        data["sensor_type"] = sensor_type
 
-        for param_name, param_value in (('task_purpose', task_purpose),):
+        for param_name, param_value in (("task_purpose", task_purpose),):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='list-deliverable-definitions', data=data)
+        content = self._provider.post(path="list-deliverable-definitions", data=data)
 
         return [c for c in content]

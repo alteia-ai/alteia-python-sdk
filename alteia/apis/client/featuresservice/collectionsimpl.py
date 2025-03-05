@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, List
+from typing import Iterable, List, overload
 
 from alteia.apis.provider import FeaturesServiceAPI
 from alteia.core.resources.resource import Resource
@@ -11,9 +11,15 @@ class CollectionsImpl:
     def __init__(self, features_service_api: FeaturesServiceAPI, **kwargs):
         self._provider = features_service_api
 
-    def create(self, *, name: str = None, features: List[ResourceId] = None,
-               properties: dict = None, schema: dict = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str | None = None,
+        features: List[ResourceId] | None = None,
+        properties: dict | None = None,
+        schema: dict | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a collection.
 
         Args:
@@ -35,22 +41,21 @@ class CollectionsImpl:
         data = kwargs
 
         if name is not None:
-            data['name'] = name
+            data["name"] = name
 
         if features is not None:
-            data['features'] = features
+            data["features"] = features
 
         if properties is not None:
-            data['properties'] = properties
+            data["properties"] = properties
 
         if schema is not None:
-            data['schema'] = schema
+            data["schema"] = schema
 
-        desc = self._provider.post('create-collection', data=data)
+        desc = self._provider.post("create-collection", data=data)
         return Resource(**desc)
 
-    def create_collections(self, descriptions: Iterable[dict],
-                           **kwargs) -> List[Resource]:
+    def create_collections(self, descriptions: Iterable[dict], **kwargs) -> List[Resource]:
         """Create collections.
 
         Args:
@@ -66,10 +71,15 @@ class CollectionsImpl:
 
         """
         data = kwargs
-        data['collections'] = descriptions
-        descs = self._provider.post('create-collections', data=data)
-        return [Resource(**desc)
-                for desc in descs]
+        data["collections"] = descriptions
+        descs = self._provider.post("create-collections", data=data)
+        return [Resource(**desc) for desc in descs]
+
+    @overload
+    def describe(self, collection: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, collection: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, collection: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a collection or a list of collections.
@@ -93,17 +103,16 @@ class CollectionsImpl:
             results = []
             ids_chunks = get_chunks(collection, max_per_chunk)
             for ids_chunk in ids_chunks:
-                data['collections'] = ids_chunk
-                descs = self._provider.post('describe-collections', data=data)
+                data["collections"] = ids_chunk
+                descs = self._provider.post("describe-collections", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['collection'] = collection
-            desc = self._provider.post('describe-collection', data=data)
+            data["collection"] = collection
+            desc = self._provider.post("describe-collection", data=data)
             return Resource(**desc)
 
-    def delete(self, collection: SomeResourceIds, *, permanent: bool = False,
-               **kwargs):
+    def delete(self, collection: SomeResourceIds, *, permanent: bool = False, **kwargs):
         """Delete a collection or multiple collections.
 
         Args:
@@ -119,16 +128,14 @@ class CollectionsImpl:
         """
         data = kwargs
         if isinstance(collection, list):
-            path = 'delete-collections' if not permanent \
-                else 'delete-collections-permanently'
+            path = "delete-collections" if not permanent else "delete-collections-permanently"
             ids_chunks = get_chunks(collection, self._provider.max_per_delete)
             for ids_chunk in ids_chunks:
-                data['collections'] = ids_chunk
+                data["collections"] = ids_chunk
                 self._provider.post(path, data=data, as_json=False)
         else:
-            path = 'delete-collection' if not permanent \
-                else 'delete-collection-permanently'
-            data['collection'] = collection
+            path = "delete-collection" if not permanent else "delete-collection-permanently"
+            data["collection"] = collection
             self._provider.post(path, data=data, as_json=False)
 
     def restore(self, collection: SomeResourceIds, **kwargs):
@@ -144,19 +151,21 @@ class CollectionsImpl:
         """
         data = kwargs
         if isinstance(collection, list):
-            path = 'restore-collections'
-            data['collections'] = collection
+            path = "restore-collections"
+            data["collections"] = collection
         else:
-            path = 'restore-collection'
-            data['collection'] = collection
+            path = "restore-collection"
+            data["collection"] = collection
 
         self._provider.post(path=path, data=data, as_json=True)
 
-    def export(self,
-               collection: ResourceId,
-               target_path: str,
-               target_name: str,
-               format_requested: str = 'geojson'):
+    def export(
+        self,
+        collection: ResourceId,
+        target_path: str,
+        target_name: str,
+        format_requested: str = "geojson",
+    ):
         """Export a collection to the given format.
 
         Args:
@@ -173,17 +182,16 @@ class CollectionsImpl:
 
         """
         if target_path is None:
-            target_path = '.'
+            target_path = "."
 
-        path = 'export-collection'
-        params = {'collection': collection, 'format': format_requested}
+        path = "export-collection"
+        params = {"collection": collection, "format": format_requested}
         if not os.path.exists(target_path):
             os.makedirs(target_path)
 
-        resp = self._provider.post(path, as_json=False,
-                                   data=params)
+        resp = self._provider.post(path, as_json=False, data=params)
         file_path = os.path.join(target_path, target_name)
-        with open(file_path, 'wb') as fh:
+        with open(file_path, "wb") as fh:
             fh.write(resp)
 
         return file_path

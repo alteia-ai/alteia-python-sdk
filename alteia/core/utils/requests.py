@@ -11,39 +11,33 @@ LOGGER = logging.getLogger(__name__)
 
 
 def extract_filename_from_headers(headers: dict) -> str:
-    h = headers['content-disposition']
+    h = headers["content-disposition"]
 
     _, parsed = cgi.parse_header(h)
-    filename = parsed.get('filename*')
+    filename = parsed.get("filename*")
     if filename is not None:
         expected_encoding = "UTF-8''"
         if filename.startswith(expected_encoding):
-            filename = filename.replace(expected_encoding, '')
+            filename = filename.replace(expected_encoding, "")
             try:
                 filename = urllib.parse.unquote(filename)
-                sanitized_name = sanitize_filename(filename, platform='auto')
+                sanitized_name = sanitize_filename(filename, platform="auto")
             except Exception as e:
                 filename = None
-                LOGGER.warning(f'Problem while extracting the filename from the headers: {e!r}')
+                LOGGER.warning(f"Problem while extracting the filename from the headers: {e!r}")
         else:
             filename = None
 
     if filename is None:
-        if parsed.get('filename') is not None:
-            sanitized_name = sanitize_filename(
-                Path(parsed['filename']),
-                platform='auto'
-            )
+        if parsed.get("filename") is not None:
+            sanitized_name = sanitize_filename(Path(parsed["filename"]), platform="auto")  # type: ignore
         else:
-            return 'unknown'
+            return "unknown"
 
     return str(sanitized_name)
 
 
-def generate_raster_tiles_url(base_url: str,
-                              access_token: str,
-                              dataset: SomeResourceIds,
-                              tile_format: str) -> str:
+def generate_raster_tiles_url(base_url: str, access_token: str, dataset: SomeResourceIds, tile_format: str) -> str:
     """Returns the URL template to share raster tiles.
 
     Args:
@@ -61,25 +55,22 @@ def generate_raster_tiles_url(base_url: str,
 
     """
     scheme, netloc, _, _, _, _ = urllib.parse.urlparse(base_url)
-    query = f'access_token={access_token}'
-    service = 'tileserver/tiles'
-    tile = '{z}/{x}/{y}.' + tile_format
+    query = f"access_token={access_token}"
+    service = "tileserver/tiles"
+    tile = "{z}/{x}/{y}." + tile_format
 
     if isinstance(dataset, list):
-        dataset_ids = ','.join(dataset)
+        dataset_ids = ",".join(dataset)
     else:
         dataset_ids = dataset
 
-    path = f'{service}/{dataset_ids}/{tile}'
+    path = f"{service}/{dataset_ids}/{tile}"
 
-    url = urllib.parse.urlunparse((scheme, netloc, path, '', query, ''))
+    url = urllib.parse.urlunparse((scheme, netloc, path, "", query, ""))
     return url
 
 
-def generate_vector_tiles_url(base_url: str,
-                              access_token: str,
-                              collection: ResourceId,
-                              tile_format: str) -> str:
+def generate_vector_tiles_url(base_url: str, access_token: str, collection: ResourceId, tile_format: str) -> str:
     """Returns the URL template to share vector tiles.
 
     Args:
@@ -93,12 +84,11 @@ def generate_vector_tiles_url(base_url: str,
 
     """
     scheme, netloc, _, _, _, _ = urllib.parse.urlparse(base_url)
-    query = f'access_token={access_token}'
-    service = 'map-service/features/collection-mvt'
-    tile = '{z}/{x}/{y}.' + tile_format
-    path_template = '{service}/{collection}/{tile}'
-    path = path_template.format(service=service, collection=collection,
-                                tile=tile)
+    query = f"access_token={access_token}"
+    service = "map-service/features/collection-mvt"
+    tile = "{z}/{x}/{y}." + tile_format
+    path_template = "{service}/{collection}/{tile}"
+    path = path_template.format(service=service, collection=collection, tile=tile)
 
-    url = urllib.parse.urlunparse((scheme, netloc, path, '', query, ''))
+    url = urllib.parse.urlunparse((scheme, netloc, path, "", query, ""))
     return url

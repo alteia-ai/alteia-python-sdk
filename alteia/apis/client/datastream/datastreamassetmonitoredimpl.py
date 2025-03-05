@@ -1,5 +1,5 @@
 """
-    Datastream asset monitored implementation
+Datastream asset monitored implementation
 """
 
 from typing import Dict, Generator, List, Union
@@ -17,14 +17,13 @@ class DatastreamsAssetMonitoredImpl:
     def search(
         self,
         *,
-        filter: Dict = None,
-        limit: int = None,
-        page: int = None,
-        sort: dict = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
         return_total: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[ResourcesWithTotal, List[Resource]]:
-
         """Search for a list of datastream assets.
 
         Args:
@@ -65,9 +64,7 @@ class DatastreamsAssetMonitoredImpl:
             if value is not None:
                 data.update({prop_name: value})
 
-        search_desc = self._provider.post(
-            path="search-datastreams-assets-monitoring", data=data, as_json=True
-        )
+        search_desc = self._provider.post(path="search-datastreams-assets-monitoring", data=data, as_json=True)
 
         datastream_assets = search_desc.get("results")
 
@@ -80,7 +77,7 @@ class DatastreamsAssetMonitoredImpl:
         return results
 
     def search_generator(
-        self, *, filter: dict = None, limit: int = 50, page: int = None, **kwargs
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
     ) -> Generator[Resource, None, None]:
         """Return a generator to search through datastream assets.
 
@@ -105,6 +102,4 @@ class DatastreamsAssetMonitoredImpl:
             A generator yielding found datastream assets.
 
         """
-        return search_generator(
-            self, first_page=1, filter=filter, limit=limit, page=page, **kwargs
-        )
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)

@@ -26,10 +26,11 @@ def sanitize_dict(value):
         original_keys = [key for key in value.keys()]
         for key in original_keys:
             try:
-                cleaned = key.translate({ord(c): None for c in '$.'})
+                cleaned = key.translate({ord(c): None for c in "$."})
             except TypeError:
-                cleaned = key.translate(None,
-                                        '$.')  # Note that translate() signature changes with key  # type but one  #
+                cleaned = key.translate(
+                    None, "$."
+                )  # Note that translate() signature changes with key  # type but one  #
                 # can't use isinstance since, in Python3,  # key may be of type str or bytes; In Python2 it  # will
                 #  be unicode or str.
             value[cleaned] = sanitize_dict(value.pop(key))
@@ -45,8 +46,8 @@ def md5(file_path):
     used for uploads
     """
     object_hash = hashlib.md5()
-    with open(file_path, 'rb') as fstr:
-        for chunk in iter(lambda: fstr.read(BLOCK_SIZE), b''):
+    with open(file_path, "rb") as fstr:
+        for chunk in iter(lambda: fstr.read(BLOCK_SIZE), b""):
             object_hash.update(chunk)
     return object_hash.hexdigest()
 
@@ -67,17 +68,18 @@ def new_instance(module_path, class_name, **kwargs):
     """
     # module path and class name have to be provided to get the class and create a new instance
     if not module_path:
-        raise ConfigError('The module path is either null or empty and has to be provided to create a new instance')
+        raise ConfigError("The module path is either null or empty and has to be provided to create a new instance")
     if not class_name:
-
-        raise ConfigError('The class name is either null or empty and has to be provided to create a new instance')
+        raise ConfigError("The class name is either null or empty and has to be provided to create a new instance")
 
     try:
         return getattr(importlib.import_module(module_path), class_name)(**kwargs)
     except Exception:
         raise ConfigError(
-            'Some errors occurred while getting a new instance of the class {module_path}.{class_name}'.format(
-                module_path=module_path, class_name=class_name))
+            "Some errors occurred while getting a new instance of the class {module_path}.{class_name}".format(
+                module_path=module_path, class_name=class_name
+            )
+        )
 
 
 def dict_merge(dct, merge_dct, add_keys=True):
@@ -105,13 +107,10 @@ def dict_merge(dct, merge_dct, add_keys=True):
 
     """
     if not add_keys:
-        merge_dct = {
-            k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))
-        }
+        merge_dct = {k: merge_dct[k] for k in set(dct).intersection(set(merge_dct))}
 
     for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.abc.Mapping)):
+        if k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], collections.abc.Mapping):
             dct[k] = dict_merge(dct[k], merge_dct[k], add_keys=add_keys)
         else:
             dct[k] = merge_dct[k]
@@ -119,14 +118,19 @@ def dict_merge(dct, merge_dct, add_keys=True):
     return dct
 
 
-def flatten_dict(dd, separator='.', prefix=''):
-    return {prefix + separator + k if prefix else k: v
+def flatten_dict(dd, separator=".", prefix=""):
+    return (
+        {
+            prefix + separator + k if prefix else k: v
             for kk, vv in dd.items()
             for k, v in flatten_dict(vv, separator, kk).items()
-            } if isinstance(dd, dict) else {prefix: dd}
+        }
+        if isinstance(dd, dict)
+        else {prefix: dd}
+    )
 
 
-def find(dict, str, separator='.'):
+def find(dict, str, separator="."):
     keys = str.split(separator)
     rv = dict
     for key in keys:
@@ -140,22 +144,22 @@ def get_full_class_path(o):
     if module is None or module == str.__class__.__module__:
         return o.__class__.__name__  # Avoid reporting __builtin__
     else:
-        return module + '.' + o.__class__.__name__
+        return module + "." + o.__class__.__name__
 
 
 def prompt_user(prompt: str, current_value: Optional[str], hidden: bool = False) -> str:
     if current_value is not None:
         if hidden:
-            prompt += ' [or press ENTER to leave the current value]'
+            prompt += " [or press ENTER to leave the current value]"
         else:
-            prompt += f' [or press ENTER to leave {current_value}]'
-    prompt += ': '
+            prompt += f" [or press ENTER to leave {current_value}]"
+    prompt += ": "
     if hidden:
-        user_value = getpass(prompt) or ''
+        user_value = getpass(prompt) or ""
     else:
         user_value = input(prompt)
     if not user_value:
-        user_value = current_value if current_value is not None else ''
+        user_value = current_value if current_value is not None else ""
     return user_value
 
 
@@ -172,29 +176,29 @@ def parse_timestamp(timestamp: str) -> datetime:
         Timestamp string converted to ``datetime`` instance
 
     """
-    z_index = timestamp.rfind('Z')
+    z_index = timestamp.rfind("Z")
     if z_index == -1:
-        z_index = timestamp.rfind('+')
+        z_index = timestamp.rfind("+")
 
     clip_index = min(z_index, 26)
-    d = datetime.strptime(timestamp[:clip_index], '%Y-%m-%dT%H:%M:%S.%f')
+    d = datetime.strptime(timestamp[:clip_index], "%Y-%m-%dT%H:%M:%S.%f")
     return d
 
 
-def human_bytes(bytes_value, digits: int = None, si=False, power_max=5) -> str:
+def human_bytes(bytes_value, digits: int | None = None, si=False, power_max=5) -> str:
     if bytes_value is None:
-        return 'Unknown'
+        return "Unknown"
     if bytes_value <= 0:
-        return '0'
-    s = ('Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB')
+        return "0"
+    s = ("Bytes", "KiB", "MiB", "GiB", "TiB", "PiB")
     ratio = 1024
     if si:
-        s = ('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')
+        s = ("Bytes", "KB", "MB", "GB", "TB", "PB")
         ratio = 1000
     e = min(floor(log(bytes_value) / log(ratio)), power_max)
-    return '%s %s' % (round(bytes_value / ratio ** e, digits), s[e])
+    return "%s %s" % (round(bytes_value / ratio**e, digits), s[e])
 
 
 def get_chunks(lst: list, max_per_chunk: int) -> List[list]:
     """make chunks from a list with max elements per chunk"""
-    return [lst[i:i + max_per_chunk] for i in range(0, len(lst), max_per_chunk)]
+    return [lst[i : i + max_per_chunk] for i in range(0, len(lst), max_per_chunk)]

@@ -1,5 +1,5 @@
 """
-    Credential implementation
+Credential implementation
 """
 
 import logging
@@ -27,11 +27,11 @@ class CredentialsImpl:
     def search(
         self,
         *,
-        name: Union[str, List[str]] = None,
-        filter: Dict = None,
-        limit: int = None,
-        page: int = None,
-        sort: dict = None,
+        name: Union[str, List[str]] | None = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
         return_total: bool = False,
         **kwargs,
     ) -> Union[ResourcesWithTotal, List[Resource]]:
@@ -85,9 +85,7 @@ class CredentialsImpl:
                 name_value = {"$eq": name}
             data["filter"]["name"] = name_value
 
-        search_desc = self._provider.post(
-            path="search-credentials", data=data, as_json=True
-        )
+        search_desc = self._provider.post(path="search-credentials", data=data, as_json=True)
 
         credentials = search_desc.get("results")
 
@@ -105,7 +103,7 @@ class CredentialsImpl:
         name: str,
         company: str,
         credentials: Dict[str, Any],
-        labels: Mapping[str, str] = None,
+        labels: Mapping[str, str] | None = None,
         **kwargs,
     ) -> Resource:
         """Create a credential entry.
@@ -210,17 +208,11 @@ class CredentialsImpl:
         """
         data = kwargs
 
-        data.update(
-            {"name": name, "company": company, "credentials": credentials}
-        )
+        data.update({"name": name, "company": company, "credentials": credentials})
         if labels:
-            data.update(
-                {"labels": labels}
-            )
+            data.update({"labels": labels})
 
-        desc = self._provider.post(
-            path="create-credentials", data=dict(data), as_json=True
-        )
+        desc = self._provider.post(path="create-credentials", data=dict(data), as_json=True)
 
         return Resource(**desc)
 
@@ -239,13 +231,7 @@ class CredentialsImpl:
 
         self._provider.post(path="delete-credentials", data=data, as_json=False)
 
-    def set_credentials(
-        self,
-        company: str,
-        name: str,
-        credentials: Dict[str, Any],
-        **kwargs
-    ) -> Resource:
+    def set_credentials(self, company: str, name: str, credentials: Dict[str, Any], **kwargs) -> Resource:
         """Set a credential entry.
 
         Args:
@@ -274,9 +260,7 @@ class CredentialsImpl:
             ... )
         """
         data = kwargs
-        data.update(
-            {"company": company, "name": name, "credentials": credentials}
-        )
+        data.update({"company": company, "name": name, "credentials": credentials})
         desc = self._provider.post(path="set-credentials", data=dict(data), as_json=True)
 
         return Resource(**desc)
@@ -308,9 +292,7 @@ class CredentialsImpl:
             ... )
         """
         data = kwargs
-        data.update(
-            {"company": company, "name": name, "labels": labels}
-        )
+        data.update({"company": company, "name": name, "labels": labels})
         desc = self._provider.post(path="set-labels", data=dict(data), as_json=True)
 
         return Resource(**desc)

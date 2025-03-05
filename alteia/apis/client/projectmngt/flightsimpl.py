@@ -1,4 +1,4 @@
-from typing import Generator, List, Union
+from typing import Generator, List, Union, overload
 
 from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import QueryError
@@ -14,7 +14,13 @@ class FlightsImpl:
         self._provider = project_manager_api
 
     def create(self, *args, **kwargs):
-        raise NotImplementedError('missions.create() must be used instead')
+        raise NotImplementedError("missions.create() must be used instead")
+
+    @overload
+    def describe(self, flight: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, flight: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, flight: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a flight or a list of flights.
@@ -35,22 +41,26 @@ class FlightsImpl:
             results = []
             ids_chunks = get_chunks(flight, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['flights'] = ids_chunk
-                descs = self._provider.post('describe-flights', data=data)
+                data["flights"] = ids_chunk
+                descs = self._provider.post("describe-flights", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['flight'] = flight
-            desc = self._provider.post('describe-flight', data=data)
+            data["flight"] = flight
+            desc = self._provider.post("describe-flight", data=data)
             return Resource(**desc)
 
-    def describe_uploads_status(self, *,
-                                flights: SomeResourceIds = None,
-                                missions: SomeResourceIds = None,
-                                projects: SomeResourceIds = None,
-                                limit: int = None, page: int = None,
-                                return_total: bool = False,
-                                **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def describe_uploads_status(
+        self,
+        *,
+        flights: SomeResourceIds | None = None,
+        missions: SomeResourceIds | None = None,
+        projects: SomeResourceIds | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Describe uncompleted flights status, descending sort by flight creation date.
 
         Args:
@@ -79,26 +89,36 @@ class FlightsImpl:
         if projects is not None and not isinstance(projects, list):
             projects = [projects]
         data = kwargs
-        for name, value in [('flights', flights),
-                            ('missions', missions),
-                            ('projects', projects),
-                            ('page', page),
-                            ('limit', limit)]:
+        for name, value in [
+            ("flights", flights),
+            ("missions", missions),
+            ("projects", projects),
+            ("page", page),
+            ("limit", limit),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('describe-flight-uploads-status', data=data)
-        descriptions = r.get('results')
-        results = [Resource(id=desc.get('flight'), **desc) for desc in descriptions]
+        r = self._provider.post("describe-flight-uploads-status", data=data)
+        descriptions = r.get("results")
+        results = [Resource(id=desc.get("flight"), **desc) for desc in descriptions]
 
         if return_total is True:
-            total = r.get('total')
+            total = r.get("total")
             return ResourcesWithTotal(total=total, results=results)
         return results
 
-    def search(self, *, filter: dict = None, fields: dict = None, limit: int = 100,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search flights.
 
         Args:
@@ -177,25 +197,32 @@ class FlightsImpl:
             ResourcesWithTotal(total=612, results=[Resource(_id='5d6e0dcc965a0f56891f3865'), ...])
 
         """
-        if kwargs.get('project'):
+        if kwargs.get("project"):
             raise QueryError('"project" keyword not exists anymore in flights.search()')
-        if kwargs.get('mission'):
+        if kwargs.get("mission"):
             raise QueryError('"mission" keyword not exists anymore in flights.search()')
         return search(
             self,
-            url='search-flights',
+            url="search-flights",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, fields: dict = None,
-                         limit: int = 100, page: int = None, sort: dict = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through flights.
 
         The generator allows the user not to care about the pagination of
@@ -228,8 +255,16 @@ class FlightsImpl:
             >>> flights = [r for r in results_iterator]
 
         """
-        return search_generator(self, first_page=1, filter=filter, fields=fields,
-                                limit=limit, page=page, sort=sort, **kwargs)
+        return search_generator(
+            self,
+            first_page=1,
+            filter=filter,
+            fields=fields,
+            limit=limit,
+            page=page,
+            sort=sort,
+            **kwargs,
+        )
 
     def update_name(self, flight: ResourceId, *, name: str, **kwargs) -> Flight:
         """Update the flight name.
@@ -246,8 +281,8 @@ class FlightsImpl:
             Flight: Updated flight resource.
         """
         data = kwargs
-        data.update({'flight': flight, 'name': name})
-        desc = self._provider.post(path='update-flight-name', data=data)
+        data.update({"flight": flight, "name": name})
+        desc = self._provider.post(path="update-flight-name", data=data)
         return Flight(**desc)
 
     def update_survey_date(self, flight: ResourceId, *, survey_date: str, **kwargs) -> Flight:
@@ -271,12 +306,13 @@ class FlightsImpl:
 
         """
         data = kwargs
-        data.update({'flight': flight, 'survey_date': survey_date})
-        desc = self._provider.post(path='update-flight-survey-date', data=data)
+        data.update({"flight": flight, "survey_date": survey_date})
+        desc = self._provider.post(path="update-flight-survey-date", data=data)
         return Flight(**desc)
 
-    def update_geodata(self, flight: ResourceId, *,
-                       bbox: list = None, geometry: dict = None, **kwargs) -> Flight:
+    def update_geodata(
+        self, flight: ResourceId, *, bbox: list | None = None, geometry: dict | None = None, **kwargs
+    ) -> Flight:
         """Update the flight geo data (bbox and geometry).
 
         Args:
@@ -293,21 +329,20 @@ class FlightsImpl:
             Flight: Updated flight resource.
         """
         if geometry is not None:
-            if not geometry.get('type'):
+            if not geometry.get("type"):
                 raise QueryError('"geometry.type" must exists')
-            if not geometry.get('coordinates'):
+            if not geometry.get("coordinates"):
                 raise QueryError('"geometry.coordinates" must exists')
         data = kwargs
-        data['flight'] = flight
+        data["flight"] = flight
 
-        if 'data' not in data:
-            data.update({'data': {}})
+        if "data" not in data:
+            data.update({"data": {}})
 
-        for name, value in [('bbox', bbox),
-                            ('geometry', geometry)]:
+        for name, value in [("bbox", bbox), ("geometry", geometry)]:
             if value is not None:
-                data['data'].update({name: value})
-        desc = self._provider.post(path='update-flight-data', data=data)
+                data["data"].update({name: value})
+        desc = self._provider.post(path="update-flight-data", data=data)
         return Flight(**desc)
 
     def update_bbox(self, flight: ResourceId, *, real_bbox: dict, **kwargs) -> Flight:
@@ -333,14 +368,14 @@ class FlightsImpl:
             Flight(_id='5d6e0dcc965a0f56891f3865')
 
         """
-        if not real_bbox.get('type'):
+        if not real_bbox.get("type"):
             raise QueryError('"real_bbox.type" must exists')
-        if not real_bbox.get('coordinates'):
+        if not real_bbox.get("coordinates"):
             raise QueryError('"real_bbox.coordinates" must exists')
 
         data = kwargs
-        data.update({'flight': flight, 'real_bbox': real_bbox})
-        desc = self._provider.post(path='update-flight-bbox', data=data)
+        data.update({"flight": flight, "real_bbox": real_bbox})
+        desc = self._provider.post(path="update-flight-bbox", data=data)
         return Flight(**desc)
 
     def update_status(self, flight: ResourceId, *, status: str, **kwargs) -> Flight:
@@ -359,6 +394,6 @@ class FlightsImpl:
             Flight: Updated flight resource.
         """
         data = kwargs
-        data.update({'flight': flight, 'status': status})
-        desc = self._provider.post(path='update-flight-status', data=data)
+        data.update({"flight": flight, "status": status})
+        desc = self._provider.post(path="update-flight-status", data=data)
         return Flight(**desc)

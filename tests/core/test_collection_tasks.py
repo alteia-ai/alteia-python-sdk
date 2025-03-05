@@ -1,8 +1,7 @@
 import json
 
-from urllib3_mock import Responses
-
 from tests.core.resource_test_base import ResourcesTestBase
+from tests.url_mock import Responses
 
 COLLECTION_TASK_RESPONSE = {
     "_id": "task-id-1",
@@ -30,9 +29,7 @@ class TestCollectionTasks(ResourcesTestBase):
 
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].request.url, "/dct-service/task/set-task-status")
-        self.assertEqual(
-            calls[0].request.body, '{"task": "task-id-1", "status": "scheduled"}'
-        )
+        self.assertEqual(calls[0].request.body, '{"task": "task-id-1", "status": "scheduled"}')
 
     @responses.activate
     def test_describe_single_collection_task(self):
@@ -76,9 +73,7 @@ class TestCollectionTasks(ResourcesTestBase):
             content_type="application/json",
         )
         calls = responses.calls
-        self.sdk.collection_tasks.describe(
-            ["task-id-1", "task-id-2"], fields={"include": ["requirement"]}
-        )
+        self.sdk.collection_tasks.describe(["task-id-1", "task-id-2"], fields={"include": ["requirement"]})
 
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].request.url, "/dct-service/task/describe-tasks")

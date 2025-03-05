@@ -1,7 +1,6 @@
-"""Implementation of projects.
+"""Implementation of projects."""
 
-"""
-from typing import Generator, List, Union
+from typing import Generator, List, Union, overload
 
 from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import QueryError, ResponseError
@@ -16,7 +15,7 @@ class ProjectsImpl:
     def __init__(self, project_manager_api: ProjectManagerAPI, **kwargs):
         self._provider = project_manager_api
 
-    def create(self, name: str, company: ResourceId, geometry: dict = None, **kwargs) -> Project:
+    def create(self, name: str, company: ResourceId, geometry: dict | None = None, **kwargs) -> Project:
         """Create a project.
 
         Args:
@@ -38,22 +37,25 @@ class ProjectsImpl:
         """
         data = kwargs
 
-        data.update({
-            'name': name,
-            'company': company
-        })
+        data.update({"name": name, "company": company})
 
         if geometry is not None:
-            data['geometry'] = geometry
+            data["geometry"] = geometry
 
-        if 'addProjectToUsers' not in data:
-            data['addProjectToUsers'] = True
+        if "addProjectToUsers" not in data:
+            data["addProjectToUsers"] = True
 
-        content = self._provider.post(path='projects', data=data)
-        if 'project' not in content:
+        content = self._provider.post(path="projects", data=data)
+        if "project" not in content:
             raise QueryError('"project" should be in the response content')
-        project_desc = content['project']
+        project_desc = content["project"]
         return Project(**project_desc)
+
+    @overload
+    def describe(self, project: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, project: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, project: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a project or a list of projects.
@@ -74,18 +76,26 @@ class ProjectsImpl:
             results = []
             ids_chunks = get_chunks(project, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['projects'] = ids_chunk
-                descs = self._provider.post('describe-projects', data=data)
+                data["projects"] = ids_chunk
+                descs = self._provider.post("describe-projects", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['project'] = project
-            desc = self._provider.post('describe-project', data=data)
+            data["project"] = project
+            desc = self._provider.post("describe-project", data=data)
             return Resource(**desc)
 
-    def search(self, *, filter: dict = None, fields: dict = None, limit: int = 100,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search projects.
 
         Args:
@@ -159,25 +169,32 @@ class ProjectsImpl:
             ResourcesWithTotal(total=940, results=[Resource(_id='5d6e0dcc965a0f56891f3860'), ...])
 
         """
-        if kwargs.get('name'):
+        if kwargs.get("name"):
             raise QueryError('"name" keyword not exists anymore in projects.search()')
-        if kwargs.get('deleted'):
+        if kwargs.get("deleted"):
             raise QueryError('"deleted" keyword not exists anymore in projects.search()')
         return search(
             self,
-            url='search-projects',
+            url="search-projects",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, fields: dict = None,
-                         limit: int = 100, page: int = None, sort: dict = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through projects.
 
         The generator allows the user not to care about the pagination of
@@ -210,8 +227,16 @@ class ProjectsImpl:
             >>> projects = [r for r in results_iterator]
 
         """
-        return search_generator(self, first_page=1, filter=filter, fields=fields,
-                                limit=limit, page=page, sort=sort, **kwargs)
+        return search_generator(
+            self,
+            first_page=1,
+            filter=filter,
+            fields=fields,
+            limit=limit,
+            page=page,
+            sort=sort,
+            **kwargs,
+        )
 
     def update_status(self, project: ResourceId, status: str) -> Project:
         """Update the project status.
@@ -230,18 +255,17 @@ class ProjectsImpl:
             Project: Updated project resource.
 
         """
-        available_status = ['pending', 'available', 'failed', 'maintenance']
+        available_status = ["pending", "available", "failed", "maintenance"]
         if status not in available_status:
-            raise RuntimeError(f'Status not in {available_status}')
+            raise RuntimeError(f"Status not in {available_status}")
 
-        data = {'project': project, 'status': status}
-        content = self._provider.post(path=f'projects/update/{project}', data=data)
+        data = {"project": project, "status": status}
+        content = self._provider.post(path=f"projects/update/{project}", data=data)
 
         if project not in str(content):
-            raise ResponseError(
-                f'Project {project!r} has not been found')
+            raise ResponseError(f"Project {project!r} has not been found")
         else:
-            d = content.get('project')
+            d = content.get("project")
             project_resource = Project(**d)
         return project_resource
 
@@ -252,7 +276,7 @@ class ProjectsImpl:
             project: Identifier of the project to delete.
 
         """
-        self._provider.delete(path=f'projects/{project}')
+        self._provider.delete(path=f"projects/{project}")
 
     def update_name(self, project: ResourceId, *, name: str, **kwargs) -> Project:
         """Update the project name.
@@ -269,8 +293,8 @@ class ProjectsImpl:
             Project: Updated project resource.
         """
         data = kwargs
-        data.update({'project': project, 'name': name})
-        desc = self._provider.post(path='update-project-name', data=data)
+        data.update({"project": project, "name": name})
+        desc = self._provider.post(path="update-project-name", data=data)
         return Project(**desc)
 
     def update_geometry(self, project: ResourceId, *, geometry: dict, **kwargs) -> Project:
@@ -287,13 +311,13 @@ class ProjectsImpl:
         Returns:
             Project: Updated project resource.
         """
-        if not geometry.get('type'):
+        if not geometry.get("type"):
             raise QueryError('"geometry.type" must exists')
-        if not geometry.get('coordinates'):
+        if not geometry.get("coordinates"):
             raise QueryError('"geometry.coordinates" must exists')
         data = kwargs
-        data.update({'project': project, 'geometry': geometry})
-        desc = self._provider.post(path='update-project-geometry', data=data)
+        data.update({"project": project, "geometry": geometry})
+        desc = self._provider.post(path="update-project-geometry", data=data)
         return Project(**desc)
 
     def update_bbox(self, project: ResourceId, *, real_bbox: dict, **kwargs) -> Project:
@@ -319,14 +343,14 @@ class ProjectsImpl:
             Project(_id='5d6e0dcc965a0f56891f3860')
 
         """
-        if not real_bbox.get('type'):
+        if not real_bbox.get("type"):
             raise QueryError('"real_bbox.type" must exists')
-        if not real_bbox.get('coordinates'):
+        if not real_bbox.get("coordinates"):
             raise QueryError('"real_bbox.coordinates" must exists')
 
         data = kwargs
-        data.update({'project': project, 'real_bbox': real_bbox})
-        desc = self._provider.post(path='update-project-bbox', data=data)
+        data.update({"project": project, "real_bbox": real_bbox})
+        desc = self._provider.post(path="update-project-bbox", data=data)
         return Project(**desc)
 
     def compute_bbox(self, project: ResourceId, **kwargs) -> Project:
@@ -342,8 +366,8 @@ class ProjectsImpl:
             Project: Updated project resource.
         """
         data = kwargs
-        data.update({'project': project})
-        desc = self._provider.post(path='compute-project-bbox', data=data)
+        data.update({"project": project})
+        desc = self._provider.post(path="compute-project-bbox", data=data)
         return Project(**desc)
 
     def update_units(self, project: ResourceId, *, units: dict, **kwargs) -> Project:
@@ -375,14 +399,18 @@ class ProjectsImpl:
         """
 
         data = kwargs
-        data.update({'project': project, 'units': units})
-        desc = self._provider.post(path='update-project-units', data=data)
+        data.update({"project": project, "units": units})
+        desc = self._provider.post(path="update-project-units", data=data)
         return Project(**desc)
 
-    def update_srs(self, project: ResourceId, *,
-                   horizontal_srs_wkt: str = None,
-                   vertical_srs_wkt: str = None,
-                   **kwargs) -> Project:
+    def update_srs(
+        self,
+        project: ResourceId,
+        *,
+        horizontal_srs_wkt: str | None = None,
+        vertical_srs_wkt: str | None = None,
+        **kwargs,
+    ) -> Project:
         """Update the SRS of a project. Horizontal or Vertical or both.
 
         Args:
@@ -400,17 +428,16 @@ class ProjectsImpl:
         """
 
         data = kwargs
-        data.update({'project': project})
+        data.update({"project": project})
         if horizontal_srs_wkt is not None:
-            data['horizontal_srs_wkt'] = horizontal_srs_wkt
+            data["horizontal_srs_wkt"] = horizontal_srs_wkt
         if vertical_srs_wkt is not None:
-            data['vertical_srs_wkt'] = vertical_srs_wkt
+            data["vertical_srs_wkt"] = vertical_srs_wkt
 
-        desc = self._provider.post(path='update-project-srs', data=data)
+        desc = self._provider.post(path="update-project-srs", data=data)
         return Project(**desc)
 
-    def update_local_coordinates_dataset(self, project: ResourceId, *,
-                                         dataset: ResourceId, **kwargs) -> Project:
+    def update_local_coordinates_dataset(self, project: ResourceId, *, dataset: ResourceId, **kwargs) -> Project:
         """Update the local coordinates dataset of a project.
 
         Args:
@@ -426,14 +453,18 @@ class ProjectsImpl:
         """
 
         data = kwargs
-        data.update({'project': project, 'local_coords_dataset': dataset})
-        desc = self._provider.post(path='update-project-local-coords', data=data)
+        data.update({"project": project, "local_coords_dataset": dataset})
+        desc = self._provider.post(path="update-project-local-coords", data=data)
         return Project(**desc)
 
-    def update_location(self, project: ResourceId, *,
-                        location: List[float] = None,
-                        fixed: bool = None,
-                        **kwargs) -> Project:
+    def update_location(
+        self,
+        project: ResourceId,
+        *,
+        location: List[float] | None = None,
+        fixed: bool | None = None,
+        **kwargs,
+    ) -> Project:
         """Update the project's location, set if the project's location is fixed. Or both updates.
 
         Args:
@@ -467,11 +498,11 @@ class ProjectsImpl:
         """
 
         data = kwargs
-        data.update({'project': project})
+        data.update({"project": project})
         if location is not None:
-            data['location'] = location
+            data["location"] = location
         if fixed is not None:
-            data['fixed'] = bool(fixed)
+            data["fixed"] = bool(fixed)
 
-        desc = self._provider.post(path='update-project-location', data=data)
+        desc = self._provider.post(path="update-project-location", data=data)
         return Project(**desc)

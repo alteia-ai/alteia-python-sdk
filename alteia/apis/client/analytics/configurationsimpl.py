@@ -1,26 +1,27 @@
-"""Implementation of analytic configurations.
+"""Implementation of analytic configurations."""
 
-"""
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Union, overload
 
 from alteia.apis.provider import AnalyticsServiceAPI
 from alteia.core.errors import QueryError
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
-from alteia.core.utils.typing import ResourceId, SomeResourceIds
+from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 
 
 class AnalyticConfigurationsImpl:
     def __init__(self, analytics_service_api: AnalyticsServiceAPI, **kwargs):
         self._provider = analytics_service_api
 
-    def create(self,
-               name: str,
-               analytic_name: str,
-               value: Dict[str, Any],
-               analytic_version_range: str = '*',
-               description: str = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        name: str,
+        analytic_name: str,
+        value: Dict[str, Any],
+        analytic_version_range: str = "*",
+        description: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a new configuration set for an analytic.
 
         Args:
@@ -47,24 +48,34 @@ class AnalyticConfigurationsImpl:
         """
         data = kwargs
 
-        data.update({
-            'name': name,
-            'analytic_name': analytic_name,
-        })
+        data.update(
+            {
+                "name": name,
+                "analytic_name": analytic_name,
+            }
+        )
 
-        if 'versions' not in data:  # can be set from kwargs
-            data['versions'] = [{
-                'analytic_version_range': analytic_version_range,
-                'value': value,
-            }]
+        if "versions" not in data:  # can be set from kwargs
+            data["versions"] = [
+                {
+                    "analytic_version_range": analytic_version_range,
+                    "value": value,
+                }
+            ]
 
         if description is not None:
-            data['description'] = description
+            data["description"] = description
 
-        desc = self._provider.post(path='create-analytic-configuration', data=data)
+        desc = self._provider.post(path="create-analytic-configuration", data=data)
         return Resource(**desc)
 
-    def describe(self, configuration_set: SomeResourceIds, **kwargs) -> Union[Resource, List]:
+    @overload
+    def describe(self, configuration_set: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, configuration_set: List[ResourceId], **kwargs) -> List[Resource]: ...
+
+    def describe(self, configuration_set: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe an analytic configuration set or a list of analytic configuration sets.
 
         Args:
@@ -93,13 +104,21 @@ class AnalyticConfigurationsImpl:
             #     results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['analytic_configuration'] = configuration_set
-            desc = self._provider.post('describe-analytic-configuration', data=data)
+            data["analytic_configuration"] = configuration_set
+            desc = self._provider.post("describe-analytic-configuration", data=data)
             return Resource(**desc)
 
-    def search(self, *, filter: dict = None, fields: dict = None, limit: int = 100,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search analytic configuration sets.
 
         Args:
@@ -172,19 +191,26 @@ class AnalyticConfigurationsImpl:
 
         return search(
             self,
-            url='search-analytic-configurations',
+            url="search-analytic-configurations",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, fields: dict = None,
-                         limit: int = 100, page: int = None, sort: dict = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through analytic configuration sets.
 
         The generator allows the user not to care about the pagination of
@@ -217,16 +243,28 @@ class AnalyticConfigurationsImpl:
             >>> configurations = [r for r in results_iterator]
 
         """
-        return search_generator(self, first_page=0, filter=filter, fields=fields,
-                                limit=limit, page=page, sort=sort, **kwargs)
+        return search_generator(
+            self,
+            first_page=0,
+            filter=filter,
+            fields=fields,
+            limit=limit,
+            page=page,
+            sort=sort,
+            **kwargs,
+        )
 
-    def update(self, configuration_set: ResourceId, *,
-               name: str = None,
-               description: str = None,
-               versions: List[Dict[str, Any]] = None,
-               value: Dict[str, Any] = None,
-               analytic_version_range: str = None,
-               **kwargs) -> Resource:
+    def update(
+        self,
+        configuration_set: ResourceId,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        versions: List[Dict[str, Any]] | None = None,
+        value: Dict[str, Any] | None = None,
+        analytic_version_range: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update an analytic configuration set.
 
         At least one of ``name``, ``description```, ``versions``, or the
@@ -288,10 +326,12 @@ class AnalyticConfigurationsImpl:
 
         data = kwargs
 
-        for prop_name, val in [('analytic_configuration', configuration_set),
-                               ('name', name),
-                               ('description', description),
-                               ('versions', versions)]:
+        for prop_name, val in [
+            ("analytic_configuration", configuration_set),
+            ("name", name),
+            ("description", description),
+            ("versions", versions),
+        ]:
             if val is not None:
                 data.update({prop_name: val})
 
@@ -302,15 +342,16 @@ class AnalyticConfigurationsImpl:
             raise QueryError('"value" is given but "analytic_version_range" is missing')
 
         if value is not None and analytic_version_range is not None:
-            if 'versions' in data:
-                raise QueryError('You cannot send both "versions" and couple '
-                                 '"value"+"analytic_version_range"')
-            data['versions'] = [{
-                'analytic_version_range': analytic_version_range,
-                'value': value,
-            }]
+            if "versions" in data:
+                raise QueryError('You cannot send both "versions" and couple ' '"value"+"analytic_version_range"')
+            data["versions"] = [
+                {
+                    "analytic_version_range": analytic_version_range,
+                    "value": value,
+                }
+            ]
 
-        desc = self._provider.post(path='update-analytic-configuration', data=data)
+        desc = self._provider.post(path="update-analytic-configuration", data=data)
         return Resource(**desc)
 
     def delete(self, configuration_set: SomeResourceIds, **kwargs) -> None:
@@ -336,12 +377,10 @@ class AnalyticConfigurationsImpl:
             #     data['analytic_configurations'] = ids_chunk
             #     self._provider.post('delete-analytic-configurations', data=data)
         else:
-            data['analytic_configuration'] = configuration_set
-            self._provider.post('delete-analytic-configuration', data=data)
+            data["analytic_configuration"] = configuration_set
+            self._provider.post("delete-analytic-configuration", data=data)
 
-    def assign_to_company(self, configuration_set: ResourceId, *,
-                          company: ResourceId,
-                          **kwargs) -> dict:
+    def assign_to_company(self, configuration_set: ResourceId, *, company: ResourceId, **kwargs) -> dict:
         """Assign an analytic configuration set to a company.
 
         All analytic configurations that are currently part of this analytic configuration set
@@ -362,16 +401,16 @@ class AnalyticConfigurationsImpl:
 
         data = kwargs
 
-        data.update({
-            'analytic_configuration': configuration_set,
-            'company': company,
-        })
+        data.update(
+            {
+                "analytic_configuration": configuration_set,
+                "company": company,
+            }
+        )
 
-        return self._provider.post(path='assign-analytic-configuration-to-company', data=data)
+        return self._provider.post(path="assign-analytic-configuration-to-company", data=data)
 
-    def unassign_from_company(self, configuration_set: ResourceId, *,
-                              company: ResourceId,
-                              **kwargs):
+    def unassign_from_company(self, configuration_set: ResourceId, *, company: ResourceId, **kwargs):
         """Unassign an analytic configuration set from a company.
 
         Args:
@@ -386,10 +425,15 @@ class AnalyticConfigurationsImpl:
 
         data = kwargs
 
-        data.update({
-            'analytic_configuration': configuration_set,
-            'company': company,
-        })
+        data.update(
+            {
+                "analytic_configuration": configuration_set,
+                "company": company,
+            }
+        )
 
-        self._provider.post(path='unassign-analytic-configuration-from-company',
-                            data=data, as_json=False)
+        self._provider.post(
+            path="unassign-analytic-configuration-from-company",
+            data=data,
+            as_json=False,
+        )

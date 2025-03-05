@@ -10,7 +10,7 @@ class UsersImpl:
     def __init__(self, auth_api: AuthAPI, **kwargs):
         self._provider = auth_api
 
-    def describe(self, user: ResourceId = None, **kwargs) -> Resource:
+    def describe(self, user: ResourceId | None = None, **kwargs) -> Resource:
         """Describe a user.
 
         Args:
@@ -26,15 +26,22 @@ class UsersImpl:
         data = kwargs
 
         if user:
-            data['user'] = user
+            data["user"] = user
 
-        content = self._provider.post(path='describe-user', data=data)
+        content = self._provider.post(path="describe-user", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search users.
 
         Args:
@@ -67,18 +74,18 @@ class UsersImpl:
         """
         return search(
             self,
-            url='search-users',
+            url="search-users",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through users.
 
         The generator allows the user not to care about the pagination of
@@ -102,5 +109,4 @@ class UsersImpl:
             A generator yielding found users.
 
         """
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)

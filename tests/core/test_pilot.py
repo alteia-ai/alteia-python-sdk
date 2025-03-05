@@ -1,8 +1,7 @@
 import json
 
-from urllib3_mock import Responses
-
 from tests.core.resource_test_base import ResourcesTestBase
+from tests.url_mock import Responses
 
 responses = Responses()
 
@@ -35,9 +34,7 @@ class TestPilots(ResourcesTestBase):
         self.sdk.pilots.describe("pilot-id-1")
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dct-service/asset-management/describe-pilot"
-        )
+        self.assertEqual(calls[0].request.url, "/dct-service/asset-management/describe-pilot")
         self.assertEqual(calls[0].request.body, '{"pilot": "pilot-id-1"}')
 
     @responses.activate
@@ -53,12 +50,8 @@ class TestPilots(ResourcesTestBase):
         self.sdk.pilots.describe(["pilot-id-1", "pilot-id-2"])
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dct-service/asset-management/describe-pilots"
-        )
-        self.assertEqual(
-            calls[0].request.body, '{"pilots": ["pilot-id-1", "pilot-id-2"]}'
-        )
+        self.assertEqual(calls[0].request.url, "/dct-service/asset-management/describe-pilots")
+        self.assertEqual(calls[0].request.body, '{"pilots": ["pilot-id-1", "pilot-id-2"]}')
 
     @staticmethod
     def __describe_single_post_response():

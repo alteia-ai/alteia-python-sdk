@@ -11,8 +11,14 @@ class OAuthClientsImpl:
     def __init__(self, auth_api: AuthAPI, **kwargs):
         self._provider = auth_api
 
-    def create(self, name: str, *, client_type='sdk',
-               expiration_date: datetime = None, **kwargs) -> Resource:
+    def create(
+        self,
+        name: str,
+        *,
+        client_type="sdk",
+        expiration_date: datetime | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create an OAuth client.
 
         This client will be used to generate a temporary connection
@@ -33,20 +39,29 @@ class OAuthClientsImpl:
 
         """
         data = kwargs
-        data.update({
-            'name': name,
-            'client_type': client_type,
-        })
+        data.update(
+            {
+                "name": name,
+                "client_type": client_type,
+            }
+        )
 
         if expiration_date is not None:
-            data['expiration_date'] = expiration_date
+            data["expiration_date"] = expiration_date
 
-        desc = self._provider.post(path='create-client', data=data)
+        desc = self._provider.post(path="create-client", data=data)
         return Resource(**desc)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search OAuth clients.
 
         Args:
@@ -73,18 +88,18 @@ class OAuthClientsImpl:
         """
         return search(
             self,
-            url='search-clients',
+            url="search-clients",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through OAuth clients.
 
         The generator allows the user not to care about the pagination of
@@ -108,8 +123,7 @@ class OAuthClientsImpl:
             A generator yielding resources for found OAuth clients.
 
         """
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)
 
     def delete(self, client: ResourceId, **kwargs) -> Resource:
         """Delete an OAuth client.
@@ -125,6 +139,6 @@ class OAuthClientsImpl:
 
         """
         data = kwargs
-        data['client'] = client
-        desc = self._provider.post(path='delete-client', data=data)
+        data["client"] = client
+        desc = self._provider.post(path="delete-client", data=data)
         return Resource(**desc)

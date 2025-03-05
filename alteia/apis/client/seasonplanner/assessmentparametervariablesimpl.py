@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerAssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,8 +8,11 @@ from alteia.core.utils.utils import get_chunks
 
 
 class AssessmentParameterVariablesImpl:
-    def __init__(self, season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_asset_management_api
 
     def create(self, *, company: ResourceId, name: str, **kwargs) -> Resource:
@@ -27,21 +30,23 @@ class AssessmentParameterVariablesImpl:
             Resource: An assessment-parameter-variable resource.
         """
         data = kwargs
-        data.update({
-            'company': company,
-            'name': name
-        })
+        data.update({"company": company, "name": name})
 
-        content = self._provider.post(
-            path='create-assessment-parameter-variable',
-            data=data
-        )
+        content = self._provider.post(path="create-assessment-parameter-variable", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search assessment-parameter-variable.
 
         Args:
@@ -96,18 +101,23 @@ class AssessmentParameterVariablesImpl:
         """
         return search(
             self,
-            url='search-assessment-parameter-variables',
+            url="search-assessment-parameter-variables",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def describe(self, assessment_parameter_variable: SomeResourceIds,
-                 **kwargs) -> SomeResources:
+    @overload
+    def describe(self, assessment_parameter_variable: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, assessment_parameter_variable: List[ResourceId], **kwargs) -> List[Resource]: ...
+
+    def describe(self, assessment_parameter_variable: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a assessment-parameter-variable
             or a list of assessment-parameter-variables.
 
@@ -127,28 +137,26 @@ class AssessmentParameterVariablesImpl:
         data = kwargs
         if isinstance(assessment_parameter_variable, list):
             results = []
-            ids_chunks = get_chunks(
-                assessment_parameter_variable,
-                self._provider.max_per_describe
-            )
+            ids_chunks = get_chunks(assessment_parameter_variable, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['assessment_parameter_variables'] = ids_chunk
-                descs = self._provider.post(
-                    'describe-assessment-parameter-variables',
-                    data=data
-                )
+                data["assessment_parameter_variables"] = ids_chunk
+                descs = self._provider.post("describe-assessment-parameter-variables", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['assessment_parameter_variable'] = assessment_parameter_variable
-            desc = self._provider.post(
-                'describe-assessment-parameter-variable',
-                data=data
-            )
+            data["assessment_parameter_variable"] = assessment_parameter_variable
+            desc = self._provider.post("describe-assessment-parameter-variable", data=data)
             return Resource(**desc)
 
-    def update(self, *, assessment_parameter_variable: ResourceId, name: str,
-               company: str = None, custom_ids: str = None, **kwargs) -> Resource:
+    def update(
+        self,
+        *,
+        assessment_parameter_variable: ResourceId,
+        name: str,
+        company: str | None = None,
+        custom_ids: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update a assessment-parameter-variable.
 
         Args:
@@ -167,20 +175,21 @@ class AssessmentParameterVariablesImpl:
             Resource: A assessment-parameter-variable resource updated.
         """
         data = kwargs
-        data.update({
-            'assessment_parameter_variable': assessment_parameter_variable,
-            'name': name
-        })
+        data.update(
+            {
+                "assessment_parameter_variable": assessment_parameter_variable,
+                "name": name,
+            }
+        )
 
-        for param_name, param_value in (('company', company),
-                                        ('custom_ids', custom_ids)):
+        for param_name, param_value in (
+            ("company", company),
+            ("custom_ids", custom_ids),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(
-            path='update-assessment-parameter-variable',
-            data=data
-        )
+        content = self._provider.post(path="update-assessment-parameter-variable", data=data)
 
         return Resource(**content)
 
@@ -194,6 +203,6 @@ class AssessmentParameterVariablesImpl:
         """
 
         data = kwargs
-        data['assessment_parameter_variable'] = assessment_parameter_variable
+        data["assessment_parameter_variable"] = assessment_parameter_variable
 
-        self._provider.post('delete-assessment-parameter-variable', data=data)
+        self._provider.post("delete-assessment-parameter-variable", data=data)

@@ -1,9 +1,9 @@
-from typing import Generator, List, Union
+from typing import Generator, List, Union, overload
 
 from alteia.apis.provider import AuthAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
 from alteia.core.resources.utils import search, search_generator
-from alteia.core.utils.typing import SomeResourceIds, SomeResources
+from alteia.core.utils.typing import ResourceId, SomeResourceIds, SomeResources
 from alteia.core.utils.utils import get_chunks
 
 
@@ -11,8 +11,13 @@ class CompaniesImpl:
     def __init__(self, auth_api: AuthAPI, **kwargs):
         self._provider = auth_api
 
-    def describe(self, company: SomeResourceIds,
-                 **kwargs) -> SomeResources:
+    @overload
+    def describe(self, company: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, company: List[ResourceId], **kwargs) -> List[Resource]: ...
+
+    def describe(self, company: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a company or multiple companies.
 
         Args:
@@ -31,18 +36,25 @@ class CompaniesImpl:
             results = []
             ids_chunks = get_chunks(company, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['companies'] = ids_chunk
-                descs = self._provider.post('describe-companies', data=data)
+                data["companies"] = ids_chunk
+                descs = self._provider.post("describe-companies", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['company'] = company
-            desc = self._provider.post('describe-company', data=data)
+            data["company"] = company
+            desc = self._provider.post("describe-company", data=data)
             return Resource(**desc)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search companies.
 
         Args:
@@ -74,18 +86,18 @@ class CompaniesImpl:
         """
         return search(
             self,
-            url='search-companies',
+            url="search-companies",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through companies.
 
         The generator allows the user not to care about the pagination of
@@ -109,5 +121,4 @@ class CompaniesImpl:
             A generator yielding found companies.
 
         """
-        return search_generator(self, first_page=1, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)

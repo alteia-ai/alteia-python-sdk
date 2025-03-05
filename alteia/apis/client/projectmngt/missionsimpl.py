@@ -1,7 +1,6 @@
-"""Implementation of missions.
+"""Implementation of missions."""
 
-"""
-from typing import Dict, Generator, List, Optional, Tuple, Union
+from typing import Dict, Generator, List, Optional, Tuple, Union, overload
 
 from alteia.apis.provider import ProjectManagerAPI
 from alteia.core.errors import QueryError
@@ -14,7 +13,6 @@ from alteia.core.utils.utils import get_chunks
 
 
 class MissionsImpl:
-
     def __init__(self, project_manager_api: ProjectManagerAPI, **kwargs):
         self._provider = project_manager_api
 
@@ -24,8 +22,8 @@ class MissionsImpl:
         project: ResourceId,
         survey_date: str,
         number_of_images: int,
-        name: str = None,
-        **kwargs
+        name: str | None = None,
+        **kwargs,
     ) -> Tuple[Optional[Flight], Mission]:
         """Creates a mission.
 
@@ -55,26 +53,21 @@ class MissionsImpl:
         flight: Optional[Flight]
 
         if name:
-            kwargs.update({'name': name})
+            kwargs.update({"name": name})
 
         if number_of_images > 0:
             flight, mission = self.create_survey(
                 survey_date=survey_date,
                 project=project,
                 number_of_images=number_of_images,
-                **kwargs
+                **kwargs,
             )
         else:
-            mission = self.create_mission(
-                project=project,
-                survey_date=survey_date,
-                **kwargs
-            )
+            mission = self.create_mission(project=project, survey_date=survey_date, **kwargs)
             flight = None
         return flight, mission
 
-    def create_mission(self, *, project: ResourceId, survey_date: str,
-                       name: str = None, **kwargs) -> Mission:
+    def create_mission(self, *, project: ResourceId, survey_date: str, name: str | None = None, **kwargs) -> Mission:
         """Creates a mission without images.
 
         This function is used when no image is attached to the mission.
@@ -96,31 +89,31 @@ class MissionsImpl:
 
         """
 
-        params_mission = {
-            'project': project,
-            'survey_date': survey_date}
+        params_mission = {"project": project, "survey_date": survey_date}
 
         if name:
-            params_mission.update({'name': name})
+            params_mission.update({"name": name})
 
         params_mission.update(kwargs)
 
-        content = self._provider.post(
-            path='missions', data=params_mission)
+        content = self._provider.post(path="missions", data=params_mission)
 
-        mission_desc = content.get('mission')
+        mission_desc = content.get("mission")
 
         return Mission(**mission_desc)
 
-    def create_survey(self, *,
-                      survey_date: str,
-                      project: ResourceId,
-                      number_of_images: int,
-                      name: str = None,
-                      coordinates: List = None,
-                      geometry: Dict = None,
-                      area: float = 0,
-                      **kwargs) -> Tuple[Flight, Mission]:
+    def create_survey(
+        self,
+        *,
+        survey_date: str,
+        project: ResourceId,
+        number_of_images: int,
+        name: str | None = None,
+        coordinates: List | None = None,
+        geometry: Dict | None = None,
+        area: float = 0,
+        **kwargs,
+    ) -> Tuple[Flight, Mission]:
         """Create a survey (mission + flight).
 
         This function is used when images will be attached to the mission.
@@ -159,43 +152,38 @@ class MissionsImpl:
         """
 
         params_survey = {
-            'project_id': project,
-            'survey_date': survey_date,
-            'number_of_photos': number_of_images,
-            'orderAnalytic': {},
-            'processSettings': {},
-            'addProjectToUsers': True,
-            'area': area
+            "project_id": project,
+            "survey_date": survey_date,
+            "number_of_photos": number_of_images,
+            "orderAnalytic": {},
+            "processSettings": {},
+            "addProjectToUsers": True,
+            "area": area,
         }
 
         if name:
-            params_survey.update({'name': name, 'mission_name': name})
+            params_survey.update({"name": name, "mission_name": name})
         else:
             # 'name' is required for the flight name (but never displayed)
-            params_survey.update({'name': ''})
+            params_survey.update({"name": ""})
 
         if geometry is not None:
-            params_survey['geometry'] = geometry
+            params_survey["geometry"] = geometry
 
         if coordinates is not None:
             if geometry is not None:
                 raise QueryError('Do not use "coordinates" and "geometry"')
-            params_survey['geometry'] = {
-                'type': 'GeometryCollection',
-                'geometries': [
-                    {
-                        'type': 'Polygon',
-                        'coordinates': [coordinates]
-                    }
-                ]}
+            params_survey["geometry"] = {
+                "type": "GeometryCollection",
+                "geometries": [{"type": "Polygon", "coordinates": [coordinates]}],
+            }
 
         params_survey.update(kwargs)
 
-        content = self._provider.post(
-            path='projects/survey', data=params_survey)
+        content = self._provider.post(path="projects/survey", data=params_survey)
 
-        mission_desc = content.get('mission')
-        flight_desc = content.get('flight')
+        mission_desc = content.get("mission")
+        flight_desc = content.get("flight")
 
         if mission_desc is None:
             raise QueryError('"mission" is missing in the response content')
@@ -206,6 +194,12 @@ class MissionsImpl:
         flight = Flight(**flight_desc)
 
         return flight, mission
+
+    @overload
+    def describe(self, mission: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, mission: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, mission: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a mission or a list of missions.
@@ -226,18 +220,26 @@ class MissionsImpl:
             results = []
             ids_chunks = get_chunks(mission, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['missions'] = ids_chunk
-                descs = self._provider.post('describe-missions', data=data)
+                data["missions"] = ids_chunk
+                descs = self._provider.post("describe-missions", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['mission'] = mission
-            desc = self._provider.post('describe-mission', data=data)
+            data["mission"] = mission
+            desc = self._provider.post("describe-mission", data=data)
             return Resource(**desc)
 
-    def search(self, *, filter: dict = None, fields: dict = None, limit: int = 100,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search missions.
 
         Args:
@@ -319,29 +321,36 @@ class MissionsImpl:
             ResourcesWithTotal(total=612, results=[Resource(_id='5d6e0dcc965a0f56891f3861'), ...])
 
         """
-        if kwargs.get('missions'):
+        if kwargs.get("missions"):
             raise QueryError('"missions" keyword not exists anymore in missions.search()')
-        if kwargs.get('flights'):
+        if kwargs.get("flights"):
             raise QueryError('"flights" keyword not exists anymore in missions.search()')
-        if kwargs.get('project'):
+        if kwargs.get("project"):
             raise QueryError('"project" keyword not exists anymore in missions.search()')
-        if kwargs.get('deleted'):
+        if kwargs.get("deleted"):
             raise QueryError('"deleted" keyword not exists anymore in missions.search()')
         return search(
             self,
-            url='search-missions',
+            url="search-missions",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, fields: dict = None,
-                         limit: int = 100, page: int = None, sort: dict = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self,
+        *,
+        filter: dict | None = None,
+        fields: dict | None = None,
+        limit: int = 100,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through missions.
 
         The generator allows the user not to care about the pagination of
@@ -374,8 +383,16 @@ class MissionsImpl:
             >>> missions = [r for r in results_iterator]
 
         """
-        return search_generator(self, first_page=1, filter=filter, fields=fields,
-                                limit=limit, page=page, sort=sort, **kwargs)
+        return search_generator(
+            self,
+            first_page=1,
+            filter=filter,
+            fields=fields,
+            limit=limit,
+            page=page,
+            sort=sort,
+            **kwargs,
+        )
 
     def delete(self, mission: ResourceId):
         """Delete a mission.
@@ -384,8 +401,7 @@ class MissionsImpl:
             mission: Identifier of the mission to delete.
 
         """
-        self._provider.post(
-            path='missions/delete-survey', data={'mission': mission})
+        self._provider.post(path="missions/delete-survey", data={"mission": mission})
 
     def update_name(self, mission: ResourceId, *, name: str, **kwargs) -> Mission:
         """Update the mission name.
@@ -402,8 +418,8 @@ class MissionsImpl:
             Mission: Updated mission resource.
         """
         data = kwargs
-        data.update({'mission': mission, 'name': name})
-        desc = self._provider.post(path='update-mission-name', data=data)
+        data.update({"mission": mission, "name": name})
+        desc = self._provider.post(path="update-mission-name", data=data)
         return Mission(**desc)
 
     def update_survey_date(self, mission: ResourceId, *, survey_date: str, **kwargs) -> Mission:
@@ -427,8 +443,8 @@ class MissionsImpl:
 
         """
         data = kwargs
-        data.update({'mission': mission, 'survey_date': survey_date})
-        desc = self._provider.post(path='update-mission-survey-date', data=data)
+        data.update({"mission": mission, "survey_date": survey_date})
+        desc = self._provider.post(path="update-mission-survey-date", data=data)
         return Mission(**desc)
 
     def update_geometry(self, mission: ResourceId, *, geometry: dict, **kwargs) -> Mission:
@@ -445,13 +461,13 @@ class MissionsImpl:
         Returns:
             Mission: Updated mission resource.
         """
-        if not geometry.get('type'):
+        if not geometry.get("type"):
             raise QueryError('"geometry.type" must exists')
-        if not geometry.get('coordinates'):
+        if not geometry.get("coordinates"):
             raise QueryError('"geometry.coordinates" must exists')
         data = kwargs
-        data.update({'mission': mission, 'geometry': geometry})
-        desc = self._provider.post(path='update-mission-geometry', data=data)
+        data.update({"mission": mission, "geometry": geometry})
+        desc = self._provider.post(path="update-mission-geometry", data=data)
         return Mission(**desc)
 
     def update_bbox(self, mission: ResourceId, *, real_bbox: dict, **kwargs) -> Mission:
@@ -477,14 +493,14 @@ class MissionsImpl:
             Mission(_id='5d6e0dcc965a0f56891f3861')
 
         """
-        if not real_bbox.get('type'):
+        if not real_bbox.get("type"):
             raise QueryError('"real_bbox.type" must exists')
-        if not real_bbox.get('coordinates'):
+        if not real_bbox.get("coordinates"):
             raise QueryError('"real_bbox.coordinates" must exists')
 
         data = kwargs
-        data.update({'mission': mission, 'real_bbox': real_bbox})
-        desc = self._provider.post(path='update-mission-bbox', data=data)
+        data.update({"mission": mission, "real_bbox": real_bbox})
+        desc = self._provider.post(path="update-mission-bbox", data=data)
         return Mission(**desc)
 
     def compute_bbox(self, mission: ResourceId, **kwargs) -> Mission:
@@ -500,12 +516,13 @@ class MissionsImpl:
             Mission: Updated mission resource.
         """
         data = kwargs
-        data.update({'mission': mission})
-        desc = self._provider.post(path='compute-mission-bbox', data=data)
+        data.update({"mission": mission})
+        desc = self._provider.post(path="compute-mission-bbox", data=data)
         return Mission(**desc)
 
-    def create_archive(self, mission: ResourceId, *,
-                       name: str = None, chunk_size: int = None, **kwargs) -> bool:
+    def create_archive(
+        self, mission: ResourceId, *, name: str | None = None, chunk_size: int | None = None, **kwargs
+    ) -> bool:
         """Request to create an archive of mission's images.
 
         Args:
@@ -532,12 +549,12 @@ class MissionsImpl:
 
         """
         data = kwargs
-        data.update({'mission': mission})
+        data.update({"mission": mission})
         if name is not None:
-            data['name'] = name
+            data["name"] = name
         if chunk_size is not None:
-            data['chunk_size'] = int(chunk_size)
-        r = self._provider.post(path='create-mission-archive', data=data)
-        if r.get('request') == 'accepted':
+            data["chunk_size"] = int(chunk_size)
+        r = self._provider.post(path="create-mission-archive", data=data)
+        if r.get("request") == "accepted":
             return True
         return False

@@ -23,12 +23,12 @@ LOGGER = logging.getLogger(__name__)
 # Minimal chunk size for multipart upload on AWS S3 (in bytes),
 # last part can be any size > 0
 S3_CHUNK_MAX_PARTS = 10000
-S3_CHUNK_MIN_SIZE = 5 * 1024 ** 2  # cannot be less than 5MB (S3)
-S3_CHUNK_MAX_SIZE = 5 * 1024 ** 3  # cannot be more than 5GB (S3)
-DM_CHUNK_MAX_SIZE = 50 * 1024 ** 2  # data-manager limit: 50MB max
+S3_CHUNK_MIN_SIZE = 5 * 1024**2  # cannot be less than 5MB (S3)
+S3_CHUNK_MAX_SIZE = 5 * 1024**3  # cannot be more than 5GB (S3)
+DM_CHUNK_MAX_SIZE = 50 * 1024**2  # data-manager limit: 50MB max
 
 
-def cfg_multipart_upload(file_size, multipart: bool = True, chunk_size: int = None) -> Tuple[bool, int]:
+def cfg_multipart_upload(file_size, multipart: bool = True, chunk_size: int | None = None) -> Tuple[bool, int]:
     """Configure multipart upload.
 
     Args:
@@ -51,10 +51,9 @@ def cfg_multipart_upload(file_size, multipart: bool = True, chunk_size: int = No
 
 
 class Chunk:
-    """Store the state of the upload of a file chunk.
+    """Store the state of the upload of a file chunk."""
 
-    """
-    def __init__(self, index, *, size, status='preupload'):
+    def __init__(self, index, *, size, status="preupload"):
         self.index = index
         self.size = size
         self.status = status
@@ -62,13 +61,15 @@ class Chunk:
         self.req = None
 
     def __str__(self):
-        template = 'Chunk {index}: {size} {status} {attempt} {req}'
-        req_maybe = self.req if self.req is not None else '<unknown>'
-        return template.format(index=self.index,
-                               size=self.size,
-                               status=self.status,
-                               attempt=self.attempt,
-                               req=req_maybe)
+        template = "Chunk {index}: {size} {status} {attempt} {req}"
+        req_maybe = self.req if self.req is not None else "<unknown>"
+        return template.format(
+            index=self.index,
+            size=self.size,
+            status=self.status,
+            attempt=self.attempt,
+            req=req_maybe,
+        )
 
 
 def prepare_chunks(*, file_size: int, chunk_size: int) -> Tuple[list, int]:
@@ -87,19 +88,19 @@ def prepare_chunks(*, file_size: int, chunk_size: int) -> Tuple[list, int]:
 
     """
     if chunk_size <= 0:
-        raise ValueError('Expecting a positive chunk size')
+        raise ValueError("Expecting a positive chunk size")
 
     if file_size <= 0:
-        raise ValueError('Expecting a positive file size')
+        raise ValueError("Expecting a positive file size")
 
     chunk_count = max(0, math.ceil(file_size / chunk_size))
     if chunk_count > S3_CHUNK_MAX_PARTS:
-        LOGGER.warning(f'Too many chunks with chunk size = {human_bytes(chunk_size)}, '
-                       f'for file size = {human_bytes(file_size)}')
+        LOGGER.warning(
+            f"Too many chunks with chunk size = {human_bytes(chunk_size)}, " f"for file size = {human_bytes(file_size)}"
+        )
         chunk_size = math.ceil(file_size / S3_CHUNK_MAX_PARTS)
         chunk_count = math.ceil(file_size / chunk_size)
-        LOGGER.info(f'New chunk size = {human_bytes(chunk_size)}, '
-                    f'with {chunk_count} chunks')
+        LOGGER.info(f"New chunk size = {human_bytes(chunk_size)}, " f"with {chunk_count} chunks")
     chunks = []
     if chunk_count > 0:
         for index in range(chunk_count):
@@ -116,18 +117,15 @@ class MultipartUpload:
 
     Deprecated: you should use alteia.core.resources.datamngt.uploader.DatasetUploader
     """
+
     def __init__(self, connection, base_url, *, chunk_size=S3_CHUNK_MIN_SIZE):
         if chunk_size < S3_CHUNK_MIN_SIZE:
             raise ValueError(
-                f'Chunk size must be >= {human_bytes(S3_CHUNK_MIN_SIZE)}; '
-                f'received : {human_bytes(chunk_size)}'
+                f"Chunk size must be >= {human_bytes(S3_CHUNK_MIN_SIZE)}; " f"received : {human_bytes(chunk_size)}"
             )
         max_size = min(DM_CHUNK_MAX_SIZE, S3_CHUNK_MAX_SIZE)
         if chunk_size > max_size:
-            raise ValueError(
-                f'Chunk size must be <= {human_bytes(max_size)}; '
-                f'received : {human_bytes(chunk_size)}'
-            )
+            raise ValueError(f"Chunk size must be <= {human_bytes(max_size)}; " f"received : {human_bytes(chunk_size)}")
 
         self._base_url = base_url
         self._chunk_size = chunk_size
@@ -138,45 +136,47 @@ class MultipartUpload:
 
     @property
     def creation_url(self):
-        return f'{self._base_url}/create-multipart-upload'
+        return f"{self._base_url}/create-multipart-upload"
 
-    def get_upload_part_url(self, *, dataset: str,
-                            component_name: str, part_number: int,
-                            checksum: str) -> str:
+    def get_upload_part_url(self, *, dataset: str, component_name: str, part_number: int, checksum: str) -> str:
         if part_number < 1:
-            raise ValueError(
-                f'part_number must be >=1; received : {part_number}'
-            )
+            raise ValueError(f"part_number must be >=1; received : {part_number}")
 
-        url_template = '{}/upload-part?{}'
-        qs = urllib.parse.urlencode({'dataset': dataset,
-                                     'component': component_name,
-                                     'part_number': part_number,
-                                     'checksum': checksum})
+        url_template = "{}/upload-part?{}"
+        qs = urllib.parse.urlencode(
+            {
+                "dataset": dataset,
+                "component": component_name,
+                "part_number": part_number,
+                "checksum": checksum,
+            }
+        )
         return url_template.format(self._base_url, qs)
 
     @property
     def completion_url(self):
-        return f'{self._base_url}/complete-multipart-upload'
+        return f"{self._base_url}/complete-multipart-upload"
 
     @property
     def _ongoing_chunks(self):
-        return [c for c in self._chunks
-                if c.status == 'preupload' and c.req is not None
-                and not c.req.done()]
+        return [c for c in self._chunks if c.status == "preupload" and c.req is not None and not c.req.done()]
 
     @property
     def _unfinished_chunks(self):
-        return [c for c in self._chunks
-                if c.status not in ('available', 'failed')]
+        return [c for c in self._chunks if c.status not in ("available", "failed")]
 
     @property
     def _waiting_chunks(self):
-        return [c for c in self._chunks
-                if c.status not in ('available', 'failed') and c.req is None]
+        return [c for c in self._chunks if c.status not in ("available", "failed") and c.req is None]
 
-    def send(self, file_path: AnyPath, *,
-             dataset: str, component_name: str, md5hash: Optional[str] = None):
+    def send(
+        self,
+        file_path: AnyPath,
+        *,
+        dataset: str,
+        component_name: str,
+        md5hash: Optional[str] = None,
+    ):
         """Send a file in multiple requests.
 
         It raises ``UploadError`` in case of failure.
@@ -198,12 +198,13 @@ class MultipartUpload:
             raise UploadError(f'File not found "{file_path}"')
 
         file_size = os.path.getsize(file_path)
-        params = {'file_path': file_path,
-                  'dataset': dataset,
-                  'component_name': component_name}
+        params = {
+            "file_path": file_path,
+            "dataset": dataset,
+            "component_name": component_name,
+        }
         try:
-            self._chunks, self._chunk_size = prepare_chunks(file_size=file_size,
-                                                            chunk_size=self._chunk_size)
+            self._chunks, self._chunk_size = prepare_chunks(file_size=file_size, chunk_size=self._chunk_size)
 
             self._create(md5hash=md5hash, **params)
             self._start(**params)
@@ -212,23 +213,28 @@ class MultipartUpload:
             self._chunks = []
             raise e
 
-    def _create(self, *, file_path: str, dataset: str, component_name: str,
-                md5hash: Optional[str] = None):
-        headers = {'Cache-Control': 'no-cache',
-                   'Content-Type': 'application/json'}
+    def _create(
+        self,
+        *,
+        file_path: str,
+        dataset: str,
+        component_name: str,
+        md5hash: Optional[str] = None,
+    ):
+        headers = {"Cache-Control": "no-cache", "Content-Type": "application/json"}
         src_file_name = os.path.basename(file_path)
         file_size = os.path.getsize(file_path)
-        creation_desc = {'dataset': dataset,
-                         'component': component_name,
-                         'filename': src_file_name,
-                         'chunk_size': self._chunk_size,
-                         'total_size': file_size}
+        creation_desc = {
+            "dataset": dataset,
+            "component": component_name,
+            "filename": src_file_name,
+            "chunk_size": self._chunk_size,
+            "total_size": file_size,
+        }
         if md5hash is not None:
-            creation_desc.update({'checksum': md5hash})
+            creation_desc.update({"checksum": md5hash})
 
-        self._connection.post(path=self.creation_url,
-                              headers=headers,
-                              data=json.dumps(creation_desc))
+        self._connection.post(path=self.creation_url, headers=headers, data=json.dumps(creation_desc))
 
     def _start(self, *, file_path: str, dataset: str, component_name: str):
         async_conn = self._connection.asynchronous
@@ -236,24 +242,25 @@ class MultipartUpload:
 
         def update_chunk(chunk, resp):
             if resp.status == 200:
-                chunk.status = 'available'
+                chunk.status = "available"
             elif resp.status == 401 and chunk.attempt == 1:
-                chunk.status = 'preupload'
+                chunk.status = "preupload"
             else:
-                chunk.status = 'failed'
+                chunk.status = "failed"
             chunk.req = None
 
         request_delay = DEFAULT_REQUESTS_TIMEOUT
-        upload_part_headers = {'Cache-Control': 'no-cache',
-                               'Content-Type': 'application/octet-stream'}
-        with open(file_path, 'rb') as st:
+        upload_part_headers = {
+            "Cache-Control": "no-cache",
+            "Content-Type": "application/octet-stream",
+        }
+        with open(file_path, "rb") as st:
             while len(self._unfinished_chunks) > 0:
                 # limit the number of simultaneous enqueued requests
                 queued_requests = async_conn.executor._work_queue.qsize()
                 if queued_requests >= max_simultaneous:
                     reqs = [c.req for c in self._ongoing_chunks]
-                    cf.wait(reqs, timeout=request_delay,
-                            return_when=cf.FIRST_COMPLETED)
+                    cf.wait(reqs, timeout=request_delay, return_when=cf.FIRST_COMPLETED)
                     continue
 
                 # check whether all chunks have been sent
@@ -273,31 +280,25 @@ class MultipartUpload:
                 md5hash = algo.hexdigest()
                 # chunk.index must start at 0 to get the proper file offset
                 # however, part_number must start at 1 (S3 requirement)
-                path = self.get_upload_part_url(dataset=dataset,
-                                                component_name=component_name,
-                                                part_number=chunk.index+1,
-                                                checksum=md5hash)
+                path = self.get_upload_part_url(
+                    dataset=dataset,
+                    component_name=component_name,
+                    part_number=chunk.index + 1,
+                    checksum=md5hash,
+                )
                 cb = functools.partial(update_chunk, chunk)
-                chunk.req = async_conn.post(path=path,
-                                            headers=upload_part_headers,
-                                            data=blob,
-                                            callback=cb)
+                chunk.req = async_conn.post(path=path, headers=upload_part_headers, data=blob, callback=cb)
 
             reqs = [c.req for c in self._ongoing_chunks]
             try:
                 all(cf.as_completed(reqs, timeout=len(reqs) * request_delay))
             except cf.TimeoutError:
-                LOGGER.warning('Timeout while waiting for chunk uploads '
-                               'to end')
+                LOGGER.warning("Timeout while waiting for chunk uploads " "to end")
 
-        if any(map(lambda ch: ch.status != 'available', self._chunks)):
-            raise UploadError('Failed to upload some chunks')
+        if any(map(lambda ch: ch.status != "available", self._chunks)):
+            raise UploadError("Failed to upload some chunks")
 
     def _complete(self, *, file_path: str, dataset: str, component_name: str):
-        headers = {'Cache-Control': 'no-cache',
-                   'Content-Type': 'application/json'}
-        completion_desc = {'dataset': dataset,
-                           'component': component_name}
-        self._connection.post(path=self.completion_url,
-                              headers=headers,
-                              data=json.dumps(completion_desc))
+        headers = {"Cache-Control": "no-cache", "Content-Type": "application/json"}
+        completion_desc = {"dataset": dataset, "component": component_name}
+        self._connection.post(path=self.completion_url, headers=headers, data=json.dumps(completion_desc))

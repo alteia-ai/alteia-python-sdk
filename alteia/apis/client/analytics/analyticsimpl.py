@@ -1,10 +1,8 @@
-"""Analytics implementation
-"""
+"""Analytics implementation"""
 
 import warnings
 from collections import defaultdict
-from typing import (Any, DefaultDict, Dict, Generator, List, Optional, Union,
-                    cast)
+from typing import Any, DefaultDict, Dict, Generator, List, Optional, Union, cast
 
 from semantic_version import NpmSpec, Version
 
@@ -21,9 +19,8 @@ class AnalyticsImpl:
     def __init__(self, analytics_service_api: AnalyticsServiceAPI, **kwargs):
         self._provider = analytics_service_api
 
-    @deprecated(target='3.0.0')
-    def share_with_company(self, analytic: ResourceId, *,
-                           company: ResourceId, **kwargs):
+    @deprecated(target="3.0.0")
+    def share_with_company(self, analytic: ResourceId, *, company: ResourceId, **kwargs):
         """Allow a company to view, order, etc. the analytic.
            *Deprecated* in favor of expose() and enable()
 
@@ -37,16 +34,15 @@ class AnalyticsImpl:
 
         """
         warn_for_deprecation(
-            f'Do not use this method `{self.share_with_company.__name__}()`. '
+            f"Do not use this method `{self.share_with_company.__name__}()`. "
             f'Use `expose()` method instead, with the analytic name of analytic "{analytic}" '
             f'and the root company of the company "{company}". '
             f'And then optionally use `enable()` method with your company "{company}"',
-            target='3.0.0'
+            target="3.0.0",
         )
 
-    @deprecated(target='3.0.0')
-    def unshare_with_company(self, analytic: ResourceId, *,
-                             company: ResourceId, **kwargs):
+    @deprecated(target="3.0.0")
+    def unshare_with_company(self, analytic: ResourceId, *, company: ResourceId, **kwargs):
         """Stop sharing the analytic with a company.
            *Deprecated* in favor of unexpose() and disable()
 
@@ -60,17 +56,24 @@ class AnalyticsImpl:
 
         """
         warn_for_deprecation(
-            f'Do not use this method `{self.share_with_company.__name__}()`. '
+            f"Do not use this method `{self.share_with_company.__name__}()`. "
             f'Use `unexpose()` method instead, with the analytic name of analytic "{analytic}" '
             f'and the root company of company "{company}". '
             f'And optionally use `disable()` method with your company "{company}"',
-            target='3.0.0'
+            target="3.0.0",
         )
 
-    def search(self, *, name: str = None, filter: Dict = None,
-               limit: int = None, page: int = None, sort: dict = None,
-               return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        name: str | None = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search for a list of analytics.
 
         Args:
@@ -104,32 +107,33 @@ class AnalyticsImpl:
         """
         data = kwargs
 
-        for prop_name, value in [('filter', filter or {}),
-                                 ('limit', limit),
-                                 ('page', page),
-                                 ('sort', sort)]:
+        for prop_name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({prop_name: value})
 
         if name is not None:
-            data['filter']['name'] = {'$eq': name}
+            data["filter"]["name"] = {"$eq": name}
 
-        search_desc = self._provider.post(
-            path='search-analytics', data=data, as_json=True)
+        search_desc = self._provider.post(path="search-analytics", data=data, as_json=True)
 
-        analytics = search_desc.get('results')
+        analytics = search_desc.get("results")
 
         results = [Resource(**analytic) for analytic in analytics]
 
         if return_total is True:
-            total = search_desc.get('total')
+            total = search_desc.get("total")
             return ResourcesWithTotal(total=total, results=results)
         else:
             return results
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through analytics.
 
         The generator allows the user not to care about the pagination of
@@ -153,8 +157,7 @@ class AnalyticsImpl:
             A generator yielding found analytics.
 
         """
-        return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=0, filter=filter, limit=limit, page=page, **kwargs)
 
     def describe(self, analytic: ResourceId, **kwargs) -> Resource:
         """Describe an analytic.
@@ -171,12 +174,11 @@ class AnalyticsImpl:
         """
         data = kwargs
 
-        data['analytic'] = analytic
-        desc = self._provider.post('describe-analytic', data=data)
+        data["analytic"] = analytic
+        desc = self._provider.post("describe-analytic", data=data)
         return Resource(**desc)
 
-    def describe_by_name(self, name: str, *,
-                         version: str = None) -> Optional[Resource]:
+    def describe_by_name(self, name: str, *, version: str | None = None) -> Optional[Resource]:
         """Describe an analytic by name.
 
         When the optional ``version`` argument is ``None``, the
@@ -207,7 +209,7 @@ class AnalyticsImpl:
         if not name:
             return None
 
-        search_filter = {'name': {'$eq': name}}
+        search_filter = {"name": {"$eq": name}}
 
         if version is not None:
             try:
@@ -217,9 +219,8 @@ class AnalyticsImpl:
                 query_exact_version = False
 
             if query_exact_version:
-                search_filter['version'] = {'$eq': version}
-                candidates = cast(List[Resource],
-                                  self.search(filter=search_filter, limit=1))
+                search_filter["version"] = {"$eq": version}
+                candidates = cast(List[Resource], self.search(filter=search_filter, limit=1))
                 return candidates[0] if len(candidates) else None
 
             try:
@@ -230,10 +231,8 @@ class AnalyticsImpl:
         else:
             version_spec = None
 
-        fields = {'include': ['_id', 'name', 'version']}
-        candidates = [a for a in self.search_generator(filter=search_filter,
-                                                       fields=fields)
-                      if hasattr(a, 'version')]
+        fields = {"include": ["_id", "name", "version"]}
+        candidates = [a for a in self.search_generator(filter=search_filter, fields=fields) if hasattr(a, "version")]
         # check on version property should not be necessary but API
         # documentation doesn't say this property is required...
 
@@ -245,16 +244,27 @@ class AnalyticsImpl:
 
         return None
 
-    def create(self, *, name: str, version: str,
-               docker_image: str,
-               docker_credentials_name: str,
-               company: ResourceId,
-               display_name: str = None, description: str = None,
-               instance_type: str = None, volume_size: int = None,
-               inputs: List[dict] = None, parameters: List[dict] = None,
-               deliverables: List[dict] = None, outputs: List[dict] = None,
-               tags: List[str] = None, groups: List[str] = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str,
+        version: str,
+        docker_image: str,
+        docker_credentials_name: str,
+        company: ResourceId,
+        display_name: str | None = None,
+        description: str | None = None,
+        instance_type: str | None = None,
+        volume_size: int | None = None,
+        inputs: List[dict] | None = None,
+        parameters: List[dict] | None = None,
+        credentials: List[dict] | None = None,
+        deliverables: List[dict] | None = None,
+        outputs: List[dict] | None = None,
+        tags: List[str] | None = None,
+        groups: List[str] | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create an analytic.
 
         Args:
@@ -284,6 +294,8 @@ class AnalyticsImpl:
             inputs: Optional inputs of the analytic.
 
             parameters: Optional parameters of the analytic.
+
+            credentials: Optional credentials of the analytic.
 
             deliverables: Optional deliverables of the analytic.
 
@@ -338,7 +350,22 @@ class AnalyticsImpl:
             ...         "scheme": {
             ...             "type": "string", "pattern": "^[0-9a-f]{24}$"
             ...         }
-            ...      }],
+            ...     }],
+            ...     credentials=[{
+            ...         "name": "aws_credentials",
+            ...         "display_name": "AWS credentials",
+            ...         "description": "Credentials to access AWS services",
+            ...         "required": True,
+            ...         "scheme": {
+            ...             "type": "object",
+            ...             "properties": {
+            ...                 "aws_access_key_id": {"type": "string"},
+            ...                 "aws_secret_access_key": {"type": "string"}
+            ...                 "aws_region": {"type": "string"}
+            ...             },
+            ...             "required": ["aws_access_key_id", "aws_secret_access_key", "aws_region"]
+            ...         }
+            ...     }],
             ...     deliverables=[{
             ...         "name": "positions",
             ...         "display_name": "Vehicule positions",
@@ -364,29 +391,32 @@ class AnalyticsImpl:
         data: DefaultDict[str, Any] = defaultdict(dict)
         data.update(kwargs)
 
-        data['name'] = name
-        data['version'] = version
-        data['company'] = company
-        data['algorithm']['docker_image'] = docker_image
-        data['algorithm']['docker_credentials_name'] = docker_credentials_name
+        data["name"] = name
+        data["version"] = version
+        data["company"] = company
+        data["algorithm"]["docker_image"] = docker_image
+        data["algorithm"]["docker_credentials_name"] = docker_credentials_name
 
         if instance_type:
-            data['instance']['type'] = instance_type
+            data["instance"]["type"] = instance_type
         if volume_size:
-            data['instance']['volume'] = volume_size
+            data["instance"]["volume"] = volume_size
 
         for k, v in [
-            ('display_name', display_name),
-            ('description', description),
-            ('inputs', inputs), ('parameters', parameters),
-            ('deliverables', deliverables), ('outputs', outputs),
-            ('tags', tags), ('groups', groups)
+            ("display_name", display_name),
+            ("description", description),
+            ("inputs", inputs),
+            ("parameters", parameters),
+            ("credentials", credentials),
+            ("deliverables", deliverables),
+            ("outputs", outputs),
+            ("tags", tags),
+            ("groups", groups),
         ]:
             if v:
                 data.update({k: v})
 
-        desc = self._provider.post(
-            path='create-analytic', data=dict(data), as_json=True)
+        desc = self._provider.post(path="create-analytic", data=dict(data), as_json=True)
 
         return Resource(**desc)
 
@@ -406,22 +436,24 @@ class AnalyticsImpl:
             analytic_list = analytic
 
         for analytic in analytic_list:
-            data = {'analytic': analytic}
+            data = {"analytic": analytic}
             data.update(kwargs)
 
-            self._provider.post(
-                path='delete-analytic-permanently',
-                data=data,
-                as_json=False
-            )
+            self._provider.post(path="delete-analytic-permanently", data=data, as_json=False)
 
-    def order(self, analytic: ResourceId = None, *,
-              name: str = None,
-              version: str = None,
-              inputs: dict = None,
-              parameters: dict = None, deliverables: List[str] = None,
-              project: ResourceId = None, mission: ResourceId = None,
-              **kwargs) -> Resource:
+    def order(
+        self,
+        analytic: ResourceId | None = None,
+        *,
+        name: str | None = None,
+        version: str | None = None,
+        inputs: dict | None = None,
+        parameters: dict | None = None,
+        deliverables: List[str] | None = None,
+        project: ResourceId | None = None,
+        mission: ResourceId | None = None,
+        **kwargs,
+    ) -> Resource:
         """Order an analytic.
 
         The analytic to order can be specified by identifier using the
@@ -481,19 +513,19 @@ class AnalyticsImpl:
 
         """
         if not name and not analytic:
-            raise ParameterError('Expecting one of analytic or parameter to be defined')
+            raise ParameterError("Expecting one of analytic or parameter to be defined")
 
         if not name and version:
-            warnings.warn('Ignoring version argument since analytic is specified by identifier')
+            warnings.warn("Ignoring version argument since analytic is specified by identifier")
 
         if name:
             found_analytic = self.describe_by_name(name, version=version)
             if not found_analytic:
-                raise ParameterError('No analytic with matching name and version')
+                raise ParameterError("No analytic with matching name and version")
 
             analytic = str(found_analytic.id)
 
-        data: Dict[str, Any] = {'analytic': analytic}
+        data: Dict[str, Any] = {"analytic": analytic}
 
         # Update to the format expected by analytics-service
         deliverable_obj: Optional[Dict[str, None]] = None
@@ -501,22 +533,28 @@ class AnalyticsImpl:
         if deliverables:
             deliverable_obj = {d: None for d in deliverables}
 
-        for k, v in [('inputs', inputs), ('parameters', parameters),
-                     ('deliverables', deliverable_obj),
-                     ('project', project), ('mission', mission)]:
+        for k, v in [
+            ("inputs", inputs),
+            ("parameters", parameters),
+            ("deliverables", deliverable_obj),
+            ("project", project),
+            ("mission", mission),
+        ]:
             if v:
                 data.update({k: v})
 
         data.update(kwargs)
 
-        desc = self._provider.post(path='order-analytic', data=data)
+        desc = self._provider.post(path="order-analytic", data=data)
 
         return Resource(**desc)
 
-    def expose(self,
-               analytics: Union[str, List[str]],
-               root_companies: Union[str, List[str]],
-               **kwargs) -> Dict:
+    def expose(
+        self,
+        analytics: Union[str, List[str]],
+        root_companies: Union[str, List[str]],
+        **kwargs,
+    ) -> Dict:
         """Make the given analytics visible to the given domains.
 
         Args:
@@ -546,21 +584,25 @@ class AnalyticsImpl:
         if isinstance(root_companies, str):
             root_companies = [root_companies]
 
-        if 'expose' not in data:
+        if "expose" not in data:
             relations = []
             for root_company in root_companies:
-                relations.append({
-                    'root_company': root_company,
-                    'analytics_names': analytics,
-                })
-            data['expose'] = relations
+                relations.append(
+                    {
+                        "root_company": root_company,
+                        "analytics_names": analytics,
+                    }
+                )
+            data["expose"] = relations
 
-        return self._provider.post(path='expose-analytics', data=data)
+        return self._provider.post(path="expose-analytics", data=data)
 
-    def unexpose(self,
-                 analytics: Union[str, List[str]],
-                 root_companies: Union[str, List[str]],
-                 **kwargs) -> Dict:
+    def unexpose(
+        self,
+        analytics: Union[str, List[str]],
+        root_companies: Union[str, List[str]],
+        **kwargs,
+    ) -> Dict:
         """Make the given analytics invisible to the given domains.
 
         Args:
@@ -590,21 +632,25 @@ class AnalyticsImpl:
         if isinstance(root_companies, str):
             root_companies = [root_companies]
 
-        if 'unexpose' not in data:
+        if "unexpose" not in data:
             relations = []
             for root_company in root_companies:
-                relations.append({
-                    'root_company': root_company,
-                    'analytics_names': analytics,
-                })
-            data['unexpose'] = relations
+                relations.append(
+                    {
+                        "root_company": root_company,
+                        "analytics_names": analytics,
+                    }
+                )
+            data["unexpose"] = relations
 
-        return self._provider.post(path='unexpose-analytics', data=data)
+        return self._provider.post(path="unexpose-analytics", data=data)
 
-    def enable(self,
-               analytics: Union[str, List[str]],
-               companies: Union[str, List[str]],
-               **kwargs) -> Dict:
+    def enable(
+        self,
+        analytics: Union[str, List[str]],
+        companies: Union[str, List[str]],
+        **kwargs,
+    ) -> Dict:
         """Make the given analytics orderable by the given comanies,
         provided they are already exposed on the domains of those companies.
 
@@ -635,21 +681,25 @@ class AnalyticsImpl:
         if isinstance(companies, str):
             companies = [companies]
 
-        if 'enable' not in data:
+        if "enable" not in data:
             relations = []
             for company in companies:
-                relations.append({
-                    'company': company,
-                    'analytics_names': analytics,
-                })
-            data['enable'] = relations
+                relations.append(
+                    {
+                        "company": company,
+                        "analytics_names": analytics,
+                    }
+                )
+            data["enable"] = relations
 
-        return self._provider.post(path='enable-analytics', data=data)
+        return self._provider.post(path="enable-analytics", data=data)
 
-    def disable(self,
-                analytics: Union[str, List[str]],
-                companies: Union[str, List[str]],
-                **kwargs) -> Dict:
+    def disable(
+        self,
+        analytics: Union[str, List[str]],
+        companies: Union[str, List[str]],
+        **kwargs,
+    ) -> Dict:
         """Make the given analytics not orderable by the given companies.
 
         Args:
@@ -679,20 +729,27 @@ class AnalyticsImpl:
         if isinstance(companies, str):
             companies = [companies]
 
-        if 'disable' not in data:
+        if "disable" not in data:
             relations = []
             for company in companies:
-                relations.append({
-                    'company': company,
-                    'analytics_names': analytics,
-                })
-            data['disable'] = relations
+                relations.append(
+                    {
+                        "company": company,
+                        "analytics_names": analytics,
+                    }
+                )
+            data["disable"] = relations
 
-        return self._provider.post(path='disable-analytics', data=data)
+        return self._provider.post(path="disable-analytics", data=data)
 
-    def set_docker_credentials(self, name: str, version: str,
-                               company: ResourceId, docker_credentials_name: str,
-                               **kwargs) -> Dict:
+    def set_docker_credentials(
+        self,
+        name: str,
+        version: str,
+        company: ResourceId,
+        docker_credentials_name: str,
+        **kwargs,
+    ) -> Dict:
         """Set the docker credentials name on an analytic.
 
         Args:
@@ -717,12 +774,89 @@ class AnalyticsImpl:
             ...     docker_credentials_name='my-gcr-credentials')
         """
         data = {
-            'name': name,
-            'version': version,
-            'company': company,
-            'docker_credentials_name': docker_credentials_name
+            "name": name,
+            "version": version,
+            "company": company,
+            "docker_credentials_name": docker_credentials_name,
         }
         data.update(kwargs)
 
-        return self._provider.post(
-            path='set-analytic-docker-credentials', data=data)
+        return self._provider.post(path="set-analytic-docker-credentials", data=data)
+
+    def assign_credentials(
+        self,
+        analytic_name: str,
+        analytic_version_range: str,
+        company: ResourceId,
+        credentials: Dict[str, str],
+        **kwargs,
+    ) -> None:
+        """Assign credentials to an analytic for a given company.
+
+        Args:
+            analytic_name: Name of the analytic that will use the credentials.
+
+            analytic_version_range: Version range for which the credentials will be assigned.
+
+            company: Identifier of the company owning the credentials.
+
+            credentials: Map of credential field names to company credential names.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> sdk.analytics.assign_credentials(
+            ...     analytic_name='my_vehicle_detection',
+            ...     analytic_version_range='0.0.x',
+            ...     company='5d3714e14c50356e2abd1f97',
+            ...     credentials={'aws': 'my-aws-credentials'})
+        """
+        data = {
+            "analytic_name": analytic_name,
+            "analytic_version_range": analytic_version_range,
+            "company": company,
+            "credentials": credentials,
+        }
+        data.update(kwargs)
+
+        self._provider.post(path="assign-analytic-credentials", data=data, as_json=False)
+
+    def unassign_credentials(
+        self,
+        analytic_name: str,
+        analytic_version_range: str,
+        company: ResourceId,
+        credential_names: List[str],
+        **kwargs,
+    ) -> None:
+        """Unassign credentials from an analytic for a given company.
+
+        Args:
+            analytic_name: Name of the analytic that will no longer use the credentials.
+
+            analytic_version_range: Version range for which the credentials will be unassigned.
+
+            company: Identifier of the company owning the credentials.
+
+            credential_names: List of credential names to unassign.
+
+            **kwargs: Optional keyword arguments. Those arguments are
+                passed as is to the API provider.
+
+        Examples:
+            >>> sdk.analytics.unassign_credentials(
+            ...     analytic_name='my_vehicle_detection',
+            ...     analytic_version_range='0.0.x',
+            ...     company='5d3714e14c50356e2abd1f97',
+            ...     credential_names=['aws'])
+        """
+        data = {
+            "analytic_name": analytic_name,
+            "analytic_version_range": analytic_version_range,
+            "company": company,
+            "credential_names": credential_names,
+        }
+        data.update(kwargs)
+
+        self._provider.post(path="unassign-analytic-credentials", data=data, as_json=False)

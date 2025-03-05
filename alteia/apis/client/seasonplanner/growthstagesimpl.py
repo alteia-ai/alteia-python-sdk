@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerAssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,8 +8,11 @@ from alteia.core.utils.utils import get_chunks
 
 
 class GrowthStagesImpl:
-    def __init__(self, season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_asset_management_api: SeasonPlannerAssetManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_asset_management_api
 
     def create(self, *, company: ResourceId, name: str, **kwargs) -> Resource:
@@ -27,18 +30,23 @@ class GrowthStagesImpl:
             Resource: A growth-stage resource.
         """
         data = kwargs
-        data.update({
-            'company': company,
-            'name': name
-        })
+        data.update({"company": company, "name": name})
 
-        content = self._provider.post(path='create-growth-stage', data=data)
+        content = self._provider.post(path="create-growth-stage", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search growth-stages.
 
         Args:
@@ -92,15 +100,21 @@ class GrowthStagesImpl:
         """
         return search(
             self,
-            url='search-growth-stages',
+            url="search-growth-stages",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
+
+    @overload
+    def describe(self, growth_stage: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, growth_stage: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, growth_stage: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a growth-stage or a list of growth-stages.
@@ -121,17 +135,16 @@ class GrowthStagesImpl:
             results = []
             ids_chunks = get_chunks(growth_stage, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['growth_stages'] = ids_chunk
-                descs = self._provider.post('describe-growth-stages', data=data)
+                data["growth_stages"] = ids_chunk
+                descs = self._provider.post("describe-growth-stages", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['growth_stage'] = growth_stage
-            desc = self._provider.post('describe-growth-stage', data=data)
+            data["growth_stage"] = growth_stage
+            desc = self._provider.post("describe-growth-stage", data=data)
             return Resource(**desc)
 
-    def update(self, *, growth_stage: ResourceId, name: str,
-               company: str = None, **kwargs) -> Resource:
+    def update(self, *, growth_stage: ResourceId, name: str, company: str | None = None, **kwargs) -> Resource:
         """Update a growth-stage.
 
         Args:
@@ -148,15 +161,12 @@ class GrowthStagesImpl:
             Resource: A growth-stage resource updated.
         """
         data = kwargs
-        data.update({
-            'growth_stage': growth_stage,
-            'name': name
-        })
+        data.update({"growth_stage": growth_stage, "name": name})
 
         if company is not None:
-            data['company'] = company
+            data["company"] = company
 
-        content = self._provider.post(path='update-growth-stage', data=data)
+        content = self._provider.post(path="update-growth-stage", data=data)
 
         return Resource(**content)
 
@@ -169,6 +179,6 @@ class GrowthStagesImpl:
         """
 
         data = kwargs
-        data['growth_stage'] = growth_stage
+        data["growth_stage"] = growth_stage
 
-        self._provider.post('delete-growth-stage', data=data)
+        self._provider.post("delete-growth-stage", data=data)

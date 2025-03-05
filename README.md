@@ -14,7 +14,7 @@
 pip install alteia
 ```
 
-**requires Python >= 3.6.1, pip >= 20.3*
+**requires Python >= 3.11, pip >= 20.3*
 
 ## Basic usage
 

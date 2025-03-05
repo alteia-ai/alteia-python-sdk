@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerTrialManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,14 +8,25 @@ from alteia.core.utils.utils import get_chunks
 
 
 class SeasonPlannerMissionsImpl:
-    def __init__(self, season_planner_trial_management_api: SeasonPlannerTrialManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_trial_management_api: SeasonPlannerTrialManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_trial_management_api
 
-    def add_mission_to_trial(self, *, trial: ResourceId, name: str, start_date: str = None,
-                             end_date: str = None, description: str = None,
-                             estimation_methods: list = None, growth_stages_range: dict = None,
-                             **kwargs) -> Resource:
+    def add_mission_to_trial(
+        self,
+        *,
+        trial: ResourceId,
+        name: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        description: str | None = None,
+        estimation_methods: list | None = None,
+        growth_stages_range: dict | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a new mission on the specified trial.
 
         The created mission will have the company of the trial.
@@ -43,24 +54,33 @@ class SeasonPlannerMissionsImpl:
             Resource: A trial resource.
         """
         data = kwargs
-        data['trial'] = trial
-        data['name'] = name
+        data["trial"] = trial
+        data["name"] = name
 
-        for param_name, param_value in (('start_date', start_date),
-                                        ('end_date', end_date),
-                                        ('description', description),
-                                        ('estimation_methods', estimation_methods),
-                                        ('growth_stages_range', growth_stages_range),):
+        for param_name, param_value in (
+            ("start_date", start_date),
+            ("end_date", end_date),
+            ("description", description),
+            ("estimation_methods", estimation_methods),
+            ("growth_stages_range", growth_stages_range),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='add-mission-to-trial', data=data)
+        content = self._provider.post(path="add-mission-to-trial", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search missions.
 
         Args:
@@ -112,14 +132,20 @@ class SeasonPlannerMissionsImpl:
 
         return search(
             self,
-            url='search-missions',
+            url="search-missions",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
+
+    @overload
+    def describe(self, mission: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, mission: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, mission: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a mission.
@@ -138,19 +164,27 @@ class SeasonPlannerMissionsImpl:
             results = []
             ids_chunks = get_chunks(mission, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['missions'] = ids_chunk
-                descs = self._provider.post('describe-missions', data=data)
+                data["missions"] = ids_chunk
+                descs = self._provider.post("describe-missions", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['mission'] = mission
-            desc = self._provider.post('describe-mission', data=data)
+            data["mission"] = mission
+            desc = self._provider.post("describe-mission", data=data)
             return Resource(**desc)
 
-    def update_mission(self, *, mission: ResourceId, name: str, start_date: str = None,
-                       end_date: str = None, description: str = None,
-                       estimation_methods: list = None, growth_stages_range: dict = None,
-                       **kwargs) -> Resource:
+    def update_mission(
+        self,
+        *,
+        mission: ResourceId,
+        name: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        description: str | None = None,
+        estimation_methods: list | None = None,
+        growth_stages_range: dict | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update a mission.
 
         Args:
@@ -176,18 +210,20 @@ class SeasonPlannerMissionsImpl:
             Resource: A mission resource.
         """
         data = kwargs
-        data['mission'] = mission
-        data['name'] = name
+        data["mission"] = mission
+        data["name"] = name
 
-        for param_name, param_value in (('start_date', start_date),
-                                        ('end_date', end_date),
-                                        ('description', description),
-                                        ('estimation_methods', estimation_methods),
-                                        ('growth_stages_range', growth_stages_range),):
+        for param_name, param_value in (
+            ("start_date", start_date),
+            ("end_date", end_date),
+            ("description", description),
+            ("estimation_methods", estimation_methods),
+            ("growth_stages_range", growth_stages_range),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='update-mission', data=data)
+        content = self._provider.post(path="update-mission", data=data)
 
         return Resource(**content)
 
@@ -200,6 +236,6 @@ class SeasonPlannerMissionsImpl:
         """
 
         data = kwargs
-        data['mission'] = mission
+        data["mission"] = mission
 
-        self._provider.post('delete-mission', data=data)
+        self._provider.post("delete-mission", data=data)

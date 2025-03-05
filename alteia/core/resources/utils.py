@@ -8,10 +8,18 @@ ASCENDING = 1
 DESCENDING = -1
 
 
-def search(manager, *, url: str, filter: dict = None, fields: dict = None,
-           limit: int = None, page: int = None,
-           sort: dict = None, return_total: bool = False,
-           **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+def search(
+    manager,
+    *,
+    url: str,
+    filter: dict | None = None,
+    fields: dict | None = None,
+    limit: int | None = None,
+    page: int | None = None,
+    sort: dict | None = None,
+    return_total: bool = False,
+    **kwargs,
+) -> Union[ResourcesWithTotal, List[Resource]]:
     """Generic search function.
 
     Args:
@@ -49,33 +57,41 @@ def search(manager, *, url: str, filter: dict = None, fields: dict = None,
 
     """
     data = kwargs
-    for name, value in [('filter', filter or {}),
-                        ('fields', fields),
-                        ('limit', limit),
-                        ('page', page),
-                        ('sort', sort)]:
+    for name, value in [
+        ("filter", filter or {}),
+        ("fields", fields),
+        ("limit", limit),
+        ("page", page),
+        ("sort", sort),
+    ]:
         if value is not None:
             data.update({name: value})
 
     r = manager._provider.post(url, data=data)
 
-    descriptions = r.get('results')
+    descriptions = r.get("results")
 
     results = [Resource(**desc) for desc in descriptions]
 
     if return_total is True:
-        total = r.get('total')
+        total = r.get("total")
         return ResourcesWithTotal(total=total, results=results)
     else:
         return results
 
 
-def search_generator(manager, *,
-                     page: int = None, first_page: int,
-                     filter: dict = None, fields: dict = None,
-                     limit: int = 50, sort: Optional[Dict[str, int]] = None,
-                     keyset_pagination: bool = False,
-                     **kwargs) -> Generator[Resource, None, None]:
+def search_generator(
+    manager,
+    *,
+    page: int | None = None,
+    first_page: int,
+    filter: dict | None = None,
+    fields: dict | None = None,
+    limit: int = 50,
+    sort: Optional[Dict[str, int]] | None = None,
+    keyset_pagination: bool = False,
+    **kwargs,
+) -> Generator[Resource, None, None]:
     """Return a generator to search through the given manager resources.
 
     The generator allows the user not to care about the pagination of
@@ -116,8 +132,8 @@ def search_generator(manager, *,
         A generator yielding found resources.
 
     """
-    if not hasattr(manager, 'search'):
-        raise RuntimeError(f'Search action not found on manager {manager!r}')
+    if not hasattr(manager, "search"):
+        raise RuntimeError(f"Search action not found on manager {manager!r}")
 
     data = kwargs
     if page is not None:
@@ -125,20 +141,20 @@ def search_generator(manager, *,
         keyset_pagination = False
 
     if fields is not None:
-        data['fields'] = fields
+        data["fields"] = fields
 
     if keyset_pagination and sort:
         warnings.warn("Keyset pagination disabled due to custom sort")
         keyset_pagination = False
 
-    if keyset_pagination and filter and '_id' in filter.keys():
+    if keyset_pagination and filter and "_id" in filter.keys():
         warnings.warn("Keyset pagination disabled due to custom _id filter")
         keyset_pagination = False
 
     if keyset_pagination:
-        data['sort'] = {'_id': DESCENDING}
+        data["sort"] = {"_id": DESCENDING}
         if limit is not None:
-            data['limit'] = limit
+            data["limit"] = limit
 
         f = copy.copy(filter) if filter else dict()
 
@@ -150,12 +166,15 @@ def search_generator(manager, *,
                 return None
 
             min_id = resources[-1].id
-            f['_id'] = {'$lt': min_id}
+            f["_id"] = {"$lt": min_id}
             return f
+
     else:
-        for name, value in [('page', first_page if page is None else page),
-                            ('sort', sort or {'_id': ASCENDING}),
-                            ('limit', limit)]:
+        for name, value in [
+            ("page", first_page if page is None else page),
+            ("sort", sort or {"_id": ASCENDING}),
+            ("limit", limit),
+        ]:
             if value is not None:
                 data[name] = value
 
@@ -169,4 +188,4 @@ def search_generator(manager, *,
             yield resource
 
         if not keyset_pagination:
-            data['page'] += 1
+            data["page"] += 1

@@ -1,6 +1,4 @@
-"""Implementation of comments.
-
-"""
+"""Implementation of comments."""
 
 import urllib.parse
 from typing import List
@@ -12,14 +10,20 @@ from alteia.core.utils.typing import ResourceId
 
 
 class CommentsImpl:
-    def __init__(self, project_manager_api: ProjectManagerAPI,
-                 sdk, **kwargs):
+    def __init__(self, project_manager_api: ProjectManagerAPI, sdk, **kwargs):
         self._provider = project_manager_api
         self._sdk = sdk
 
-    def create(self, text: str, *, project: ResourceId,
-               type: str, target: ResourceId = None, flight: ResourceId = None,
-               **kwargs) -> Comment:
+    def create(
+        self,
+        text: str,
+        *,
+        project: ResourceId,
+        type: str,
+        target: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        **kwargs,
+    ) -> Comment:
         """Create a comment.
 
         Args:
@@ -52,45 +56,42 @@ class CommentsImpl:
 
         """
         data = kwargs
-        data.update({'project_id': project,
-                     'text': text,
-                     'target': {'type': type}})
+        data.update({"project_id": project, "text": text, "target": {"type": type}})
 
-        if type == 'photo':
+        if type == "photo":
             if target is None or flight is None:
-                raise ParameterError('When commentging a photo, '
-                                     'the target and flight must be defined')
+                raise ParameterError("When commentging a photo, " "the target and flight must be defined")
             else:
-                data['target']['id'] = flight
-                data['target']['subId'] = target
+                data["target"]["id"] = flight
+                data["target"]["subId"] = target
 
         elif target is not None:
-            data['target']['id'] = target
+            data["target"]["id"] = target
 
-        res = self._provider.post('comments', data=data)
-        return self._convert_uisrv_desc_to_Comment(desc=res['comment'])
+        res = self._provider.post("comments", data=data)
+        return self._convert_uisrv_desc_to_Comment(desc=res["comment"])
 
     def _convert_uisrv_desc_to_Comment(self, desc: dict) -> Comment:
         """Convert a comment description returned by UI-Services
-           to a Comment object"""
+        to a Comment object"""
         # {'Comment_key': 'uisrv_desc_key'}
         params = {}
 
-        text = desc.pop('text')
-        project = desc.pop('project_id')
-        creation_date = desc.pop('date')
-        comment_id = desc.pop('_id')
-        comment_type = desc['target'].pop('type')
-        creation_user = desc['author'].pop('id')
+        text = desc.pop("text")
+        project = desc.pop("project_id")
+        creation_date = desc.pop("date")
+        comment_id = desc.pop("_id")
+        comment_type = desc["target"].pop("type")
+        creation_user = desc["author"].pop("id")
 
-        if desc['target'].get('subId'):
-            params['target'] = desc['target'].pop('subId')
-            params['flight'] = desc['target'].pop('id')
-        elif desc['target'].get('id'):
-            params['target'] = desc['target'].pop('id')
-        desc.pop('target')
+        if desc["target"].get("subId"):
+            params["target"] = desc["target"].pop("subId")
+            params["flight"] = desc["target"].pop("id")
+        elif desc["target"].get("id"):
+            params["target"] = desc["target"].pop("id")
+        desc.pop("target")
 
-        desc.pop('author')
+        desc.pop("author")
 
         params.update(desc)  # Save remaining properties (should be empty)
 
@@ -101,12 +102,18 @@ class CommentsImpl:
             project=project,
             creation_user=creation_user,
             creation_date=creation_date,
-            **params
+            **params,
         )
 
-    def search(self, *, project: ResourceId, type: str = None,
-               target: ResourceId = None, flight: ResourceId = None,
-               **kwargs) -> List[Comment]:
+    def search(
+        self,
+        *,
+        project: ResourceId,
+        type: str | None = None,
+        target: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        **kwargs,
+    ) -> List[Comment]:
         """Search for comments.
 
         When searching for comments on a photo. Both the ``flight`` id and
@@ -136,37 +143,42 @@ class CommentsImpl:
 
         """
         query = kwargs
-        query['project_id'] = project
+        query["project_id"] = project
 
         if type:
-            query['target_type'] = type
+            query["target_type"] = type
 
         if flight:
-            query['target_id'] = flight
+            query["target_id"] = flight
             if target:
                 # the target is a photo id when a flight id is supplied
-                query['target_subid'] = target
+                query["target_subid"] = target
 
         elif target:
-            query['target_id'] = target
+            query["target_id"] = target
 
         query_str = urllib.parse.urlencode(query)
-        path = f'comments?{query_str}'
+        path = f"comments?{query_str}"
 
         desc = self._provider.get(path)
 
         found_comments = []
-        for group in desc.get('conversations'):
-            for comment in group.get('comments'):
-                comment.update({'target': group.get('_id').copy()})
-                comment.update({'project_id': project})
-                found_comments.append(
-                    self._convert_uisrv_desc_to_Comment(desc=comment))
+        for group in desc.get("conversations"):
+            for comment in group.get("comments"):
+                comment.update({"target": group.get("_id").copy()})
+                comment.update({"project_id": project})
+                found_comments.append(self._convert_uisrv_desc_to_Comment(desc=comment))
         return found_comments
 
-    def mark_as_read(self, *, project: ResourceId, type: str = None,
-                     target: ResourceId = None, flight: ResourceId = None,
-                     **kwargs) -> None:
+    def mark_as_read(
+        self,
+        *,
+        project: ResourceId,
+        type: str | None = None,
+        target: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        **kwargs,
+    ) -> None:
         """Mark all the comments of a target or project as read.
 
         Args:
@@ -192,20 +204,18 @@ class CommentsImpl:
 
         """
         data = kwargs
-        data.update({'project_id': project})
+        data.update({"project_id": project})
 
         if type:
-            data['target'] = {'type': type}
-            if type == 'photo':
+            data["target"] = {"type": type}
+            if type == "photo":
                 if target is None or flight is None:
-                    raise ParameterError(
-                        'When dealing with a photo target, '
-                        'the target and flight must be defined')
+                    raise ParameterError("When dealing with a photo target, " "the target and flight must be defined")
                 else:
-                    data['target']['id'] = flight
-                    data['target']['subId'] = target
+                    data["target"]["id"] = flight
+                    data["target"]["subId"] = target
 
             elif target is not None:
-                data['target']['id'] = target
+                data["target"]["id"] = target
 
-        self._provider.post('comments/mark-as-read', data=data, as_json=False)
+        self._provider.post("comments/mark-as-read", data=data, as_json=False)

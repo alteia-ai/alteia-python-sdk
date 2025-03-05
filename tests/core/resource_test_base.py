@@ -6,10 +6,9 @@ from tests.alteiatest import AlteiaTestBase
 
 
 class ResourcesTestBase(AlteiaTestBase):
-
     @classmethod
     def setUpClass(cls):
-        with patch('alteia.core.connection.token.TokenManager.renew_token') as mock:
+        with patch("alteia.core.connection.token.TokenManager.renew_token") as mock:
             mock.return_value = None
             cls.sdk = alteia.SDK(config_path=cls.get_absolute_path("./config-test.json"))
 

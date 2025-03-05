@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, overload
 
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -11,8 +11,16 @@ class SensorsImpl:
     def __init__(self, asset_management_api: AssetManagementAPI, **kwargs):
         self._provider = asset_management_api
 
-    def create(self, *, sensor_model: str, team: ResourceId, serial_number: str,
-               firmware: str = None, comment: str = None, **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        sensor_model: str,
+        team: ResourceId,
+        serial_number: str,
+        firmware: str | None = None,
+        comment: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a sensor.
 
         Args:
@@ -33,24 +41,27 @@ class SensorsImpl:
             Resource: A sensor resource.
         """
         data = kwargs
-        data.update({
-            'sensor_model': sensor_model,
-            'team': team,
-            'serial_number': serial_number
-        })
+        data.update({"sensor_model": sensor_model, "team": team, "serial_number": serial_number})
 
-        for param_name, param_value in (('comment', comment),
-                                        ('firmware', firmware)):
+        for param_name, param_value in (("comment", comment), ("firmware", firmware)):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-sensor', data=data)
+        content = self._provider.post(path="create-sensor", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search sensors.
 
         Args:
@@ -87,15 +98,21 @@ class SensorsImpl:
         """
         return search(
             self,
-            url='search-sensors',
+            url="search-sensors",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
+
+    @overload
+    def describe(self, sensor: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, sensor: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, sensor: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a sensor or a list of sensors.
@@ -116,13 +133,13 @@ class SensorsImpl:
             results = []
             ids_chunks = get_chunks(sensor, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['sensors'] = ids_chunk
-                descs = self._provider.post('describe-sensors', data=data)
+                data["sensors"] = ids_chunk
+                descs = self._provider.post("describe-sensors", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['sensor'] = sensor
-            desc = self._provider.post('describe-sensor', data=data)
+            data["sensor"] = sensor
+            desc = self._provider.post("describe-sensor", data=data)
             return Resource(**desc)
 
     def delete(self, sensor: ResourceId, **kwargs):
@@ -134,6 +151,6 @@ class SensorsImpl:
         """
 
         data = kwargs
-        data['sensor'] = sensor
+        data["sensor"] = sensor
 
-        self._provider.post('delete-sensor', data=data)
+        self._provider.post("delete-sensor", data=data)

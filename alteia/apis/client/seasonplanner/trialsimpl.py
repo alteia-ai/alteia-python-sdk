@@ -1,4 +1,4 @@
-from typing import Generator, List, Union
+from typing import Generator, List, Union, overload
 
 from alteia.apis.provider import SeasonPlannerTrialManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,13 +8,27 @@ from alteia.core.utils.utils import get_chunks
 
 
 class TrialsImpl:
-    def __init__(self, season_planner_trial_management_api: SeasonPlannerTrialManagementAPI,
-                 **kwargs):
+    def __init__(
+        self,
+        season_planner_trial_management_api: SeasonPlannerTrialManagementAPI,
+        **kwargs,
+    ):
         self._provider = season_planner_trial_management_api
 
-    def create(self, *, field: ResourceId, name: str, crop: ResourceId, comment: str = None,
-               season: str = None, location: dict = None, missions: List = None, links: List = None,
-               custom_id: ResourceId = None, **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        field: ResourceId,
+        name: str,
+        crop: ResourceId,
+        comment: str | None = None,
+        season: str | None = None,
+        location: dict | None = None,
+        missions: List | None = None,
+        links: List | None = None,
+        custom_id: ResourceId | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a trial.
 
         Args:
@@ -101,28 +115,39 @@ class TrialsImpl:
             Resource: A trial resource.
         """
         data = kwargs
-        data.update({
-            'field': field,
-            'name': name,
-            'crop': crop,
-        })
+        data.update(
+            {
+                "field": field,
+                "name": name,
+                "crop": crop,
+            }
+        )
 
-        for param_name, param_value in (('comment', comment),
-                                        ('season', season),
-                                        ('location', location),
-                                        ('missions', missions),
-                                        ('links', links),
-                                        ('custom_id', custom_id),):
+        for param_name, param_value in (
+            ("comment", comment),
+            ("season", season),
+            ("location", location),
+            ("missions", missions),
+            ("links", links),
+            ("custom_id", custom_id),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-trial', data=data)
+        content = self._provider.post(path="create-trial", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search trials.
 
         Args:
@@ -180,18 +205,18 @@ class TrialsImpl:
 
         return search(
             self,
-            url='search-trials',
+            url="search-trials",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through trials.
 
         The generator allows the user not to care about the pagination of
@@ -215,8 +240,13 @@ class TrialsImpl:
             A generator yielding found trials.
 
         """
-        return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=0, filter=filter, limit=limit, page=page, **kwargs)
+
+    @overload
+    def describe(self, trial: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, trial: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, trial: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a trial.
@@ -235,13 +265,13 @@ class TrialsImpl:
             results = []
             ids_chunks = get_chunks(trial, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['trials'] = ids_chunk
-                descs = self._provider.post('describe-trials', data=data)
+                data["trials"] = ids_chunk
+                descs = self._provider.post("describe-trials", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['trial'] = trial
-            desc = self._provider.post('describe-trial', data=data)
+            data["trial"] = trial
+            desc = self._provider.post("describe-trial", data=data)
             return Resource(**desc)
 
     def delete(self, trial: ResourceId, **kwargs):
@@ -253,13 +283,23 @@ class TrialsImpl:
         """
 
         data = kwargs
-        data['trial'] = trial
+        data["trial"] = trial
 
-        self._provider.post('delete-trial', data=data)
+        self._provider.post("delete-trial", data=data)
 
-    def update(self, trial: ResourceId, field: ResourceId, crop: ResourceId, name: str = None,
-               comment: str = None, season: str = None, location: dict = None,
-               links: List = None, custom_id: ResourceId = None, **kwargs) -> Resource:
+    def update(
+        self,
+        trial: ResourceId,
+        field: ResourceId,
+        crop: ResourceId,
+        name: str | None = None,
+        comment: str | None = None,
+        season: str | None = None,
+        location: dict | None = None,
+        links: List | None = None,
+        custom_id: ResourceId | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update a trial.
 
         Args:
@@ -329,20 +369,22 @@ class TrialsImpl:
             Resource: A trial resource.
         """
         data = kwargs
-        data['trial'] = trial
-        data['field'] = field
-        data['crop'] = crop
+        data["trial"] = trial
+        data["field"] = field
+        data["crop"] = crop
 
-        for param_name, param_value in (('name', name),
-                                        ('comment', comment),
-                                        ('season', season),
-                                        ('location', location),
-                                        ('links', links),
-                                        ('custom_id', custom_id),):
+        for param_name, param_value in (
+            ("name", name),
+            ("comment", comment),
+            ("season", season),
+            ("location", location),
+            ("links", links),
+            ("custom_id", custom_id),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='update-trial', data=data)
+        content = self._provider.post(path="update-trial", data=data)
 
         return Resource(**content)
 
@@ -409,12 +451,11 @@ class TrialsImpl:
         data["trial"] = trial
         data["plots"] = plots
 
-        content = self._provider.post(path='set-plots-on-trial', data=data)
+        content = self._provider.post(path="set-plots-on-trial", data=data)
 
         return Resource(**content)
 
-    def set_dtm_dataset_on_trial(self, *, trial: ResourceId, dataset: ResourceId,
-                                 **kwargs) -> Resource:
+    def set_dtm_dataset_on_trial(self, *, trial: ResourceId, dataset: ResourceId, **kwargs) -> Resource:
         """
         Set trial DTM dataset on a trial
 
@@ -430,6 +471,6 @@ class TrialsImpl:
         data["trial"] = trial
         data["dataset"] = dataset
 
-        content = self._provider.post(path='set-dtm-dataset-on-trial', data=data)
+        content = self._provider.post(path="set-dtm-dataset-on-trial", data=data)
 
         return Resource(**content)

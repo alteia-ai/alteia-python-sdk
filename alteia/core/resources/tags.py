@@ -1,17 +1,25 @@
-"""Tag related resources.
-
-"""
+"""Tag related resources."""
 
 from alteia.core.resources.resource import Resource
 from alteia.core.utils.typing import ResourceId
 
 
 class Tag(Resource):
-    def __init__(self, *, id: ResourceId, name: str, project: ResourceId,
-                 type: str, creation_date: str, target: ResourceId = None,
-                 flight: ResourceId = None, creation_user: ResourceId,
-                 deletion_date: str = None, deletion_user: ResourceId = None,
-                 **kwargs):
+    def __init__(
+        self,
+        *,
+        id: ResourceId,
+        name: str,
+        project: ResourceId,
+        type: str,
+        creation_date: str,
+        target: ResourceId | None = None,
+        flight: ResourceId | None = None,
+        creation_user: ResourceId,
+        deletion_date: str | None = None,
+        deletion_user: ResourceId | None = None,
+        **kwargs,
+    ):
         """Tag resource.
 
         Args:
@@ -57,5 +65,5 @@ class Tag(Resource):
             creation_user=creation_user,
             deletion_date=deletion_date,
             deletion_user=deletion_user,
-            **kwargs
+            **kwargs,
         )

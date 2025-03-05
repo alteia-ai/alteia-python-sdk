@@ -1,5 +1,5 @@
 """
-    Datastreams implementation
+Datastreams implementation
 """
 
 from typing import Dict, Generator, List, Union
@@ -22,7 +22,7 @@ class DatastreamsImpl:
         end_date: str,
         source: Dict,
         template: ResourceId,
-        **kwargs
+        **kwargs,
     ) -> Resource:
         """Create a datastream.
 
@@ -80,14 +80,13 @@ class DatastreamsImpl:
     def search(
         self,
         *,
-        filter: Dict = None,
-        limit: int = None,
-        page: int = None,
-        sort: dict = None,
+        filter: Dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
         return_total: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[ResourcesWithTotal, List[Resource]]:
-
         """Search for a list of datastreams.
 
         Args:
@@ -128,9 +127,7 @@ class DatastreamsImpl:
             if value is not None:
                 data.update({prop_name: value})
 
-        search_desc = self._provider.post(
-            path="search-datastreams", data=data, as_json=True
-        )
+        search_desc = self._provider.post(path="search-datastreams", data=data, as_json=True)
 
         datastreams = search_desc.get("results")
 
@@ -143,7 +140,7 @@ class DatastreamsImpl:
         return results
 
     def search_generator(
-        self, *, filter: dict = None, limit: int = 50, page: int = None, **kwargs
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
     ) -> Generator[Resource, None, None]:
         """Return a generator to search through datastreams.
 
@@ -168,9 +165,7 @@ class DatastreamsImpl:
             A generator yielding found datastreams.
 
         """
-        return search_generator(
-            self, first_page=1, filter=filter, limit=limit, page=page, **kwargs
-        )
+        return search_generator(self, first_page=1, filter=filter, limit=limit, page=page, **kwargs)
 
     def describe(self, *, datastream: ResourceId) -> Resource:
         """Describe a datastream.

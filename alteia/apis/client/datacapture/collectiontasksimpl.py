@@ -1,4 +1,4 @@
-from typing import Generator, List, Union
+from typing import Generator, List, Union, overload
 
 from alteia.apis.provider import CollectionTaskAPI, CollectionTaskManagementAPI
 from alteia.core.resources.resource import Resource, ResourcesWithTotal
@@ -8,17 +8,33 @@ from alteia.core.utils.utils import get_chunks
 
 
 class CollectionTaskImpl:
-    def __init__(self, collection_task_api: CollectionTaskAPI,
-                 collection_task_management_api: CollectionTaskManagementAPI, **kwargs):
+    def __init__(
+        self,
+        collection_task_api: CollectionTaskAPI,
+        collection_task_management_api: CollectionTaskManagementAPI,
+        **kwargs,
+    ):
         self._provider = collection_task_api
         self._alt_provider = collection_task_management_api
 
-    def create(self, *, name: str, company: ResourceId, site: ResourceId = None,
-               survey: ResourceId = None, location: dict = None,
-               forecast_date_range: dict = None, scheduled_date_range: dict = None,
-               team: ResourceId = None, pic: ResourceId = None, comment: str = None,
-               custom_props: dict = None, requirement: dict = None, purpose: str = None,
-               **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str,
+        company: ResourceId,
+        site: ResourceId | None = None,
+        survey: ResourceId | None = None,
+        location: dict | None = None,
+        forecast_date_range: dict | None = None,
+        scheduled_date_range: dict | None = None,
+        team: ResourceId | None = None,
+        pic: ResourceId | None = None,
+        comment: str | None = None,
+        custom_props: dict | None = None,
+        requirement: dict | None = None,
+        purpose: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a collection task.
 
         Args:
@@ -57,32 +73,43 @@ class CollectionTaskImpl:
             Resource: A collection task resource.
         """
         data = kwargs
-        data.update({
-            'name': name,
-            'company': company,
-        })
+        data.update(
+            {
+                "name": name,
+                "company": company,
+            }
+        )
 
-        for param_name, param_value in (('site', site),
-                                        ('survey', survey),
-                                        ('location', location),
-                                        ('forecast_date_range', forecast_date_range),
-                                        ('scheduled_date_range', scheduled_date_range),
-                                        ('team', team),
-                                        ('pic', pic),
-                                        ('comment', comment),
-                                        ('custom_props', custom_props),
-                                        ('requirement', requirement),
-                                        ('purpose', purpose),):
+        for param_name, param_value in (
+            ("site", site),
+            ("survey", survey),
+            ("location", location),
+            ("forecast_date_range", forecast_date_range),
+            ("scheduled_date_range", scheduled_date_range),
+            ("team", team),
+            ("pic", pic),
+            ("comment", comment),
+            ("custom_props", custom_props),
+            ("requirement", requirement),
+            ("purpose", purpose),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-task', data=data)
+        content = self._provider.post(path="create-task", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search collection tasks.
 
         Args:
@@ -112,18 +139,18 @@ class CollectionTaskImpl:
 
         return search(
             self,
-            url='search-tasks',
+            url="search-tasks",
             filter=filter,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def search_generator(self, *, filter: dict = None, limit: int = 50,
-                         page: int = None,
-                         **kwargs) -> Generator[Resource, None, None]:
+    def search_generator(
+        self, *, filter: dict | None = None, limit: int = 50, page: int | None = None, **kwargs
+    ) -> Generator[Resource, None, None]:
         """Return a generator to search through collection tasks.
 
         The generator allows the user not to care about the pagination of
@@ -147,10 +174,15 @@ class CollectionTaskImpl:
             A generator yielding found collection tasks.
 
         """
-        return search_generator(self, first_page=0, filter=filter, limit=limit,
-                                page=page, **kwargs)
+        return search_generator(self, first_page=0, filter=filter, limit=limit, page=page, **kwargs)
 
-    def describe(self, task: SomeResourceIds, *, fields: dict = None, **kwargs) -> SomeResources:
+    @overload
+    def describe(self, task: ResourceId, *, fields: dict | None = None, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, task: List[ResourceId], *, fields: dict | None = None, **kwargs) -> List[Resource]: ...
+
+    def describe(self, task: SomeResourceIds, *, fields: dict | None = None, **kwargs) -> SomeResources:
         """Describe a collection task.
 
         Args:
@@ -173,13 +205,13 @@ class CollectionTaskImpl:
             results = []
             ids_chunks = get_chunks(task, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['tasks'] = ids_chunk
-                descs = self._provider.post('describe-tasks', data=data)
+                data["tasks"] = ids_chunk
+                descs = self._provider.post("describe-tasks", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['task'] = task
-            desc = self._provider.post('describe-task', data=data)
+            data["task"] = task
+            desc = self._provider.post("describe-task", data=data)
             return Resource(**desc)
 
     def delete(self, task: ResourceId, **kwargs):
@@ -191,9 +223,9 @@ class CollectionTaskImpl:
         """
 
         data = kwargs
-        data['task'] = task
+        data["task"] = task
 
-        self._provider.post('delete-task', data=data)
+        self._provider.post("delete-task", data=data)
 
     def create_flight_log(self, task: ResourceId, **kwargs):
         """Create or update the collection task flight log.
@@ -208,9 +240,9 @@ class CollectionTaskImpl:
             Resource: A collection task resource.
         """
         data = kwargs
-        data['task'] = task
+        data["task"] = task
 
-        self._alt_provider.post('create-or-update-task-flight-log', data=data)
+        self._alt_provider.post("create-or-update-task-flight-log", data=data)
 
     def rename(self, task: ResourceId, *, name: str, **kwargs):
         """Rename a collection task.
@@ -229,17 +261,29 @@ class CollectionTaskImpl:
         """
 
         data = kwargs
-        data.update({'task': task, 'name': name})
+        data.update({"task": task, "name": name})
 
-        content = self._provider.post('set-task-name', data=data)
+        content = self._provider.post("set-task-name", data=data)
         return Resource(**content)
 
-    def update(self, task: ResourceId, *, name: str = None, site: ResourceId = None,
-               survey: ResourceId = None, location: dict = None,
-               forecast_date_range: dict = None, scheduled_date_range: dict = None,
-               team: ResourceId = None, pic: ResourceId = None, comment: str = None,
-               custom_props: dict = None, requirement: dict = None, purpose: str = None,
-               **kwargs) -> Resource:
+    def update(
+        self,
+        task: ResourceId,
+        *,
+        name: str | None = None,
+        site: ResourceId | None = None,
+        survey: ResourceId | None = None,
+        location: dict | None = None,
+        forecast_date_range: dict | None = None,
+        scheduled_date_range: dict | None = None,
+        team: ResourceId | None = None,
+        pic: ResourceId | None = None,
+        comment: str | None = None,
+        custom_props: dict | None = None,
+        requirement: dict | None = None,
+        purpose: str | None = None,
+        **kwargs,
+    ) -> Resource:
         """Update a collection task.
 
         Args:
@@ -278,24 +322,26 @@ class CollectionTaskImpl:
             Resource: A collection task resource.
         """
         data = kwargs
-        data['task'] = task
+        data["task"] = task
 
-        for param_name, param_value in (('name', name),
-                                        ('site', site),
-                                        ('survey', survey),
-                                        ('location', location),
-                                        ('forecast_date_range', forecast_date_range),
-                                        ('scheduled_date_range', scheduled_date_range),
-                                        ('team', team),
-                                        ('pic', pic),
-                                        ('comment', comment),
-                                        ('custom_props', custom_props),
-                                        ('requirement', requirement),
-                                        ('purpose', purpose),):
+        for param_name, param_value in (
+            ("name", name),
+            ("site", site),
+            ("survey", survey),
+            ("location", location),
+            ("forecast_date_range", forecast_date_range),
+            ("scheduled_date_range", scheduled_date_range),
+            ("team", team),
+            ("pic", pic),
+            ("comment", comment),
+            ("custom_props", custom_props),
+            ("requirement", requirement),
+            ("purpose", purpose),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='update-task', data=data)
+        content = self._provider.post(path="update-task", data=data)
 
         return Resource(**content)
 
@@ -313,11 +359,10 @@ class CollectionTaskImpl:
         data = kwargs
         data["task"] = task
         data["status"] = status
-        content = self._provider.post(path='set-task-status', data=data)
+        content = self._provider.post(path="set-task-status", data=data)
         return Resource(**content)
 
-    def set_fieldreport_in_task(self, *, task: ResourceId, field_report: dict,
-                                **kwargs) -> Resource:
+    def set_fieldreport_in_task(self, *, task: ResourceId, field_report: dict, **kwargs) -> Resource:
         """
         Set fieldreport in a collection task
 
@@ -355,6 +400,6 @@ class CollectionTaskImpl:
         data["task"] = task
         data["field_report"] = field_report
 
-        content = self._provider.post(path='set-fieldreport-in-task', data=data)
+        content = self._provider.post(path="set-fieldreport-in-task", data=data)
 
         return Resource(**content)

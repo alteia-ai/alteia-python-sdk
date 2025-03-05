@@ -1,9 +1,8 @@
 import json
 from copy import deepcopy
 
-from urllib3_mock import Responses
-
 from tests.core.resource_test_base import ResourcesTestBase
+from tests.url_mock import Responses
 
 responses = Responses()
 
@@ -107,7 +106,7 @@ class TestDatastreamTemplate(ResourcesTestBase):
             name="My datastream",
             import_dataset={"dataset_parameters": {}},
             source={"type": "object-storage"},
-            **data_create
+            **data_create,
         )
 
         self.assertEqual(len(calls), 1)
@@ -139,7 +138,7 @@ class TestDatastreamTemplate(ResourcesTestBase):
             name="My datastream",
             import_dataset={"dataset_parameters": {}},
             source={"type": "object-storage"},
-            **data_create
+            **data_create,
         )
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
@@ -167,7 +166,7 @@ class TestDatastreamTemplate(ResourcesTestBase):
             name="My datastream",
             import_dataset={"dataset_parameters": {}},
             source={"type": "object-storage"},
-            **data_create
+            **data_create,
         )
 
         self.assertEqual(len(calls), 1)
@@ -194,7 +193,7 @@ class TestDatastreamTemplate(ResourcesTestBase):
             name="My datastream",
             import_dataset={"dataset_parameters": {}},
             source={"type": "object-storage"},
-            **DATA_CREATE
+            **DATA_CREATE,
         )
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0].request.url, "/dataflow/create-datastream-template")
@@ -287,9 +286,7 @@ class TestDatastreamTemplate(ResourcesTestBase):
         )
 
         self.assertEqual(len(calls), 1)
-        self.assertEqual(
-            calls[0].request.url, "/dataflow/describe-datastream-templates"
-        )
+        self.assertEqual(calls[0].request.url, "/dataflow/describe-datastream-templates")
         self.assertEqual(
             calls[0].request.body,
             '{"datastreamtemplates": ["507f191e810c19729de860eb"]}',

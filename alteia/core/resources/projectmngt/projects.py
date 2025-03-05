@@ -36,6 +36,6 @@ class Project(Resource):
             Project: A project resource.
         """
         # Rename companyId key to company in order to have consistent naming
-        if kwargs.get('companyId'):
-            kwargs['company'] = kwargs.pop('companyId')
+        if kwargs.get("companyId"):
+            kwargs["company"] = kwargs.pop("companyId")
         super().__init__(**kwargs)

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, overload
 
 from alteia.apis.provider import AssetManagementAPI
 from alteia.core.resources.resource import Resource
@@ -10,10 +10,20 @@ class CarrierModelsImpl:
     def __init__(self, asset_management_api: AssetManagementAPI, **kwargs):
         self._provider = asset_management_api
 
-    def create(self, *, name: str, maker: str, type: str, company: ResourceId = None,
-               unloaded_weight: dict = None, flight_time: dict = None,
-               speed: dict = None, altitude: dict = None,
-               compatible_sensor_models: List[ResourceId] = None, **kwargs) -> Resource:
+    def create(
+        self,
+        *,
+        name: str,
+        maker: str,
+        type: str,
+        company: ResourceId | None = None,
+        unloaded_weight: dict | None = None,
+        flight_time: dict | None = None,
+        speed: dict | None = None,
+        altitude: dict | None = None,
+        compatible_sensor_models: List[ResourceId] | None = None,
+        **kwargs,
+    ) -> Resource:
         """Create a carrier model.
 
         Args:
@@ -46,29 +56,33 @@ class CarrierModelsImpl:
             Resource: A carrier model resource.
         """
         data = kwargs
-        data.update({
-            'name': name,
-            'maker': maker,
-            'type': type
-        })
+        data.update({"name": name, "maker": maker, "type": type})
 
-        for param_name, param_value in (('company', company),
-                                        ('unloaded_weight', unloaded_weight),
-                                        ('flight_time', flight_time),
-                                        ('speed', speed),
-                                        ('altitude', altitude),
-                                        ('unloaded_weight', unloaded_weight),
-                                        ('compatible_sensor_models', compatible_sensor_models)):
+        for param_name, param_value in (
+            ("company", company),
+            ("unloaded_weight", unloaded_weight),
+            ("flight_time", flight_time),
+            ("speed", speed),
+            ("altitude", altitude),
+            ("unloaded_weight", unloaded_weight),
+            ("compatible_sensor_models", compatible_sensor_models),
+        ):
             if param_value is not None:
                 data[param_name] = param_value
 
-        content = self._provider.post(path='create-carrier-model', data=data)
+        content = self._provider.post(path="create-carrier-model", data=data)
 
         return Resource(**content)
 
-    def search(self, *, filter: dict = None, limit: int = None,
-               page: int = None, sort: dict = None, **kwargs
-               ) -> List[Resource]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        **kwargs,
+    ) -> List[Resource]:
         """Search carrier models.
 
         Args:
@@ -92,17 +106,25 @@ class CarrierModelsImpl:
 
         data = kwargs
 
-        for name, value in [('filter', filter or {}),
-                            ('limit', limit),
-                            ('page', page),
-                            ('sort', sort)]:
+        for name, value in [
+            ("filter", filter or {}),
+            ("limit", limit),
+            ("page", page),
+            ("sort", sort),
+        ]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post('search-carrier-models', data=data)
-        results = r.get('results')
+        r = self._provider.post("search-carrier-models", data=data)
+        results = r.get("results")
 
         return [Resource(**m) for m in results]
+
+    @overload
+    def describe(self, carrier_models: ResourceId, **kwargs) -> Resource: ...
+
+    @overload
+    def describe(self, carrier_models: List[ResourceId], **kwargs) -> List[Resource]: ...
 
     def describe(self, carrier_models: SomeResourceIds, **kwargs) -> SomeResources:
         """Describe a carrier model or a list of carrier models.
@@ -124,13 +146,13 @@ class CarrierModelsImpl:
             results = []
             ids_chunks = get_chunks(carrier_models, self._provider.max_per_describe)
             for ids_chunk in ids_chunks:
-                data['carrier_models'] = ids_chunk
-                descs = self._provider.post('describe-carrier-models', data=data)
+                data["carrier_models"] = ids_chunk
+                descs = self._provider.post("describe-carrier-models", data=data)
                 results += [Resource(**desc) for desc in descs]
             return results
         else:
-            data['carrier_model'] = carrier_models
-            desc = self._provider.post('describe-carrier-model', data=data)
+            data["carrier_model"] = carrier_models
+            desc = self._provider.post("describe-carrier-model", data=data)
             return Resource(**desc)
 
     def delete(self, carrier_model: ResourceId, **kwargs):
@@ -142,6 +164,6 @@ class CarrierModelsImpl:
         """
 
         data = kwargs
-        data['carrier_model'] = carrier_model
+        data["carrier_model"] = carrier_model
 
-        self._provider.post('delete-carrier-model', data=data)
+        self._provider.post("delete-carrier-model", data=data)

@@ -21,20 +21,10 @@ repos:
   hooks:
   - id: seed-isort-config
 
-- repo: https://github.com/timothycrosley/isort
+- repo: https://github.com/PyCQA/isort
   rev: 5.12.0   # pick the isort version you'd like to use from https://github.com/timothycrosley/isort/releases
   hooks:
   - id: isort
-
-- repo: https://github.com/pycqa/flake8
-  rev: 3.9.2
-  hooks:
-  - id: flake8
-
-- repo: https://github.com/pycqa/pylint
-  rev: v2.15.3
-  hooks:
-  - id: pylint
 
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.4.0
@@ -46,3 +36,16 @@ repos:
   rev: v1.0.0
   hooks:
   - id: check-poetry
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.6.3
+  hooks:
+    # Run the linter.
+  - id: ruff
+    args: [alteia, tests, --fix]
+    exclude: tests/functionnal/
+    # Run the formatter.
+  - id: ruff-format
+    args: [alteia, tests]
+    exclude: tests/functionnal/

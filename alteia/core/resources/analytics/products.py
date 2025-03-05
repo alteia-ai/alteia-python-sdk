@@ -1,6 +1,4 @@
-"""Product related resources.
-
-"""
+"""Product related resources."""
 
 from datetime import datetime
 from typing import List, NamedTuple
@@ -12,7 +10,4 @@ class ProductLog:
         self.record = record
 
 
-ProductLogsWithTotal = NamedTuple(
-    'ProductLogsWithTotal',
-    [('total', int), ('logs', List[ProductLog])]
-)
+ProductLogsWithTotal = NamedTuple("ProductLogsWithTotal", [("total", int), ("logs", List[ProductLog])])

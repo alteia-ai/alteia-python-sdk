@@ -10,9 +10,17 @@ class AssessmentParameterEstimationsImpl:
     def __init__(self, season_planner_api: SeasonPlannerAPI, **kwargs):
         self._provider = season_planner_api
 
-    def search(self, *, filter: dict = None, limit: int = None, fields: dict = None,
-               page: int = None, sort: dict = None, return_total: bool = False,
-               **kwargs) -> Union[ResourcesWithTotal, List[Resource]]:
+    def search(
+        self,
+        *,
+        filter: dict | None = None,
+        limit: int | None = None,
+        fields: dict | None = None,
+        page: int | None = None,
+        sort: dict | None = None,
+        return_total: bool = False,
+        **kwargs,
+    ) -> Union[ResourcesWithTotal, List[Resource]]:
         """Search assessment-parameter-estimations.
 
         Args:
@@ -87,18 +95,17 @@ class AssessmentParameterEstimationsImpl:
         """
         return search(
             self,
-            url='search-assessment-parameter-estimations',
+            url="search-assessment-parameter-estimations",
             filter=filter,
             fields=fields,
             limit=limit,
             page=page,
             sort=sort,
             return_total=return_total,
-            **kwargs
+            **kwargs,
         )
 
-    def start_analysis_on_ape(self, assessment_parameter_estimation: ResourceId,
-                              **kwargs) -> Resource:
+    def start_analysis_on_ape(self, assessment_parameter_estimation: ResourceId, **kwargs) -> Resource:
         """Start analysis on APE.
 
         Args:
@@ -111,17 +118,13 @@ class AssessmentParameterEstimationsImpl:
             Resource: A assessment-parameter-estimation resource.
         """
         data = kwargs
-        data['assessment_parameter_estimation'] = assessment_parameter_estimation
+        data["assessment_parameter_estimation"] = assessment_parameter_estimation
 
-        content = self._provider.post(
-            path='start-analysis-on-ape',
-            data=data
-        )
+        content = self._provider.post(path="start-analysis-on-ape", data=data)
 
         return Resource(**content)
 
-    def start_reporting_on_ape(self, assessment_parameter_estimation: ResourceId,
-                               **kwargs) -> Resource:
+    def start_reporting_on_ape(self, assessment_parameter_estimation: ResourceId, **kwargs) -> Resource:
         """Start reporting on APE.
 
         Args:
@@ -134,12 +137,9 @@ class AssessmentParameterEstimationsImpl:
             Resource: A assessment-parameter-estimation resource.
         """
         data = kwargs
-        data['assessment_parameter_estimation'] = assessment_parameter_estimation
+        data["assessment_parameter_estimation"] = assessment_parameter_estimation
 
-        content = self._provider.post(
-            path='start-reporting-on-ape',
-            data=data
-        )
+        content = self._provider.post(path="start-reporting-on-ape", data=data)
 
         return Resource(**content)
 
@@ -172,14 +172,11 @@ class AssessmentParameterEstimationsImpl:
         """
         data = kwargs
 
-        for name, value in [('filter', filter or {})]:
+        for name, value in [("filter", filter or {})]:
             if value is not None:
                 data.update({name: value})
 
-        r = self._provider.post(
-            path='export-report-entries',
-            data=data
-        )
-        results = r.get('results')
+        r = self._provider.post(path="export-report-entries", data=data)
+        results = r.get("results")
 
         return results
